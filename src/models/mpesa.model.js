@@ -42,6 +42,27 @@ async function applyCallback({ checkoutRequestId, resultCode, resultDesc, mpesaR
   }
 
   return withTenantClient(txn.school_id, async (client) => {
+    // Idempotency guard: Daraja retries callbacks that don't get a timely
+    // response, and this endpoint has to tolerate that safely. If this
+    // transaction was already processed as successful, don't insert a
+    // second payment row for the same M-Pesa transaction — return the
+    // existing outcome instead of double-counting the payment.
+    if (txn.status === 'success') {
+      const existingPayment = await client.query(
+        `SELECT * FROM payments WHERE invoice_id = $1 AND method = 'mpesa' ORDER BY paid_at DESC LIMIT 1`,
+        [txn.invoice_id]
+      );
+      const existingInvoice = txn.invoice_id
+        ? await client.query(`SELECT * FROM invoices WHERE id = $1`, [txn.invoice_id])
+        : { rows: [] };
+      return {
+        transaction: txn,
+        payment: existingPayment.rows[0] || null,
+        invoice: existingInvoice.rows[0] || null,
+        duplicate: true,
+      };
+    }
+
     const status = String(resultCode) === '0' ? 'success' : 'failed';
 
     const updated = await client.query(

@@ -11,6 +11,7 @@ const { hashPassword } = require('../utils/password.util');
 async function findByEmailAcrossSchools(email) {
   const result = await query(
     `SELECT u.id, u.school_id, u.full_name, u.email, u.password_hash, u.is_active,
+            u.failed_login_attempts, u.locked_until,
             r.code AS role_code, s.name AS school_name
      FROM users u
      JOIN roles r ON r.id = u.role_id
@@ -43,6 +44,23 @@ async function findById(id, schoolId) {
     );
     return result.rows[0] || null;
   });
+}
+
+/**
+ * Plain (non-tenant-scoped) lookup by id — needed for the refresh-token
+ * flow, which only has a user_id from the DB-stored token, not a
+ * school_id from a JWT (that's the whole point of refreshing: the access
+ * token may have already expired). Also the only way to resolve a
+ * super_admin account, which has no school_id for withTenantClient to use.
+ */
+async function findByIdAcrossSchools(id) {
+  const result = await query(
+    `SELECT u.id, u.school_id, u.full_name, u.email, u.is_active, r.code AS role_code
+     FROM users u JOIN roles r ON r.id = u.role_id
+     WHERE u.id = $1 AND u.deleted_at IS NULL`,
+    [id]
+  );
+  return result.rows[0] || null;
 }
 
 /**
@@ -97,4 +115,36 @@ async function updatePasswordHash(userId, passwordHash) {
   return result.rows[0] || null;
 }
 
-module.exports = { findByEmailAcrossSchools, findByEmailInSchool, findById, create, listBySchool, updatePasswordHash };
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
+/**
+ * Increments the failed-attempt counter and locks the account once the
+ * threshold is hit. This is per-ACCOUNT, unlike the IP-based rate limiter
+ * on the route — the two are complementary: rate limiting slows down
+ * broad brute-forcing, this stops a targeted attack on one known email
+ * from many different IPs.
+ */
+async function recordFailedLogin(userId) {
+  const result = await query(
+    `UPDATE users
+     SET failed_login_attempts = failed_login_attempts + 1,
+         locked_until = CASE
+           WHEN failed_login_attempts + 1 >= $2 THEN now() + interval '${LOCKOUT_MINUTES} minutes'
+           ELSE locked_until
+         END
+     WHERE id = $1
+     RETURNING failed_login_attempts, locked_until`,
+    [userId, MAX_FAILED_ATTEMPTS]
+  );
+  return result.rows[0];
+}
+
+async function resetFailedLogins(userId) {
+  await query(`UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = $1`, [userId]);
+}
+
+module.exports = {
+  findByEmailAcrossSchools, findByEmailInSchool, findById, findByIdAcrossSchools, create, listBySchool,
+  updatePasswordHash, recordFailedLogin, resetFailedLogins,
+};
