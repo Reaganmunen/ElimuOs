@@ -1,5 +1,6 @@
 const { query, withTenantClient } = require('../config/db');
 const { hashPassword } = require('../utils/password.util');
+const { recordAudit } = require('../utils/auditLog.util');
 
 /**
  * Login lookup happens BEFORE we know the tenant (the client doesn't have a
@@ -67,7 +68,7 @@ async function findByIdAcrossSchools(id) {
  * Creates a user within a tenant. roleCode is resolved to role_id via a
  * lookup against the (small, global) roles table.
  */
-async function create({ schoolId, fullName, email, phone, password, roleCode }) {
+async function create({ schoolId, fullName, email, phone, password, roleCode }, actorUserId) {
   const passwordHash = await hashPassword(password);
 
   return withTenantClient(schoolId, async (client) => {
@@ -83,7 +84,17 @@ async function create({ schoolId, fullName, email, phone, password, roleCode }) 
        RETURNING id, uuid, full_name, email, phone, created_at`,
       [schoolId, roleId, fullName, email, phone, passwordHash]
     );
-    return result.rows[0];
+    const user = result.rows[0];
+
+    // Account creation is an access-control event — who has a login at
+    // all, and who granted it, matters enough to be worth its own trail
+    // separate from ordinary data changes.
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'create', tableName: 'users', recordId: user.id,
+      details: { email, roleCode },
+    });
+
+    return user;
   });
 }
 

@@ -1,4 +1,5 @@
 const { withTenantClient } = require('../config/db');
+const { recordAudit } = require('../utils/auditLog.util');
 
 /**
  * Generates an invoice for a student for a given term, itemizing every
@@ -7,7 +8,7 @@ const { withTenantClient } = require('../config/db');
  * schema enforces one invoice per student per term) rather than silently
  * duplicating charges.
  */
-async function generateForStudent(schoolId, studentId, termId, dueDate) {
+async function generateForStudent(schoolId, studentId, termId, dueDate, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     const studentRow = await client.query(
       `SELECT s.id, c.grade_id FROM students s
@@ -44,6 +45,11 @@ async function generateForStudent(schoolId, studentId, termId, dueDate) {
         [invoice.id, item.id, item.item_name, item.amount]
       );
     }
+
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'create', tableName: 'invoices', recordId: invoice.id,
+      details: { studentId, termId, totalAmount },
+    });
 
     return invoice;
   });

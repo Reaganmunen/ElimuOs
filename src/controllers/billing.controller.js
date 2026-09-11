@@ -58,7 +58,7 @@ const getMySubscription = asyncHandler(async (req, res) => {
 const cancelMySubscription = asyncHandler(async (req, res) => {
   const live = await subscriptionModel.getLiveForSchool(req.user.school_id);
   if (!live) throw new ApiError(404, 'No live subscription to cancel');
-  const cancelled = await subscriptionModel.cancel(live.id, req.user.school_id);
+  const cancelled = await subscriptionModel.cancel(live.id, req.user.school_id, req.user.id);
   return sendSuccess(res, 200, cancelled, 'Subscription cancelled');
 });
 
@@ -70,7 +70,7 @@ const changeMyPlan = asyncHandler(async (req, res) => {
 
   const live = await subscriptionModel.getLiveForSchool(req.user.school_id);
   if (!live) throw new ApiError(404, 'No live subscription to change');
-  const updated = await subscriptionModel.changePlan(live.id, req.user.school_id, planId);
+  const updated = await subscriptionModel.changePlan(live.id, req.user.school_id, planId, req.user.id);
   return sendSuccess(res, 200, updated, 'Plan changed');
 });
 
@@ -97,7 +97,7 @@ const activateSubscription = asyncHandler(async (req, res) => {
   const target = await subscriptionModel.getById(req.params.id);
   if (!target) throw new ApiError(404, 'Subscription not found');
 
-  const activated = await subscriptionModel.activate(req.params.id, target.school_id);
+  const activated = await subscriptionModel.activate(req.params.id, target.school_id, req.user.id);
   return sendSuccess(res, 200, activated, 'Subscription activated');
 });
 

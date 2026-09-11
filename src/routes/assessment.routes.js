@@ -1,7 +1,7 @@
 const express = require('express');
 const {
   createAssessment, recordResults, getAssessmentResults, getStudentTermResults,
-  generateReportCard, getReportCard,
+  generateReportCard, getReportCard, downloadReportCardPdf,
 } = require('../controllers/assessment.controller');
 const { authenticate, restrictTo } = require('../middleware/auth.middleware');
 
@@ -16,5 +16,6 @@ router.get('/:id/results', restrictTo('teacher', 'school_admin'), getAssessmentR
 router.get('/students/:studentId/terms/:termId', restrictTo('teacher', 'school_admin'), getStudentTermResults);
 router.post('/students/:studentId/terms/:termId/report-card', restrictTo('teacher', 'school_admin'), generateReportCard);
 router.get('/students/:studentId/terms/:termId/report-card', restrictTo('teacher', 'school_admin', 'accountant'), getReportCard);
+router.get('/students/:studentId/terms/:termId/report-card/pdf', restrictTo('teacher', 'school_admin', 'accountant'), downloadReportCardPdf);
 
 module.exports = router;

@@ -63,8 +63,18 @@ async function getMostRecentForSchool(schoolId) {
  * token can never activate a subscription belonging to another tenant —
  * super_admin calls pass schoolId resolved from the subscription row
  * itself (see controller), so this stays a hard boundary either way.
+ *
+ * NOTE on audit logging here: unlike the withTenantClient-based models,
+ * this file has never used transactions (every function is a single plain
+ * `query()` call) — so the audit write below is a SEPARATE statement, not
+ * atomically tied to the update the way recordAudit is everywhere else in
+ * this codebase. In the rare case the process crashes between the two
+ * statements, you could end up with an activated subscription and no
+ * audit row for it. Acceptable for now given how infrequently these
+ * platform-level billing actions happen, but worth knowing about rather
+ * than silently assuming the same guarantee applies here too.
  */
-async function activate(subscriptionId, schoolId) {
+async function activate(subscriptionId, schoolId, actorUserId) {
   const result = await query(
     `UPDATE school_subscriptions
      SET status = 'active', current_period_start = now(), current_period_end = now() + interval '${BILLING_PERIOD_DAYS} days'
@@ -72,24 +82,42 @@ async function activate(subscriptionId, schoolId) {
      RETURNING *`,
     [subscriptionId, schoolId]
   );
+  if (result.rows[0]) {
+    await query(
+      `INSERT INTO audit_logs (school_id, user_id, action, table_name, record_id, details) VALUES ($1,$2,$3,$4,$5,$6)`,
+      [schoolId, actorUserId, 'activate', 'school_subscriptions', subscriptionId, JSON.stringify({ planId: result.rows[0].plan_id })]
+    );
+  }
   return result.rows[0] || null;
 }
 
-async function cancel(subscriptionId, schoolId) {
+async function cancel(subscriptionId, schoolId, actorUserId) {
   const result = await query(
     `UPDATE school_subscriptions SET status = 'cancelled' WHERE id = $1 AND school_id = $2 RETURNING *`,
     [subscriptionId, schoolId]
   );
+  if (result.rows[0]) {
+    await query(
+      `INSERT INTO audit_logs (school_id, user_id, action, table_name, record_id, details) VALUES ($1,$2,$3,$4,$5,$6)`,
+      [schoolId, actorUserId, 'cancel', 'school_subscriptions', subscriptionId, JSON.stringify({})]
+    );
+  }
   return result.rows[0] || null;
 }
 
-async function changePlan(subscriptionId, schoolId, newPlanId) {
+async function changePlan(subscriptionId, schoolId, newPlanId, actorUserId) {
   const result = await query(
     `UPDATE school_subscriptions SET plan_id = $3
      WHERE id = $1 AND school_id = $2 AND status IN ('trial','active','past_due')
      RETURNING *`,
     [subscriptionId, schoolId, newPlanId]
   );
+  if (result.rows[0]) {
+    await query(
+      `INSERT INTO audit_logs (school_id, user_id, action, table_name, record_id, details) VALUES ($1,$2,$3,$4,$5,$6)`,
+      [schoolId, actorUserId, 'change_plan', 'school_subscriptions', subscriptionId, JSON.stringify({ newPlanId })]
+    );
+  }
   return result.rows[0] || null;
 }
 

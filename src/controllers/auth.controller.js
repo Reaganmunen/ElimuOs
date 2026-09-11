@@ -45,7 +45,7 @@ const registerSchool = asyncHandler(async (req, res) => {
     email: adminEmail,
     password: adminPassword,
     roleCode: 'school_admin',
-  });
+  }, null); // self-registration — no other actor performed this, so userId is null in the audit entry
 
   const tokens = await issueTokenPair({ id: admin.id, school_id: school.id, role_code: 'school_admin' });
 

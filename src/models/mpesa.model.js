@@ -1,6 +1,7 @@
 const { withTenantClient } = require('../config/db');
 const { query } = require('../config/db');
 const invoiceModel = require('./invoice.model');
+const { recordAudit } = require('../utils/auditLog.util');
 
 async function createPending(schoolId, { invoiceId, checkoutRequestId, merchantRequestId, phoneNumber, amount }) {
   return withTenantClient(schoolId, async (client) => {
@@ -83,6 +84,17 @@ async function applyCallback({ checkoutRequestId, resultCode, resultDesc, mpesaR
       );
       payment = paymentResult.rows[0];
       invoice = await invoiceModel.recalculateStatus(client, txn.invoice_id);
+
+      // userId is null here on purpose — this payment was created
+      // automatically by Daraja's webhook, not by a logged-in staff
+      // member. "Who did this" for an automated action is legitimately
+      // "the system", not a person, and the audit record should say so
+      // rather than attribute it to whichever admin happened to be logged
+      // in when the callback happened to arrive.
+      await recordAudit(client, {
+        schoolId: txn.school_id, userId: null, action: 'create', tableName: 'payments', recordId: payment.id,
+        details: { invoiceId: txn.invoice_id, amount: payment.amount, method: 'mpesa', mpesaReceiptNumber, source: 'daraja_callback' },
+      });
     }
 
     return { transaction: updated.rows[0], payment, invoice };

@@ -12,7 +12,7 @@ const createFeeStructure = asyncHandler(async (req, res) => {
   if (!gradeId || !termId || !itemName || amount == null) {
     throw new ApiError(400, 'gradeId, termId, itemName and amount are required');
   }
-  const fee = await feeStructureModel.create(req.user.school_id, { gradeId, termId, itemName, amount, isMandatory });
+  const fee = await feeStructureModel.create(req.user.school_id, { gradeId, termId, itemName, amount, isMandatory }, req.user.id);
   return sendSuccess(res, 201, fee, 'Fee structure created');
 });
 
@@ -24,7 +24,7 @@ const listFeeStructures = asyncHandler(async (req, res) => {
 });
 
 const deleteFeeStructure = asyncHandler(async (req, res) => {
-  const result = await feeStructureModel.remove(req.user.school_id, req.params.id);
+  const result = await feeStructureModel.remove(req.user.school_id, req.params.id, req.user.id);
   if (!result) throw new ApiError(404, 'Fee structure not found');
   return sendSuccess(res, 200, result, 'Fee structure removed');
 });
@@ -35,7 +35,7 @@ const generateInvoice = asyncHandler(async (req, res) => {
   const { studentId, termId, dueDate } = req.body;
   if (!studentId || !termId) throw new ApiError(400, 'studentId and termId are required');
   try {
-    const invoice = await invoiceModel.generateForStudent(req.user.school_id, studentId, termId, dueDate);
+    const invoice = await invoiceModel.generateForStudent(req.user.school_id, studentId, termId, dueDate, req.user.id);
     return sendSuccess(res, 201, invoice, 'Invoice generated');
   } catch (err) {
     // Distinguish expected business-rule failures (no fee structure set,
@@ -94,7 +94,7 @@ const listStudentPayments = asyncHandler(async (req, res) => {
 const voidPayment = asyncHandler(async (req, res) => {
   const { invoiceId } = req.body;
   if (!invoiceId) throw new ApiError(400, 'invoiceId is required to recalculate the invoice after voiding');
-  const result = await paymentModel.voidPayment(req.user.school_id, req.params.id, invoiceId);
+  const result = await paymentModel.voidPayment(req.user.school_id, req.params.id, invoiceId, req.user.id);
   if (!result) throw new ApiError(404, 'Payment not found');
   return sendSuccess(res, 200, result, 'Payment voided');
 });

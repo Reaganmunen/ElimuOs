@@ -103,6 +103,54 @@ async function unlinkFromStudent(schoolId, studentId, guardianId) {
   });
 }
 
+/**
+ * Attaches a login account to an existing guardian, enabling parent-portal
+ * access. One user per guardian (enforced by guardians.user_id being a
+ * plain FK with app-level uniqueness checked here, mirroring the pattern
+ * used for students below).
+ */
+async function linkUserAccount(schoolId, guardianId, userId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `UPDATE guardians SET user_id = $1 WHERE id = $2 AND school_id = $3 RETURNING *`,
+      [userId, guardianId, schoolId]
+    );
+    return result.rows[0] || null;
+  });
+}
+
+/**
+ * Resolves "which guardian record does this logged-in parent user
+ * correspond to" — the starting point for every parent-portal endpoint.
+ */
+async function findByUserId(schoolId, userId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(`SELECT * FROM guardians WHERE user_id = $1 AND school_id = $2`, [userId, schoolId]);
+    return result.rows[0] || null;
+  });
+}
+
+/**
+ * THE authorization check for the entire parent portal: does the logged-in
+ * user's guardian record actually have a relationship to this student?
+ * Every parent-facing endpoint that takes a studentId in the URL must call
+ * this before touching that student's data — without it, a parent could
+ * view or pay for ANY student in the school just by guessing IDs, since
+ * tenant (school_id) scoping alone doesn't prove a family relationship.
+ */
+async function isGuardianOfStudent(schoolId, userId, studentId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `SELECT 1 FROM student_guardians sg
+       JOIN guardians g ON g.id = sg.guardian_id
+       WHERE g.user_id = $1 AND sg.student_id = $2 AND g.school_id = $3`,
+      [userId, studentId, schoolId]
+    );
+    return result.rows.length > 0;
+  });
+}
+
 module.exports = {
   create, findById, search, linkToStudent, listByStudent, listStudentsByGuardian, listByClass, unlinkFromStudent,
+  linkUserAccount, findByUserId, isGuardianOfStudent,
 };

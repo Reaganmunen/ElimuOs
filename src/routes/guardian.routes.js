@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  createGuardian, searchGuardians, getGuardian, linkGuardianToStudent, listGuardianStudents,
+  createGuardian, searchGuardians, getGuardian, linkGuardianToStudent, listGuardianStudents, createPortalAccount,
 } = require('../controllers/guardian.controller');
 const { authenticate, restrictTo } = require('../middleware/auth.middleware');
 
@@ -13,5 +13,6 @@ router.get('/', restrictTo('school_admin', 'accountant'), searchGuardians);
 router.get('/:id', restrictTo('school_admin', 'accountant'), getGuardian);
 router.get('/:id/students', restrictTo('school_admin', 'accountant'), listGuardianStudents);
 router.post('/:id/link-student', restrictTo('school_admin'), linkGuardianToStudent);
+router.post('/:id/portal-account', restrictTo('school_admin'), createPortalAccount);
 
 module.exports = router;

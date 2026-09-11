@@ -12,7 +12,7 @@ const createUser = asyncHandler(async (req, res) => {
   const passwordError = validatePasswordStrength(password);
   if (passwordError) throw new ApiError(400, passwordError);
 
-  const user = await userModel.create({ schoolId: req.user.school_id, fullName, email, phone, password, roleCode });
+  const user = await userModel.create({ schoolId: req.user.school_id, fullName, email, phone, password, roleCode }, req.user.id);
   return sendSuccess(res, 201, user, 'User created');
 });
 

@@ -8,7 +8,7 @@ const upsertProfile = asyncHandler(async (req, res) => {
   try {
     const profile = await staffProfileModel.upsert(req.user.school_id, req.params.userId, {
       tscNumber, employmentDate, designation,
-    });
+    }, req.user.id);
     return sendSuccess(res, 200, profile, 'Staff profile saved');
   } catch (err) {
     throw new ApiError(400, err.message);

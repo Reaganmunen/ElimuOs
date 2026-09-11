@@ -1,8 +1,9 @@
 const { withTenantClient } = require('../config/db');
+const { recordAudit } = require('../utils/auditLog.util');
 
 async function create(schoolId, {
   admissionNumber, fullName, dateOfBirth, gender, upiNumber, currentClassId,
-}) {
+}, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
       `INSERT INTO students (school_id, admission_number, full_name, date_of_birth, gender, upi_number, current_class_id)
@@ -25,6 +26,12 @@ async function create(schoolId, {
         );
       }
     }
+
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'create', tableName: 'students', recordId: student.id,
+      details: { admissionNumber, fullName },
+    });
+
     return student;
   });
 }
@@ -78,7 +85,7 @@ async function search(schoolId, { q, status, limit = 50, offset = 0 } = {}) {
   });
 }
 
-async function update(schoolId, studentId, fields) {
+async function update(schoolId, studentId, fields, actorUserId) {
   const allowed = ['full_name', 'date_of_birth', 'gender', 'upi_number', 'status', 'photo_url'];
   const keys = Object.keys(fields).filter((k) => allowed.includes(k));
   if (keys.length === 0) return findById(schoolId, studentId);
@@ -90,6 +97,12 @@ async function update(schoolId, studentId, fields) {
       `UPDATE students SET ${setClause} WHERE id = $1 AND school_id = $2 RETURNING *`,
       [studentId, schoolId, ...values]
     );
+    if (result.rows[0]) {
+      await recordAudit(client, {
+        schoolId, userId: actorUserId, action: 'update', tableName: 'students', recordId: studentId,
+        details: { changedFields: keys },
+      });
+    }
     return result.rows[0] || null;
   });
 }
@@ -99,7 +112,7 @@ async function update(schoolId, studentId, fields) {
  * transfers between streams. Also stamps student_class_history for the
  * destination class's academic year.
  */
-async function transferClass(schoolId, studentId, newClassId) {
+async function transferClass(schoolId, studentId, newClassId, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     const classRow = await client.query(`SELECT academic_year_id FROM classes WHERE id = $1 AND school_id = $2`, [newClassId, schoolId]);
     if (classRow.rows.length === 0) {
@@ -115,18 +128,67 @@ async function transferClass(schoolId, studentId, newClassId) {
        ON CONFLICT (student_id, academic_year_id) DO UPDATE SET class_id = EXCLUDED.class_id`,
       [studentId, newClassId, schoolId, classRow.rows[0].academic_year_id]
     );
+
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'transfer_class', tableName: 'students', recordId: studentId,
+      details: { newClassId },
+    });
+
     return result.rows[0] || null;
   });
 }
 
-async function softDelete(schoolId, studentId) {
+async function softDelete(schoolId, studentId, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
       `UPDATE students SET deleted_at = now(), status = 'withdrawn' WHERE id = $1 AND school_id = $2 RETURNING id`,
       [studentId, schoolId]
     );
+    if (result.rows[0]) {
+      await recordAudit(client, {
+        schoolId, userId: actorUserId, action: 'withdraw', tableName: 'students', recordId: studentId,
+      });
+    }
     return result.rows[0] || null;
   });
 }
 
-module.exports = { create, findById, listByClass, search, update, transferClass, softDelete };
+/**
+ * Attaches a login account to an existing student, enabling student-portal
+ * access. Most students won't have one — this is opt-in per student,
+ * typically set up for older learners (Junior School and up).
+ */
+async function linkUserAccount(schoolId, studentId, userId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `UPDATE students SET user_id = $1 WHERE id = $2 AND school_id = $3 RETURNING *`,
+      [userId, studentId, schoolId]
+    );
+    return result.rows[0] || null;
+  });
+}
+
+/**
+ * Resolves "which student record does this logged-in student user
+ * correspond to" — the starting point for every student-portal endpoint.
+ * No separate ownership check is needed beyond this (unlike the parent
+ * portal's isGuardianOfStudent) because a student portal account only
+ * ever represents itself, never a set of other people's records.
+ */
+async function findByUserId(schoolId, userId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `SELECT s.*, c.stream_name, g.name AS grade_name
+       FROM students s
+       LEFT JOIN classes c ON c.id = s.current_class_id
+       LEFT JOIN grades g ON g.id = c.grade_id
+       WHERE s.user_id = $1 AND s.school_id = $2 AND s.deleted_at IS NULL`,
+      [userId, schoolId]
+    );
+    return result.rows[0] || null;
+  });
+}
+
+module.exports = {
+  create, findById, listByClass, search, update, transferClass, softDelete, linkUserAccount, findByUserId,
+};

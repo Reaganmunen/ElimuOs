@@ -1,4 +1,5 @@
 const { withTenantClient } = require('../config/db');
+const { recordAudit } = require('../utils/auditLog.util');
 
 /**
  * Upserts a staff profile for a user. One-to-one with users (enforced by
@@ -7,7 +8,7 @@ const { withTenantClient } = require('../config/db');
  * TSC number" and "set it for the first time" are the same operation from
  * the caller's point of view.
  */
-async function upsert(schoolId, userId, { tscNumber, employmentDate, designation }) {
+async function upsert(schoolId, userId, { tscNumber, employmentDate, designation }, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     // Confirm the user actually belongs to this school before attaching a
     // profile to them — user_id alone isn't enough to prove tenant ownership.
@@ -26,7 +27,14 @@ async function upsert(schoolId, userId, { tscNumber, employmentDate, designation
        RETURNING *`,
       [userId, schoolId, tscNumber, employmentDate, designation]
     );
-    return result.rows[0];
+    const profile = result.rows[0];
+
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'upsert', tableName: 'staff_profiles', recordId: profile.id,
+      details: { targetUserId: userId, designation },
+    });
+
+    return profile;
   });
 }
 

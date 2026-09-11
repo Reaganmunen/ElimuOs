@@ -16,6 +16,7 @@ const mpesaRoutes = require('./mpesa.routes');
 const communicationRoutes = require('./communication.routes');
 const staffRoutes = require('./staff.routes');
 const billingRoutes = require('./billing.routes');
+const auditLogRoutes = require('./auditLog.routes');
 
 const router = express.Router();
 
@@ -35,5 +36,6 @@ router.use('/mpesa', mpesaRoutes);
 router.use('/communications', communicationRoutes);
 router.use('/staff', staffRoutes);
 router.use('/billing', billingRoutes);
+router.use('/audit-logs', auditLogRoutes);
 
 module.exports = router;
