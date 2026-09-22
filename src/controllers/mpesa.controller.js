@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const mpesaModel = require('../models/mpesa.model');
 const invoiceModel = require('../models/invoice.model');
 const paymentConfigModel = require('../models/schoolPaymentConfig.model');
+const guardianModel = require('../models/guardian.model');
 const { initiateStkPush } = require('../utils/daraja.client');
 
 /**
@@ -21,6 +22,23 @@ const initiatePayment = asyncHandler(async (req, res) => {
 
   const invoice = await invoiceModel.getById(req.user.school_id, invoiceId);
   if (!invoice) throw new ApiError(404, 'Invoice not found');
+
+  // This route is also open to 'parent' (see mpesa.routes.js) — tenant
+  // scoping above only proves the invoice belongs to THIS school, not
+  // that it belongs to THIS parent's own child. Without this check any
+  // parent at a school could pay, or simply probe the existence/amount
+  // of, any other family's invoice by guessing an id. Mirrors the same
+  // ownership check the parent portal's router.param('studentId', ...)
+  // enforces for every other parent-facing, student-scoped route.
+  if (req.user.role === 'parent') {
+    const owns = await guardianModel.isGuardianOfStudent(req.user.school_id, req.user.id, invoice.student_id);
+    if (!owns) {
+      // 404, not 403 — same reasoning used throughout this codebase for
+      // ownership checks: don't confirm the invoice exists to a caller
+      // who has no relationship to the student it belongs to.
+      throw new ApiError(404, 'Invoice not found');
+    }
+  }
 
   const config = await paymentConfigModel.get(req.user.school_id);
   if (!config || !config.mpesa_shortcode) {

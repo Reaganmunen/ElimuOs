@@ -34,10 +34,26 @@ async function search(schoolId, { q, limit = 50, offset = 0 } = {}) {
   });
 }
 
-// Links a guardian to a student. Uses ON CONFLICT so re-linking the same
-// pair just updates the relationship/primary flag instead of erroring.
+/**
+ * Links a guardian to a student. Uses ON CONFLICT so re-linking the same
+ * pair just updates the relationship/primary flag instead of erroring.
+ *
+ * student_guardians has no school_id column of its own, and its RLS
+ * policy (as of migration 007) only allows the insert through when BOTH
+ * the student and the guardian belong to the current tenant — but relying
+ * on that alone means a bad guardianId fails as an opaque Postgres
+ * RLS-violation error rather than a clean 404. This explicit existence
+ * check exists to give the caller that clean error; the RLS policy is the
+ * actual enforcement backstop if this check is ever bypassed or this
+ * function is ever called from somewhere that skips it.
+ */
 async function linkToStudent(schoolId, { studentId, guardianId, relationship, isPrimaryContact }) {
   return withTenantClient(schoolId, async (client) => {
+    const guardianCheck = await client.query(`SELECT id FROM guardians WHERE id = $1 AND school_id = $2`, [guardianId, schoolId]);
+    if (guardianCheck.rows.length === 0) {
+      throw new Error('Guardian not found in this school');
+    }
+
     const result = await client.query(
       `INSERT INTO student_guardians (student_id, guardian_id, relationship, is_primary_contact)
        VALUES ($1,$2,$3,$4)

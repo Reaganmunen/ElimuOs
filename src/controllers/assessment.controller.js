@@ -26,6 +26,19 @@ const recordResults = asyncHandler(async (req, res) => {
       throw new ApiError(400, 'Each result needs studentId and rubricLevelId');
     }
   }
+
+  const assessment = await assessmentModel.getById(req.user.school_id, req.params.id);
+  if (!assessment) throw new ApiError(404, 'Assessment not found');
+
+  // A teacher can only record results for an assessment THEY created
+  // (assessments.teacher_id, set at createAssessment time) — previously
+  // any teacher in the school could record results for any class's
+  // assessment. school_admin is exempt, since admins legitimately need
+  // to fix/enter results on a teacher's behalf (e.g. covering an absence).
+  if (req.user.role === 'teacher' && String(assessment.teacher_id) !== String(req.user.id)) {
+    throw new ApiError(403, 'You can only record results for assessments you created');
+  }
+
   const saved = await assessmentModel.recordResults(req.user.school_id, req.params.id, results);
   return sendSuccess(res, 201, saved, 'Results recorded');
 });

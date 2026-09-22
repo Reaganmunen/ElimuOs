@@ -29,10 +29,17 @@ const getGuardian = asyncHandler(async (req, res) => {
 const linkGuardianToStudent = asyncHandler(async (req, res) => {
   const { studentId, relationship, isPrimaryContact } = req.body;
   if (!studentId || !relationship) throw new ApiError(400, 'studentId and relationship are required');
-  const link = await guardianModel.linkToStudent(req.user.school_id, {
-    studentId, guardianId: req.params.id, relationship, isPrimaryContact,
-  });
-  return sendSuccess(res, 200, link, 'Guardian linked to student');
+  try {
+    const link = await guardianModel.linkToStudent(req.user.school_id, {
+      studentId, guardianId: req.params.id, relationship, isPrimaryContact,
+    });
+    return sendSuccess(res, 200, link, 'Guardian linked to student');
+  } catch (err) {
+    // e.g. "Guardian not found in this school" (guardianId belongs to a
+    // different tenant) or a studentId that doesn't exist/belong here —
+    // both are expected client-input failures, not server errors.
+    throw new ApiError(400, err.message);
+  }
 });
 
 const listGuardianStudents = asyncHandler(async (req, res) => {

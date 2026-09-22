@@ -2,6 +2,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { sendSuccess } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const staffProfileModel = require('../models/staffProfile.model');
+const userModel = require('../models/user.model');
 
 const upsertProfile = asyncHandler(async (req, res) => {
   const { tscNumber, employmentDate, designation } = req.body;
@@ -29,10 +30,21 @@ const listStaff = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, staff);
 });
 
+// Removing a staff profile is an offboarding action, not just a metadata
+// deletion — the admin expects the login to stop working too. We
+// deactivate rather than delete the user row, so audit_logs / payments /
+// attendance_records recorded_by/received_by foreign keys stay intact.
 const removeProfile = asyncHandler(async (req, res) => {
   const result = await staffProfileModel.remove(req.user.school_id, req.params.userId);
   if (!result) throw new ApiError(404, 'Staff profile not found');
-  return sendSuccess(res, 200, result, 'Staff profile removed');
+
+  try {
+    await userModel.deactivate(req.user.school_id, req.params.userId, req.user.id);
+  } catch (err) {
+    throw new ApiError(400, err.message);
+  }
+
+  return sendSuccess(res, 200, result, 'Staff member removed and account deactivated');
 });
 
 module.exports = { upsertProfile, getProfile, listStaff, removeProfile };

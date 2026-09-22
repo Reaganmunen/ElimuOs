@@ -1,14 +1,14 @@
 const { withTenantClient } = require('../config/db');
 
-async function create(schoolId, { classId, learningAreaId, teacherId, academicYearId }) {
+async function create(schoolId, { classId, learningAreaId, teacherId, academicYearId, periodsPerWeek }) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
-      `INSERT INTO teaching_assignments (school_id, class_id, learning_area_id, teacher_id, academic_year_id)
-       VALUES ($1,$2,$3,$4,$5)
+      `INSERT INTO teaching_assignments (school_id, class_id, learning_area_id, teacher_id, academic_year_id, periods_per_week)
+       VALUES ($1,$2,$3,$4,$5,$6)
        ON CONFLICT (class_id, learning_area_id, academic_year_id)
-       DO UPDATE SET teacher_id = EXCLUDED.teacher_id
+       DO UPDATE SET teacher_id = EXCLUDED.teacher_id, periods_per_week = EXCLUDED.periods_per_week
        RETURNING *`,
-      [schoolId, classId, learningAreaId, teacherId, academicYearId]
+      [schoolId, classId, learningAreaId, teacherId, academicYearId, periodsPerWeek || 5]
     );
     return result.rows[0];
   });

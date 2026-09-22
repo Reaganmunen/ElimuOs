@@ -189,6 +189,22 @@ async function findByUserId(schoolId, userId) {
   });
 }
 
+/**
+ * Count of currently-enrolled (not withdrawn/deleted) students — used to
+ * enforce a subscription plan's max_students seat limit, e.g. when a
+ * school tries to downgrade to a smaller plan (see billing.controller.js
+ * changeMyPlan).
+ */
+async function countActive(schoolId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `SELECT COUNT(*) AS count FROM students WHERE school_id = $1 AND deleted_at IS NULL`,
+      [schoolId]
+    );
+    return Number(result.rows[0].count);
+  });
+}
+
 module.exports = {
-  create, findById, listByClass, search, update, transferClass, softDelete, linkUserAccount, findByUserId,
+  create, findById, listByClass, search, update, transferClass, softDelete, linkUserAccount, findByUserId, countActive,
 };

@@ -12,6 +12,13 @@ async function createAssessment(schoolId, { classId, subStrandId, termId, teache
   });
 }
 
+async function getById(schoolId, assessmentId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(`SELECT * FROM assessments WHERE id = $1 AND school_id = $2`, [assessmentId, schoolId]);
+    return result.rows[0] || null;
+  });
+}
+
 /**
  * Bulk-records rubric results for every student in one assessment event.
  * `results` = [{ studentId, rubricLevelId, teacherRemark }]
@@ -87,4 +94,4 @@ async function getStudentTermResults(schoolId, studentId, termId) {
   });
 }
 
-module.exports = { createAssessment, recordResults, getResultsByAssessment, getStudentTermResults };
+module.exports = { createAssessment, getById, recordResults, getResultsByAssessment, getStudentTermResults };

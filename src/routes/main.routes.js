@@ -17,6 +17,8 @@ const communicationRoutes = require('./communication.routes');
 const staffRoutes = require('./staff.routes');
 const billingRoutes = require('./billing.routes');
 const auditLogRoutes = require('./auditLog.routes');
+const parentPortalRoutes = require('./parentPortal.routes');
+const studentPortalRoutes = require('./studentPortal.routes');
 
 const router = express.Router();
 
@@ -37,5 +39,10 @@ router.use('/communications', communicationRoutes);
 router.use('/staff', staffRoutes);
 router.use('/billing', billingRoutes);
 router.use('/audit-logs', auditLogRoutes);
+// These two were written in full (controllers, models, the ownership-check
+// middleware) but never mounted here, which made the entire parent
+// portal unreachable via the API. Caught during this review — see chat.
+router.use('/parent-portal', parentPortalRoutes);
+router.use('/student-portal', studentPortalRoutes);
 
 module.exports = router;

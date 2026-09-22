@@ -3,6 +3,7 @@ const { sendSuccess } = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
 const planModel = require('../models/subscriptionPlan.model');
 const subscriptionModel = require('../models/schoolSubscription.model');
+const studentModel = require('../models/student.model');
 
 // -- Plans (super_admin manages, any authenticated role can view) --
 
@@ -70,6 +71,24 @@ const changeMyPlan = asyncHandler(async (req, res) => {
 
   const live = await subscriptionModel.getLiveForSchool(req.user.school_id);
   if (!live) throw new ApiError(404, 'No live subscription to change');
+
+  // max_students is nullable (an unlimited-seats plan) — only enforce the
+  // check when the target plan actually caps seats. Without this, a
+  // school could downgrade to a smaller plan while already over that
+  // plan's limit, silently leaving them over-quota with no signal until
+  // something else (a future seat-limit check at student-creation time,
+  // if you add one) started rejecting new students for a reason that
+  // traces back to a plan change made weeks earlier.
+  if (plan.max_students != null) {
+    const activeStudents = await studentModel.countActive(req.user.school_id);
+    if (activeStudents > plan.max_students) {
+      throw new ApiError(
+        400,
+        `This plan allows up to ${plan.max_students} students, but this school currently has ${activeStudents} enrolled. Withdraw students or choose a larger plan first.`
+      );
+    }
+  }
+
   const updated = await subscriptionModel.changePlan(live.id, req.user.school_id, planId, req.user.id);
   return sendSuccess(res, 200, updated, 'Plan changed');
 });

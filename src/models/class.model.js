@@ -43,6 +43,30 @@ async function listBySchool(schoolId, { academicYearId } = {}) {
   });
 }
 
+/**
+ * Resolves "is this user the class teacher (form teacher) of a class,
+ * and which one" — distinct from teaching_assignments, which is about
+ * which subjects a teacher teaches in which classes. A teacher can teach
+ * several classes' subjects but be the class teacher of at most one
+ * (class_teacher_id has no uniqueness constraint stopping more than one
+ * class naming the same teacher, but in practice a school assigns one
+ * class teacher per class per year — this returns all matches in the
+ * rare case that isn't followed). Used by the "where do I land after
+ * login" endpoint.
+ */
+async function listByClassTeacher(schoolId, userId) {
+  return withTenantClient(schoolId, async (client) => {
+    const result = await client.query(
+      `SELECT c.*, g.name AS grade_name
+       FROM classes c JOIN grades g ON g.id = c.grade_id
+       WHERE c.class_teacher_id = $1 AND c.school_id = $2
+       ORDER BY c.created_at DESC`,
+      [userId, schoolId]
+    );
+    return result.rows;
+  });
+}
+
 async function update(schoolId, classId, { streamName, classTeacherId }) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
@@ -55,4 +79,4 @@ async function update(schoolId, classId, { streamName, classTeacherId }) {
   });
 }
 
-module.exports = { create, findById, listBySchool, update };
+module.exports = { create, findById, listBySchool, update, listByClassTeacher };

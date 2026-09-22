@@ -29,12 +29,17 @@ const createTerm = asyncHandler(async (req, res) => {
   if (!termNumber || !startDate || !endDate) {
     throw new ApiError(400, 'termNumber, startDate and endDate are required');
   }
-  const term = await termModel.create(req.user.school_id, {
-    academicYearId: req.params.id,
-    termNumber,
-    startDate,
-    endDate,
-  });
+  let term;
+  try {
+    term = await termModel.create(req.user.school_id, {
+      academicYearId: req.params.id,
+      termNumber,
+      startDate,
+      endDate,
+    });
+  } catch (err) {
+    throw new ApiError(400, err.message);
+  }
   return sendSuccess(res, 201, term, 'Term created');
 });
 

@@ -28,7 +28,10 @@ async function issueTokenPair(user) {
  * This is the "sign up your school" entry point for the SaaS.
  */
 const registerSchool = asyncHandler(async (req, res) => {
-  const { schoolName, county, phone, email, adminFullName, adminEmail, adminPassword } = req.body;
+  const {
+    schoolName, knecCode, county, subCounty, address, phone, email,
+    adminFullName, adminEmail, adminPassword,
+  } = req.body;
 
   if (!schoolName || !adminEmail || !adminPassword || !adminFullName) {
     throw new ApiError(400, 'schoolName, adminFullName, adminEmail and adminPassword are required');
@@ -37,7 +40,7 @@ const registerSchool = asyncHandler(async (req, res) => {
   const passwordError = validatePasswordStrength(adminPassword);
   if (passwordError) throw new ApiError(400, passwordError);
 
-  const school = await schoolModel.create({ name: schoolName, county, phone, email });
+  const school = await schoolModel.create({ name: schoolName, knecCode, county, subCounty, address, phone, email });
 
   const admin = await userModel.create({
     schoolId: school.id,
