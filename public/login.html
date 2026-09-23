@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+<div class="auth-shell">
+
+  <div class="auth-side">
+    <div class="auth-side-content">
+      <a href="index.html" class="brand">
+        <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+        ElimuOs
+      </a>
+      <h2>Welcome back to your school's dashboard.</h2>
+      <p>Attendance, assessments, timetables and fees — wherever you left off.</p>
+    </div>
+    <div class="auth-side-quote">
+      "Report cards used to take a full weekend. Now they're ready the moment results are in."
+      <div class="who">— Deputy Principal, Greenfield Academy</div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-form-wrap">
+      <a href="index.html" class="brand d-none">ElimuOs</a>
+
+      <!-- Step 1: email + password -->
+      <div id="loginStep">
+        <h1>Log in</h1>
+        <p class="sub">One login for every school and every role.</p>
+
+        <div id="loginAlert"></div>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input class="input" type="email" id="email" name="email" autocomplete="email" required />
+            <div class="input-error-text">Enter your email address.</div>
+          </div>
+
+          <div class="field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label for="password" style="margin-bottom:0;">Password</label>
+              <a href="forgot-password.html" style="font-size:0.82rem; color:var(--blue); font-weight:600;">Forgot password?</a>
+            </div>
+            <div class="password-field" style="margin-top:7px;">
+              <input class="input" type="password" id="password" name="password" autocomplete="current-password" required style="padding-right:42px;" />
+              <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="input-error-text">Enter your password.</div>
+          </div>
+
+          <button type="submit" class="btn-elimu btn-elimu-primary btn-elimu-block" id="loginSubmit">
+            <span id="loginSubmitText">Log in</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: pick a school (only shown if the email matches more than one) -->
+      <div id="schoolStep" style="display:none;">
+        <h1>Which school?</h1>
+        <p class="sub" id="schoolStepSub">This email is used at more than one school — pick yours to continue.</p>
+
+        <div class="school-pick-list" id="schoolPickList"></div>
+
+        <button type="button" class="btn-elimu btn-elimu-primary btn-elimu-block" id="schoolContinue" disabled>Continue</button>
+        <button type="button" class="btn-elimu btn-elimu-ghost btn-elimu-block" id="schoolBack" style="margin-top:10px;">Back</button>
+      </div>
+
+      <p class="auth-switch">New school? <a href="register.html">Register here</a></p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const loginForm = document.getElementById('loginForm');
+  const loginAlert = document.getElementById('loginAlert');
+  const loginSubmit = document.getElementById('loginSubmit');
+  const loginSubmitText = document.getElementById('loginSubmitText');
+  const loginStep = document.getElementById('loginStep');
+  const schoolStep = document.getElementById('schoolStep');
+  const schoolPickList = document.getElementById('schoolPickList');
+  const schoolContinue = document.getElementById('schoolContinue');
+  const schoolBack = document.getElementById('schoolBack');
+
+  // Remembered across the two-step flow so the school-picker step doesn't
+  // need to ask for the password again.
+  let pendingEmail = '';
+  let pendingPassword = '';
+  let selectedSchoolId = null;
+
+  function showAlert(container, type, html) {
+    const icon = type === 'error' ? 'bi-exclamation-circle-fill' : 'bi-clock-fill';
+    container.innerHTML = `<div class="alert-elimu alert-${type}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function clearAlert(container) { container.innerHTML = ''; }
+
+  function setLoading(isLoading) {
+    loginSubmit.disabled = isLoading;
+    loginSubmitText.textContent = isLoading ? 'Logging in…' : 'Log in';
+  }
+
+  document.getElementById('togglePassword').addEventListener('click', () => {
+    const input = document.getElementById('password');
+    const icon = document.querySelector('#togglePassword i');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    icon.className = showing ? 'bi bi-eye' : 'bi bi-eye-slash';
+  });
+
+  function goToDestination(user) {
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get('returnTo');
+
+    if (user.role === 'super_admin') {
+      showAlert(loginAlert, 'warn', 'Super admin accounts don\'t use this dashboard — manage the platform from the command line instead.');
+      setLoading(false);
+      return;
+    }
+
+    const target = returnTo || window.ElimuOs.auth.dashboardPathForRole(user.role);
+    if (!target) {
+      showAlert(loginAlert, 'error', 'This account\'s role isn\'t recognized. Contact your school admin.');
+      setLoading(false);
+      return;
+    }
+    window.location.href = target;
+  }
+
+  async function attemptLogin(schoolId) {
+    setLoading(true);
+    clearAlert(loginAlert);
+    try {
+      const { status, body } = await window.ElimuOs.auth.login({
+        email: pendingEmail, password: pendingPassword, schoolId,
+      });
+
+      if (status === 200) {
+        goToDestination(body.data.user);
+        return;
+      }
+
+      if (status === 300) {
+        // Multiple schools share this email — show the picker instead of
+        // treating this as a failure.
+        renderSchoolPicker(body.data.schools);
+        setLoading(false);
+        return;
+      }
+
+      if (status === 423) {
+        showAlert(loginAlert, 'warn', body.message);
+        setLoading(false);
+        return;
+      }
+
+      // 401 (bad credentials) and anything else.
+      showAlert(loginAlert, 'error', body?.message || 'Something went wrong. Please try again.');
+      setLoading(false);
+    } catch (err) {
+      showAlert(loginAlert, 'error', 'Could not reach the server. Check your connection and try again.');
+      setLoading(false);
+    }
+  }
+
+  function renderSchoolPicker(schools) {
+    loginStep.style.display = 'none';
+    schoolStep.style.display = 'block';
+    selectedSchoolId = null;
+    schoolContinue.disabled = true;
+
+    schoolPickList.innerHTML = schools.map((s) => `
+      <div class="school-pick" data-school-id="${s.school_id}">
+        <span>${s.school_name}</span>
+        <i class="bi bi-circle"></i>
+      </div>
+    `).join('');
+
+    schoolPickList.querySelectorAll('.school-pick').forEach((el) => {
+      el.addEventListener('click', () => {
+        schoolPickList.querySelectorAll('.school-pick').forEach((s) => {
+          s.classList.remove('selected');
+          s.querySelector('i').className = 'bi bi-circle';
+        });
+        el.classList.add('selected');
+        el.querySelector('i').className = 'bi bi-check-circle-fill';
+        selectedSchoolId = el.dataset.schoolId;
+        schoolContinue.disabled = false;
+      });
+    });
+  }
+
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    let valid = true;
+    [email, password].forEach((input) => {
+      if (!input.value.trim()) { input.classList.add('has-error'); valid = false; }
+      else input.classList.remove('has-error');
+    });
+    if (!valid) return;
+
+    pendingEmail = email.value.trim();
+    pendingPassword = password.value;
+    attemptLogin();
+  });
+
+  schoolContinue.addEventListener('click', () => {
+    if (!selectedSchoolId) return;
+    attemptLogin(selectedSchoolId);
+  });
+
+  schoolBack.addEventListener('click', () => {
+    schoolStep.style.display = 'none';
+    loginStep.style.display = 'block';
+    clearAlert(loginAlert);
+  });
+</script>
+
+</body>
+</html>

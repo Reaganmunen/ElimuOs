@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guardians — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout only — shell lives in admin-shell.css. Mirrors
+     students.html's table/modal conventions so this feels like the same
+     app. */
+
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+
+  .filter-row{ display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-box{ position: relative; flex: 1; min-width: 220px; max-width: 340px; }
+  .search-box i{ position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); font-size: 0.88rem; }
+  .search-box input{ padding-left: 36px; }
+
+  .guardians-table{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .guardians-table th{
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line);
+  }
+  .guardians-table td{ padding: 13px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .guardians-table tr:last-child td{ border-bottom: none; }
+  .row-title{ font-weight: 700; }
+  .row-sub{ color: var(--ink-soft); font-size: 0.8rem; }
+  .muted-cell{ color: var(--ink-soft); font-size: 0.82rem; }
+  .portal-tag{
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; background: rgba(74,90,240,0.1); color: var(--blue-deep);
+  }
+  .row-actions{ display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .link-btn{
+    background: none; border: none; padding: 0; font: inherit; font-weight: 600; font-size: 0.8rem;
+    color: var(--blue); cursor: pointer;
+  }
+  .link-btn:hover{ text-decoration: underline; }
+  .link-btn.danger{ color: var(--coral); }
+  .link-btn:disabled{ color: var(--ink-soft); cursor: not-allowed; text-decoration: none; }
+
+  .form-error{
+    font-size: 0.82rem; color: #B23350; background: rgba(240,99,122,0.09);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px; display: none;
+  }
+  .form-error.shown{ display: block; }
+
+  .empty-state{ text-align: center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state i{ font-size: 1.8rem; color: var(--line); margin-bottom: 10px; display: block; }
+
+  .load-more-row{ text-align: center; padding: 16px 0 4px; }
+
+  .child-row{ display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+  .child-row:last-child{ border-bottom: none; }
+  .relationship-tag{ font-size: 0.72rem; font-weight: 700; text-transform: capitalize; color: var(--ink-soft); }
+  .primary-badge{
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 700;
+    background: rgba(23,166,115,0.12); color: var(--leaf); border-radius: 999px; padding: 2px 8px; margin-left: 6px;
+  }
+
+  .student-pick-list{ max-height: 200px; overflow-y: auto; border: 1.5px solid var(--line); border-radius: var(--radius-sm); margin-top: 6px; }
+  .student-pick-row{ padding: 9px 12px; cursor: pointer; font-size: 0.86rem; border-bottom: 1px solid var(--line); }
+  .student-pick-row:last-child{ border-bottom: none; }
+  .student-pick-row:hover{ background: var(--cloud); }
+  .picked-student-chip{
+    display: inline-flex; align-items: center; gap: 8px; background: var(--cloud); border: 1.5px solid var(--line);
+    border-radius: 999px; padding: 7px 13px; font-size: 0.86rem; font-weight: 600; margin-top: 6px;
+  }
+  .picked-student-chip button{ background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 0.9rem; padding: 0; }
+
+  .modal-box.wide{ max-width: 520px; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link active"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Guardians</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+
+      <div class="page-head">
+        <div>
+          <h1>Guardians</h1>
+          <p>Parents and guardians — link them to their children, and set up the login they'll use to check invoices and results.</p>
+        </div>
+        <button type="button" class="btn-elimu btn-elimu-primary" id="addGuardianBtn"><i class="bi bi-person-plus-fill"></i> Add guardian</button>
+      </div>
+
+      <div id="pageAlertSlot"></div>
+
+      <div class="filter-row">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input class="input" id="searchInput" placeholder="Search by name or phone…" />
+        </div>
+      </div>
+
+      <div class="card-elimu" id="loadingState">
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+      </div>
+
+      <div class="card-elimu" id="tableCard" style="display:none; padding:20px 20px 8px;">
+        <div style="overflow-x:auto;">
+          <table class="guardians-table">
+            <thead>
+              <tr>
+                <th>Guardian</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Portal login</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="guardiansTableBody"></tbody>
+          </table>
+        </div>
+        <div class="load-more-row" id="loadMoreRow" style="display:none;">
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="loadMoreBtn">Load more</button>
+        </div>
+      </div>
+
+      <div class="empty-state card-elimu" id="emptyState" style="display:none;">
+        <i class="bi bi-person-hearts"></i>
+        <span id="emptyStateText">No guardians yet — click "Add guardian" to add the first one.</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Add guardian modal -->
+<div class="modal-overlay" id="guardianModal" style="display:none;">
+  <div class="modal-box" style="max-width:460px;">
+    <h3>Add a guardian</h3>
+    <div class="form-error" id="guardianFormError"></div>
+    <form id="guardianForm" novalidate>
+      <div class="field">
+        <label for="guardianFullName">Full name</label>
+        <input class="input" id="guardianFullName" required />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="guardianPhone">Phone</label>
+          <input class="input" id="guardianPhone" placeholder="2547XXXXXXXX" required />
+        </div>
+        <div class="field">
+          <label for="guardianEmail">Email <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+          <input class="input" type="email" id="guardianEmail" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="guardianNationalId">National ID <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+        <input class="input" id="guardianNationalId" />
+      </div>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button type="button" class="btn-elimu btn-elimu-ghost" id="guardianModalCancel">Cancel</button>
+        <button type="submit" class="btn-elimu btn-elimu-primary" id="guardianModalSubmit">Add guardian</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Guardian detail modal: linked children, link a new one, portal login -->
+<div class="modal-overlay" id="detailModal" style="display:none;">
+  <div class="modal-box wide">
+    <h3 id="detailModalTitle">Guardian</h3>
+    <div class="form-error" id="detailFormError"></div>
+
+    <div id="detailLoading"><div class="skeleton" style="height:14px; margin:10px 0;"></div></div>
+
+    <div id="detailBody" style="display:none;">
+      <div style="font-family:'Plus Jakarta Sans'; font-weight:700; font-size:0.8rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">Children</div>
+      <div id="childrenList"><p class="muted-cell">No students linked yet.</p></div>
+
+      <div style="font-family:'Plus Jakarta Sans'; font-weight:700; font-size:0.8rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:20px 0 10px;">Link a child</div>
+      <div class="search-box" style="max-width:none;">
+        <i class="bi bi-search"></i>
+        <input class="input" id="linkStudentSearch" placeholder="Search by name or admission number…" autocomplete="off" />
+      </div>
+      <div class="student-pick-list" id="linkStudentResults" style="display:none;"></div>
+      <div id="linkStudentPicked"></div>
+
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field">
+          <label for="relationshipSelect">Relationship</label>
+          <select class="input" id="relationshipSelect">
+            <option value="mother">Mother</option>
+            <option value="father">Father</option>
+            <option value="guardian">Guardian</option>
+            <option value="grandparent">Grandparent</option>
+            <option value="sibling">Sibling</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex; align-items:flex-end;">
+          <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-weight:600;">
+            <input type="checkbox" id="isPrimaryContact" style="width:auto;" /> Primary contact
+          </label>
+        </div>
+      </div>
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="linkStudentBtn"><i class="bi bi-link-45deg"></i> Link this child</button>
+
+      <div style="font-family:'Plus Jakarta Sans'; font-weight:700; font-size:0.8rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:22px 0 10px;">Portal login</div>
+      <div id="portalSection"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="detailModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create portal account modal -->
+<div class="modal-overlay" id="portalModal" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <h3>Create portal login</h3>
+    <p style="margin-bottom:16px;">They'll be able to sign in to check their children's results and fee invoices, and pay via M-Pesa.</p>
+    <div class="form-error" id="portalFormError"></div>
+    <div class="field">
+      <label for="portalEmail">Guardian's email</label>
+      <input class="input" type="email" id="portalEmail" />
+    </div>
+    <div class="field">
+      <label for="portalPassword">Temporary password</label>
+      <input class="input" type="password" id="portalPassword" />
+      <div class="hint">At least 8 characters, with a mix of letters and numbers.</div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="portalModalCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="portalModalConfirm">Create login</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+
+  const PAGE_SIZE = 50;
+  let guardianList = [];
+  let offset = 0;
+  let searchDebounce = null;
+  let openGuardianId = null;
+  let openGuardianHasPortal = false;
+  let pickedChild = null;
+  let linkStudentDebounce = null;
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function clearAlert() { document.getElementById('pageAlertSlot').innerHTML = ''; }
+  function formError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (!msg) { el.classList.remove('shown'); el.textContent = ''; return; }
+    el.textContent = msg;
+    el.classList.add('shown');
+  }
+
+  // ---------- Loaders ----------
+  async function fetchGuardians({ reset }) {
+    if (reset) offset = 0;
+    const q = document.getElementById('searchInput').value.trim();
+    const params = new URLSearchParams({ limit: PAGE_SIZE, offset });
+    if (q) params.set('q', q);
+    const res = await api.apiFetch(`/guardians?${params.toString()}`);
+    if (reset) guardianList = res.data;
+    else guardianList = guardianList.concat(res.data);
+    document.getElementById('loadMoreRow').style.display = res.data.length === PAGE_SIZE ? 'block' : 'none';
+    offset += res.data.length;
+  }
+
+  function render() {
+    document.getElementById('loadingState').style.display = 'none';
+    if (guardianList.length === 0) {
+      document.getElementById('tableCard').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      const hasFilter = document.getElementById('searchInput').value.trim();
+      document.getElementById('emptyStateText').textContent = hasFilter
+        ? 'No guardians match this search.'
+        : 'No guardians yet — click "Add guardian" to add the first one.';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('tableCard').style.display = 'block';
+
+    const body = document.getElementById('guardiansTableBody');
+    body.innerHTML = guardianList.map(g => {
+      const portalCell = g.user_id
+        ? `<span class="portal-tag"><i class="bi bi-check-circle-fill"></i> Active</span>`
+        : `<span class="muted-cell">Not set up</span>`;
+      return `
+        <tr>
+          <td><div class="row-title">${g.full_name}</div>${g.national_id ? `<div class="row-sub">ID ${g.national_id}</div>` : ''}</td>
+          <td class="muted-cell">${g.phone || '—'}</td>
+          <td class="muted-cell">${g.email || '—'}</td>
+          <td>${portalCell}</td>
+          <td class="row-actions"><button class="link-btn" data-open="${g.id}">View / link child</button></td>
+        </tr>`;
+    }).join('');
+    body.querySelectorAll('[data-open]').forEach(btn => {
+      btn.addEventListener('click', () => openDetail(btn.getAttribute('data-open')));
+    });
+  }
+
+  async function refreshList(reset) {
+    try {
+      await fetchGuardians({ reset });
+      render();
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      showAlert('error', err.message || 'Could not load guardians.');
+    }
+  }
+
+  // ---------- Add guardian ----------
+  document.getElementById('addGuardianBtn').addEventListener('click', () => {
+    document.getElementById('guardianForm').reset();
+    formError('guardianFormError', null);
+    document.getElementById('guardianModal').style.display = 'flex';
+  });
+  document.getElementById('guardianModalCancel').addEventListener('click', () => {
+    document.getElementById('guardianModal').style.display = 'none';
+  });
+  document.getElementById('guardianForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('guardianFormError', null);
+    const fullName = document.getElementById('guardianFullName').value.trim();
+    const phone = document.getElementById('guardianPhone').value.trim();
+    const email = document.getElementById('guardianEmail').value.trim();
+    const nationalId = document.getElementById('guardianNationalId').value.trim();
+    if (!fullName || !phone) { formError('guardianFormError', 'Full name and phone are required.'); return; }
+
+    const btn = document.getElementById('guardianModalSubmit');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api.apiFetch('/guardians', {
+        method: 'POST',
+        body: JSON.stringify({ fullName, phone, email: email || undefined, nationalId: nationalId || undefined }),
+      });
+      document.getElementById('guardianModal').style.display = 'none';
+      showAlert('success', `${fullName} was added.`);
+      await refreshList(true);
+    } catch (err) {
+      formError('guardianFormError', err.message || 'Could not add this guardian.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add guardian';
+    }
+  });
+
+  // ---------- Detail: children + linking + portal ----------
+  function renderPortalSection(guardian) {
+    const section = document.getElementById('portalSection');
+    if (guardian.user_id) {
+      section.innerHTML = `<span class="portal-tag"><i class="bi bi-check-circle-fill"></i> Portal login active</span>`;
+      openGuardianHasPortal = true;
+    } else {
+      section.innerHTML = `<button type="button" class="btn-elimu btn-elimu-ghost" id="createPortalFromDetailBtn"><i class="bi bi-key-fill"></i> Create portal login</button>`;
+      openGuardianHasPortal = false;
+      document.getElementById('createPortalFromDetailBtn').addEventListener('click', () => {
+        formError('portalFormError', null);
+        document.getElementById('portalEmail').value = '';
+        document.getElementById('portalPassword').value = '';
+        document.getElementById('portalModal').style.display = 'flex';
+      });
+    }
+  }
+
+  function renderChildren(students) {
+    const list = document.getElementById('childrenList');
+    if (students.length === 0) {
+      list.innerHTML = `<p class="muted-cell">No students linked yet.</p>`;
+      return;
+    }
+    list.innerHTML = students.map(s => `
+      <div class="child-row">
+        <div>
+          <div class="row-title">${s.full_name}</div>
+          <div class="row-sub">${s.admission_number} <span class="relationship-tag">· ${s.relationship}</span>${s.is_primary_contact ? '<span class="primary-badge"><i class="bi bi-star-fill"></i> Primary</span>' : ''}</div>
+        </div>
+        <button class="link-btn danger" data-unlink="${s.id}">Unlink</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-unlink]').forEach(btn => {
+      btn.addEventListener('click', () => unlinkChild(btn.getAttribute('data-unlink')));
+    });
+  }
+
+  async function loadDetail() {
+    document.getElementById('detailLoading').style.display = 'block';
+    document.getElementById('detailBody').style.display = 'none';
+    try {
+      const [guardianRes, studentsRes] = await Promise.all([
+        api.apiFetch(`/guardians/${openGuardianId}`),
+        api.apiFetch(`/guardians/${openGuardianId}/students`),
+      ]);
+      document.getElementById('detailModalTitle').textContent = guardianRes.data.full_name;
+      renderChildren(studentsRes.data);
+      renderPortalSection(guardianRes.data);
+      document.getElementById('detailLoading').style.display = 'none';
+      document.getElementById('detailBody').style.display = 'block';
+    } catch (err) {
+      document.getElementById('detailLoading').style.display = 'none';
+      formError('detailFormError', err.message || 'Could not load this guardian.');
+    }
+  }
+
+  function openDetail(guardianId) {
+    openGuardianId = guardianId;
+    formError('detailFormError', null);
+    pickedChild = null;
+    document.getElementById('linkStudentSearch').value = '';
+    document.getElementById('linkStudentSearch').style.display = 'block';
+    document.getElementById('linkStudentResults').style.display = 'none';
+    document.getElementById('linkStudentPicked').innerHTML = '';
+    document.getElementById('isPrimaryContact').checked = false;
+    document.getElementById('relationshipSelect').value = 'mother';
+    document.getElementById('detailModal').style.display = 'flex';
+    loadDetail();
+  }
+  document.getElementById('detailModalClose').addEventListener('click', () => {
+    document.getElementById('detailModal').style.display = 'none';
+    refreshList(true);
+  });
+
+  document.getElementById('linkStudentSearch').addEventListener('input', (e) => {
+    clearTimeout(linkStudentDebounce);
+    const q = e.target.value.trim();
+    const resultsEl = document.getElementById('linkStudentResults');
+    if (!q) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; return; }
+    linkStudentDebounce = setTimeout(async () => {
+      try {
+        const res = await api.apiFetch(`/students?status=active&limit=10&offset=0&q=${encodeURIComponent(q)}`);
+        const students = res.data;
+        resultsEl.innerHTML = students.length
+          ? students.map(s => `<div class="student-pick-row" data-id="${s.id}" data-name="${s.full_name}" data-adm="${s.admission_number}">${s.full_name} <span class="muted-cell">· ${s.admission_number}</span></div>`).join('')
+          : `<div class="student-pick-row muted-cell">No matching students.</div>`;
+        resultsEl.querySelectorAll('[data-id]').forEach(row => {
+          row.addEventListener('click', () => {
+            pickedChild = { id: row.getAttribute('data-id'), name: row.getAttribute('data-name'), adm: row.getAttribute('data-adm') };
+            document.getElementById('linkStudentSearch').style.display = 'none';
+            resultsEl.style.display = 'none';
+            document.getElementById('linkStudentPicked').innerHTML =
+              `<div class="picked-student-chip">${pickedChild.name} · ${pickedChild.adm} <button type="button" id="unpickChildBtn">&times;</button></div>`;
+            document.getElementById('unpickChildBtn').addEventListener('click', () => {
+              pickedChild = null;
+              document.getElementById('linkStudentPicked').innerHTML = '';
+              document.getElementById('linkStudentSearch').style.display = 'block';
+            });
+          });
+        });
+        resultsEl.style.display = 'block';
+      } catch (err) { /* non-fatal */ }
+    }, 300);
+  });
+
+  document.getElementById('linkStudentBtn').addEventListener('click', async () => {
+    formError('detailFormError', null);
+    if (!pickedChild) { formError('detailFormError', 'Search for and pick a student first.'); return; }
+    const relationship = document.getElementById('relationshipSelect').value;
+    const isPrimaryContact = document.getElementById('isPrimaryContact').checked;
+
+    const btn = document.getElementById('linkStudentBtn');
+    btn.disabled = true; btn.textContent = 'Linking…';
+    try {
+      await api.apiFetch(`/guardians/${openGuardianId}/link-student`, {
+        method: 'POST',
+        body: JSON.stringify({ studentId: pickedChild.id, relationship, isPrimaryContact }),
+      });
+      pickedChild = null;
+      document.getElementById('linkStudentPicked').innerHTML = '';
+      document.getElementById('linkStudentSearch').style.display = 'block';
+      document.getElementById('linkStudentSearch').value = '';
+      document.getElementById('isPrimaryContact').checked = false;
+      await loadDetail();
+    } catch (err) {
+      formError('detailFormError', err.message || 'Could not link this child.');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-link-45deg"></i> Link this child';
+    }
+  });
+
+  async function unlinkChild(studentId) {
+    if (!confirm('Unlink this child from this guardian?')) return;
+    try {
+      await api.apiFetch(`/students/${studentId}/guardians/${openGuardianId}`, { method: 'DELETE' });
+      await loadDetail();
+    } catch (err) {
+      formError('detailFormError', err.message || 'Could not unlink this child.');
+    }
+  }
+
+  // ---------- Create portal login ----------
+  document.getElementById('portalModalCancel').addEventListener('click', () => {
+    document.getElementById('portalModal').style.display = 'none';
+  });
+  document.getElementById('portalModalConfirm').addEventListener('click', async () => {
+    formError('portalFormError', null);
+    const email = document.getElementById('portalEmail').value.trim();
+    const password = document.getElementById('portalPassword').value;
+    if (!email || !password) { formError('portalFormError', 'Email and password are both required.'); return; }
+
+    const btn = document.getElementById('portalModalConfirm');
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      await api.apiFetch(`/guardians/${openGuardianId}/portal-account`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      document.getElementById('portalModal').style.display = 'none';
+      showAlert('success', 'Portal login created.');
+      await loadDetail();
+    } catch (err) {
+      formError('portalFormError', err.message || 'Could not create the portal login.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create login';
+    }
+  });
+
+  // ---------- Search / pagination ----------
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => refreshList(true), 350);
+  });
+  document.getElementById('loadMoreBtn').addEventListener('click', () => refreshList(false));
+
+  // ---------- Boot ----------
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    await refreshList(true);
+  })();
+</script>
+
+</body>
+</html>

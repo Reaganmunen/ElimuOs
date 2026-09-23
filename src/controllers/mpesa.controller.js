@@ -134,6 +134,20 @@ const listInvoiceTransactions = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, txns);
 });
 
+/**
+ * Returns this school's own payment config (till/paybill number etc.), or
+ * null if it hasn't set one up yet. Added alongside the admin "Fees"
+ * page — updatePaymentConfig existed already, but there was previously no
+ * way for the frontend to read back what's currently configured. Never
+ * returns secrets_manager_key's underlying secret (it isn't one — see the
+ * note on initiatePayment above — this just echoes the pointer string the
+ * admin themselves typed in).
+ */
+const getPaymentConfig = asyncHandler(async (req, res) => {
+  const config = await paymentConfigModel.get(req.user.school_id);
+  return sendSuccess(res, 200, config);
+});
+
 const updatePaymentConfig = asyncHandler(async (req, res) => {
   const { mpesaShortcode, mpesaAccountRefPrefix, secretsManagerKey } = req.body;
   if (!mpesaShortcode) throw new ApiError(400, 'mpesaShortcode is required');
@@ -141,4 +155,4 @@ const updatePaymentConfig = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, config, 'Payment config updated');
 });
 
-module.exports = { initiatePayment, handleCallback, listInvoiceTransactions, updatePaymentConfig };
+module.exports = { initiatePayment, handleCallback, listInvoiceTransactions, getPaymentConfig, updatePaymentConfig };

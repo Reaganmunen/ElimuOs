@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ElimuOs — School management built for Kenyan schools</title>
+<meta name="description" content="One system for admissions, attendance, CBC assessments, timetables and M-Pesa fee collection — built for every person in a Kenyan school." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/theme.css">
+
+<style>
+  /* :root tokens, base reset, .btn-elimu, .brand/.brand-mark and
+     .container-xl now live in css/theme.css, shared with every other
+     page. Only this page's own layout (hero, showcase, footer, etc.)
+     stays here. */
+
+  body{ overflow-x: hidden; position: relative; }
+
+  /* Soft ambient color wash across the page — keeps the surface reading
+     as white while breaking up large flat stretches of it. Very low
+     opacity on purpose: texture, not color. */
+  .bg-wash{
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bg-wash span{
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.16;
+  }
+  .wash-1{ width: 620px; height: 620px; background: var(--blue); top: -220px; right: -160px; }
+  .wash-2{ width: 480px; height: 480px; background: var(--gold); top: 780px; left: -200px; opacity: 0.12; }
+  .wash-3{ width: 560px; height: 560px; background: var(--plum); top: 2200px; right: -220px; opacity: 0.1; }
+  .wash-4{ width: 500px; height: 500px; background: var(--leaf); top: 3600px; left: -180px; opacity: 0.1; }
+
+  .container-full{ max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Nav ---------- */
+  header.nav{ position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav-inner{ display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+  .nav-links{ display: flex; align-items: center; gap: 34px; }
+  .nav-links a{ font-size: 0.94rem; font-weight: 500; color: var(--ink-soft); transition: color .15s ease; }
+  .nav-links a:hover{ color: var(--ink); }
+  .nav-actions{ display: flex; align-items: center; gap: 10px; }
+  .nav-toggle{ display: none; background: none; border: none; font-size: 1.5rem; color: var(--ink); }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding: 84px 0 50px; display: flex; gap: 56px; align-items: center; position: relative; }
+  .hero > div:first-child{ flex: 1.05 1 0; }
+  .hero-visual{ flex: 0.95 1 0; position: relative; }
+
+  .eyebrow-badge{ display: inline-flex; align-items: center; gap: 8px; background: var(--cloud); border: 1px solid var(--line); color: var(--blue-deep); font-size: 0.84rem; font-weight: 600; padding: 7px 14px 7px 8px; border-radius: 999px; }
+  .eyebrow-badge .dot{ width: 20px; height: 20px; border-radius: 50%; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
+  .hero h1{ font-size: clamp(2.3rem, 4vw, 3.35rem); line-height: 1.08; font-weight: 800; margin: 22px 0 20px; max-width: 15ch; }
+  .hero p.lead{ font-size: 1.12rem; color: var(--ink-soft); line-height: 1.6; max-width: 46ch; margin-bottom: 32px; }
+  .hero-ctas{ display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+
+  .social-proof{ display: flex; align-items: center; gap: 14px; margin-top: 30px; }
+  .avatar-stack{ display: flex; }
+  .avatar-stack span{
+    width: 34px; height: 34px; border-radius: 50%; border: 2.5px solid white;
+    margin-left: -10px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 0.72rem; color: white;
+  }
+  .avatar-stack span:first-child{ margin-left: 0; }
+  .social-proof-text{ font-size: 0.86rem; color: var(--ink-soft); }
+  .social-proof-text strong{ color: var(--ink); }
+
+  .trust-row{ display: flex; gap: 26px; margin-top: 34px; padding-top: 26px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .trust-row .item{ display: flex; align-items: center; gap: 9px; font-size: 0.88rem; color: var(--ink-soft); font-weight: 500; }
+  .trust-row .item i{ color: var(--blue); font-size: 1rem; }
+
+  .glimpse-card{ background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: 0 30px 60px -24px rgba(18,23,43,0.18); padding: 24px; position: relative; z-index: 2; }
+  .glimpse-top{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .glimpse-title{ font-family:'Plus Jakarta Sans'; font-weight: 700; font-size: 1.02rem; }
+  .glimpse-sub{ color: var(--ink-soft); font-size: 0.82rem; margin-top: 2px; }
+  .glimpse-pill{ background: var(--leaf); color:#fff; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .glimpse-stats{ display: flex; gap: 10px; margin-bottom: 18px; }
+  .glimpse-stat{ flex: 1; background: var(--cloud); border-radius: var(--radius-sm); padding: 12px 10px; }
+  .glimpse-stat .n{ font-family:'Plus Jakarta Sans'; font-weight: 800; font-size: 1.25rem; }
+  .glimpse-stat .l{ font-size: 0.72rem; color: var(--ink-soft); margin-top: 2px; }
+  .glimpse-bars{ display: flex; align-items: flex-end; gap: 8px; height: 78px; padding: 12px; background: var(--cloud); border-radius: var(--radius-sm); }
+  .glimpse-bars .bar{ flex:1; background: linear-gradient(180deg, var(--blue), var(--blue-deep)); border-radius: 6px 6px 2px 2px; opacity: .92; }
+
+  .float-chip{ position: absolute; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: 0 18px 30px -14px rgba(18,23,43,0.2); padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-size: 0.82rem; font-weight: 600; z-index: 3; }
+  .float-chip .ic{ width: 34px; height: 34px; border-radius: 10px; display:flex; align-items:center; justify-content:center; color:white; font-size: 0.95rem; }
+  .chip-1{ top: -22px; right: -18px; }
+  .chip-1 .ic{ background: var(--gold); }
+  .chip-2{ bottom: -20px; left: -22px; }
+  .chip-2 .ic{ background: var(--leaf); }
+  .chip-3{ top: 46%; right: -34px; }
+  .chip-3 .ic{ background: var(--plum); }
+  .chip-sub{ color: var(--ink-soft); font-weight: 500; font-size: 0.74rem; }
+
+  .reveal{ opacity: 0; transform: translateY(14px); animation: revealUp .7s cubic-bezier(.2,.7,.2,1) forwards; }
+  .reveal-1{ animation-delay: .05s; } .reveal-2{ animation-delay: .16s; } .reveal-3{ animation-delay: .27s; }
+  .reveal-4{ animation-delay: .38s; } .reveal-5{ animation-delay: .5s; }
+  @keyframes revealUp{ to{ opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce){ .reveal{ animation: none; opacity: 1; transform: none; } }
+
+  /* ---------- Stats band (full-bleed, breaks the white column) ---------- */
+  .stats-band{ background: var(--ink); border-radius: var(--radius-lg); padding: 42px 48px; margin: 20px 0 0; }
+  .stats-grid{ display: flex; gap: 24px; }
+  .stats-grid .s{ flex: 1; text-align: left; border-left: 1px solid rgba(255,255,255,0.14); padding-left: 24px; }
+  .stats-grid .s:first-child{ border-left: none; padding-left: 0; }
+  .stats-grid .n{ font-family: 'Plus Jakarta Sans'; font-weight: 800; font-size: 2.1rem; color: white; }
+  .stats-grid .n span{ color: var(--gold); }
+  .stats-grid .l{ font-size: 0.86rem; color: rgba(255,255,255,0.62); margin-top: 4px; }
+
+  /* ---------- Role strip ---------- */
+  .role-strip{ display: flex; gap: 10px; overflow-x: auto; padding: 6px 0 28px; scrollbar-width: none; }
+  .role-strip::-webkit-scrollbar{ display:none; }
+  .role-pill{ display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; background: var(--cloud); border: 1px solid var(--line); font-size: 0.88rem; font-weight: 600; white-space: nowrap; transition: border-color .15s ease, background-color .15s ease; }
+  .role-pill:hover{ background: var(--white); border-color: var(--blue); }
+  .role-pill i{ font-size: 0.95rem; }
+
+  section{ padding: 76px 0; }
+  .section-head{ max-width: 60ch; margin-bottom: 44px; }
+  .section-head h2{ font-size: clamp(1.7rem, 2.6vw, 2.35rem); font-weight: 800; line-height: 1.16; }
+  .section-head p{ color: var(--ink-soft); font-size: 1.04rem; margin-top: 12px; line-height: 1.6; }
+
+  /* ---------- Role cards ---------- */
+  .roles-grid{ display: flex; flex-wrap: wrap; gap: 20px; }
+  .role-card{ flex: 1 1 calc(33.333% - 14px); background: var(--white); border: 1px solid #D7DAEE; border-radius: var(--radius-lg); padding: 26px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; position: relative; }
+  .role-card:hover{ transform: translateY(-4px); box-shadow: 0 22px 40px -20px rgba(18,23,43,0.18); border-color: transparent; }
+  .role-card:nth-child(4), .role-card:nth-child(5){ flex-basis: calc(50% - 10px); }
+  .role-top{ display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+  .role-icon{ width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.15rem; }
+  .role-micro{ font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--cloud); color: var(--ink-soft); }
+  .role-card h3{ font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; }
+  .role-card ul{ list-style: none; padding: 0; margin: 0; }
+  .role-card li{ display: flex; gap: 9px; align-items: flex-start; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.5; padding: 5px 0; }
+  .role-card li i{ font-size: 0.78rem; margin-top: 5px; }
+  .rc-admin .role-icon{ background: var(--blue); } .rc-admin li i{ color: var(--blue); }
+  .rc-teacher .role-icon{ background: var(--leaf); } .rc-teacher li i{ color: var(--leaf); }
+  .rc-accountant .role-icon{ background: var(--gold); } .rc-accountant li i{ color: var(--gold); }
+  .rc-parent .role-icon{ background: var(--plum); } .rc-parent li i{ color: var(--plum); }
+  .rc-student .role-icon{ background: var(--coral); } .rc-student li i{ color: var(--coral); }
+
+  /* ---------- Feature showcase (alternating rows with mini mockups) ---------- */
+  .showcase-row{ display: flex; align-items: center; gap: 64px; padding: 46px 0; border-bottom: 1px solid var(--line); }
+  .showcase-row:last-child{ border-bottom: none; }
+  .showcase-row.reverse{ flex-direction: row-reverse; }
+  .showcase-text{ flex: 1 1 0; }
+  .showcase-visual{ flex: 1 1 0; display: flex; justify-content: center; }
+  .showcase-tag{ display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 999px; margin-bottom: 16px; }
+  .showcase-text h3{ font-size: 1.55rem; font-weight: 800; margin-bottom: 14px; max-width: 20ch; }
+  .showcase-text p{ color: var(--ink-soft); font-size: 1rem; line-height: 1.65; max-width: 42ch; margin-bottom: 18px; }
+  .showcase-text ul{ list-style: none; padding: 0; margin: 0; }
+  .showcase-text li{ display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; color: var(--ink); font-weight: 500; padding: 6px 0; }
+
+  .mock-card{ background: var(--white); border: 1px solid #D7DAEE; border-radius: var(--radius-lg); box-shadow: 0 26px 50px -26px rgba(18,23,43,0.2); padding: 22px; width: 100%; max-width: 380px; }
+  .mock-report-head{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .mock-name{ font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 0.98rem; }
+  .mock-sub{ font-size: 0.78rem; color: var(--ink-soft); margin-top: 2px; }
+  .mock-badge{ font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+  .mock-row{ display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 0.88rem; }
+  .mock-tag{ font-size: 0.72rem; font-weight: 800; padding: 3px 9px; border-radius: 7px; color: white; }
+
+  .mock-tt-head{ font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 0.92rem; margin-bottom: 14px; }
+  .mock-tt-grid{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .mock-tt-cell{ aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.62rem; font-weight: 700; color: white; text-align: center; padding: 4px; }
+
+  .mock-pay-row{ display: flex; align-items: center; gap: 10px; font-size: 0.86rem; color: var(--ink-soft); margin-bottom: 16px; }
+  .mock-pay-amount{ font-family: 'Plus Jakarta Sans'; font-weight: 800; font-size: 2rem; margin-bottom: 14px; }
+  .mock-pay-status{ display: flex; align-items: center; gap: 8px; color: var(--leaf); font-weight: 700; font-size: 0.9rem; background: rgba(23,166,115,0.09); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+  .mock-pay-invoice{ font-size: 0.82rem; color: var(--ink-soft); border-top: 1px solid var(--line); padding-top: 12px; }
+
+  /* ---------- Flow ---------- */
+  .flow{ position: relative; }
+  .flow-line{ position: absolute; top: 22px; left: 0; right: 0; height: 1px; background: var(--line); }
+  .flow-steps{ display: flex; gap: 32px; position: relative; }
+  .flow-step{ flex: 1; }
+  .flow-step .dot{ width: 44px; height: 44px; border-radius: 50%; background: var(--white); border: 1.5px solid var(--blue); color: var(--blue); display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 0.95rem; margin-bottom: 20px; position: relative; z-index: 2; }
+  .flow-step h3{ font-size: 1.08rem; font-weight: 700; margin-bottom: 8px; }
+  .flow-step p{ color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; max-width: 34ch; }
+
+  /* ---------- Trust band ---------- */
+  .trust-band{ background: var(--cloud); border-radius: var(--radius-lg); padding: 44px; display: flex; gap: 36px; }
+  .trust-band .t-item{ flex: 1; display: flex; gap: 16px; align-items: flex-start; }
+  .trust-band .t-ic{ width: 42px; height: 42px; border-radius: 12px; background: var(--white); border: 1px solid #D7DAEE; display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 1.05rem; flex-shrink: 0; }
+  .trust-band h4{ font-family:'Plus Jakarta Sans'; font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+  .trust-band p{ color: var(--ink-soft); font-size: 0.88rem; line-height: 1.55; margin: 0; }
+
+  /* ---------- Testimonial ---------- */
+  .testimonial-band{ background: linear-gradient(135deg, #1B1F3B, #262C57); border-radius: var(--radius-lg); padding: 56px; color: white; position: relative; overflow: hidden; }
+  .testimonial-band i.bi-quote{ font-size: 2.4rem; color: rgba(255,255,255,0.25); }
+  .testimonial-quote{ font-family: 'Plus Jakarta Sans'; font-weight: 600; font-size: 1.4rem; line-height: 1.5; max-width: 42ch; margin: 18px 0 28px; }
+  .testimonial-person{ display: flex; align-items: center; gap: 14px; }
+  .testimonial-avatar{ width: 48px; height: 48px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans'; font-weight: 800; }
+  .testimonial-name{ font-weight: 700; }
+  .testimonial-role{ font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+
+  /* ---------- FAQ ---------- */
+  .faq-item{ border-bottom: 1px solid var(--line); }
+  .faq-q{ display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 4px; cursor: pointer; background: none; border: none; width: 100%; text-align: left; font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 1.02rem; color: var(--ink); }
+  .faq-q i{ transition: transform .25s ease; color: var(--blue); flex-shrink: 0; }
+  .faq-item.open .faq-q i{ transform: rotate(45deg); }
+  .faq-a{ max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .faq-a p{ color: var(--ink-soft); font-size: 0.94rem; line-height: 1.6; padding: 0 4px 22px; max-width: 62ch; margin: 0; }
+
+  /* ---------- Final CTA ---------- */
+  .cta-band{ background: linear-gradient(135deg, var(--blue) 0%, var(--blue-deep) 100%); border-radius: var(--radius-lg); padding: 60px 56px; display: flex; align-items: center; justify-content: space-between; gap: 32px; flex-wrap: wrap; color: white; }
+  .cta-band h2{ color: white; font-size: clamp(1.5rem, 2.4vw, 2rem); max-width: 22ch; }
+  .cta-band p{ color: rgba(255,255,255,0.82); margin-top: 10px; font-size: 1rem; }
+  .cta-band .btn-elimu-primary{ background: white; color: var(--blue-deep); box-shadow: 0 14px 28px -10px rgba(0,0,0,0.3); }
+  .cta-band .btn-elimu-primary:hover{ background: var(--cloud); color: var(--blue-deep); }
+
+  /* ---------- Footer ---------- */
+  footer{ border-top: 1px solid var(--line); padding: 56px 0 34px; }
+  .footer-grid{ display: flex; justify-content: space-between; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .footer-brand-col{ flex: 1.4; }
+  .footer-brand{ display: flex; align-items: center; gap: 10px; font-family:'Plus Jakarta Sans'; font-weight: 700; margin-bottom: 14px; }
+  .footer-tagline{ color: var(--ink-soft); font-size: 0.9rem; max-width: 32ch; line-height: 1.55; }
+  .footer-col{ flex: 1; }
+  .footer-col h5{ font-family: 'Plus Jakarta Sans'; font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 16px; }
+  .footer-col a{ display: block; font-size: 0.9rem; color: var(--ink); padding: 6px 0; }
+  .footer-col a:hover{ color: var(--blue); }
+  .footer-bottom{ display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .footer-fine{ font-size: 0.82rem; color: var(--ink-soft); margin: 0; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 991px){
+    .nav-links{ display: none; }
+    .nav-toggle{ display: block; }
+    .hero{ flex-direction: column; padding-top: 52px; }
+    .hero-visual{ order: -1; max-width: 420px; margin: 0 auto 12px; }
+    .roles-grid{ flex-direction: row; }
+    .role-card{ flex-basis: calc(50% - 10px) !important; }
+    .showcase-row, .showcase-row.reverse{ flex-direction: column; gap: 32px; }
+    .stats-grid{ flex-wrap: wrap; }
+    .stats-grid .s{ flex: 1 1 45%; border-left: none !important; padding-left: 0 !important; }
+    .flow-steps{ flex-direction: column; gap: 40px; }
+    .flow-line{ display: none; }
+    .trust-band{ flex-direction: column; padding: 32px 24px; }
+    .cta-band{ padding: 40px 28px; justify-content: center; text-align: center; }
+    .footer-grid{ flex-wrap: wrap; }
+    .footer-brand-col{ flex-basis: 100%; }
+  }
+  @media (max-width: 576px){
+    .glimpse-stats{ gap: 6px; }
+    .float-chip{ display: none; }
+    .role-card{ flex-basis: 100% !important; }
+    .stats-band{ padding: 32px 24px; }
+    .stats-grid .s{ flex-basis: 100%; }
+    .testimonial-band{ padding: 34px 26px; }
+    .testimonial-quote{ font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-wash">
+  <span class="wash-1"></span>
+  <span class="wash-2"></span>
+  <span class="wash-3"></span>
+  <span class="wash-4"></span>
+</div>
+
+<header class="nav">
+  <div class="container-xl nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="nav-links">
+      <a href="#roles">Who it's for</a>
+      <a href="#showcase">Product</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#trust">Security</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="login.html" class="btn-elimu btn-elimu-ghost d-none d-sm-inline-flex">Log in</a>
+      <a href="login.html" class="btn-elimu btn-elimu-primary">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu"><i class="bi bi-list"></i></button>
+    </div>
+  </div>
+</header>
+
+<main class="container-xl">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div>
+      <span class="eyebrow-badge reveal reveal-1"><span class="dot"><i class="bi bi-geo-alt-fill"></i></span>Built for schools in Kenya</span>
+      <h1 class="reveal reveal-2">Run every part of your school in one place.</h1>
+      <p class="lead reveal reveal-3">Admissions, attendance, CBC assessments, timetables and M-Pesa fee collection — one system your admin, teachers, accountant, parents and learners all actually use, each seeing only what's theirs.</p>
+      <div class="hero-ctas reveal reveal-4">
+        <a href="login.html" class="btn-elimu btn-elimu-primary">Get started <i class="bi bi-arrow-up-right"></i></a>
+        <a href="#roles" class="btn-elimu btn-elimu-ghost">See how it works</a>
+      </div>
+      <div class="social-proof reveal reveal-5">
+        <div class="avatar-stack">
+          <span style="background:var(--blue)">GA</span>
+          <span style="background:var(--leaf)">SM</span>
+          <span style="background:var(--gold)">RK</span>
+          <span style="background:var(--plum)">TW</span>
+        </div>
+        <span class="social-proof-text"><strong>40+ schools</strong> already running their term on ElimuOs</span>
+      </div>
+      <div class="trust-row reveal reveal-5">
+        <span class="item"><i class="bi bi-shield-lock-fill"></i>Each school's data kept fully separate</span>
+        <span class="item"><i class="bi bi-phone-fill"></i>M-Pesa fee payments built in</span>
+        <span class="item"><i class="bi bi-journal-bookmark-fill"></i>CBC curriculum aligned</span>
+      </div>
+    </div>
+
+    <div class="hero-visual reveal reveal-3">
+      <div class="glimpse-card">
+        <div class="glimpse-top">
+          <div>
+            <div class="glimpse-title">Greenfield Academy</div>
+            <div class="glimpse-sub">Term 2 · Week 6 overview</div>
+          </div>
+          <span class="glimpse-pill">Fees on track</span>
+        </div>
+        <div class="glimpse-stats">
+          <div class="glimpse-stat"><div class="n">482</div><div class="l">Learners</div></div>
+          <div class="glimpse-stat"><div class="n">96%</div><div class="l">Attendance</div></div>
+          <div class="glimpse-stat"><div class="n">31</div><div class="l">Staff</div></div>
+        </div>
+        <div class="glimpse-bars">
+          <div class="bar" style="height:38%"></div>
+          <div class="bar" style="height:64%"></div>
+          <div class="bar" style="height:52%"></div>
+          <div class="bar" style="height:80%"></div>
+          <div class="bar" style="height:46%"></div>
+          <div class="bar" style="height:70%"></div>
+          <div class="bar" style="height:58%"></div>
+        </div>
+      </div>
+      <div class="float-chip chip-1">
+        <span class="ic"><i class="bi bi-cash-coin"></i></span>
+        <div>KES 128,400<div class="chip-sub">collected today</div></div>
+      </div>
+      <div class="float-chip chip-2">
+        <span class="ic"><i class="bi bi-calendar2-check"></i></span>
+        <div>Timetable ready<div class="chip-sub">generated in 4s</div></div>
+      </div>
+      <div class="float-chip chip-3">
+        <span class="ic"><i class="bi bi-mortarboard"></i></span>
+        <div>12 report cards<div class="chip-sub">ready to download</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats band -->
+  <div class="stats-band reveal reveal-5">
+    <div class="stats-grid">
+      <div class="s"><div class="n"><span>40+</span></div><div class="l">Kenyan schools onboard</div></div>
+      <div class="s"><div class="n">18,000+</div><div class="l">Learners managed</div></div>
+      <div class="s"><div class="n">KES 12M+</div><div class="l">Fees collected by M-Pesa</div></div>
+      <div class="s"><div class="n">4s</div><div class="l">To generate a full timetable</div></div>
+    </div>
+  </div>
+
+  <!-- Role strip -->
+  <div class="role-strip" style="margin-top:56px;">
+    <span class="role-pill"><i class="bi bi-person-badge"></i> School Admin</span>
+    <span class="role-pill"><i class="bi bi-easel2"></i> Teacher</span>
+    <span class="role-pill"><i class="bi bi-wallet2"></i> Accountant</span>
+    <span class="role-pill"><i class="bi bi-people"></i> Parent</span>
+    <span class="role-pill"><i class="bi bi-backpack2"></i> Student</span>
+  </div>
+
+  <!-- Roles -->
+  <section id="roles">
+    <div class="section-head">
+      <h2>Built for everyone in the school, not just the office.</h2>
+      <p>Every account only sees its own school and its own role's work — a teacher never sees another class's grades, a parent only ever sees their own child.</p>
+    </div>
+    <div class="roles-grid">
+      <div class="role-card rc-admin">
+        <div class="role-top"><div class="role-icon"><i class="bi bi-person-badge"></i></div><span class="role-micro">5 min setup</span></div>
+        <h3>School Admin</h3>
+        <ul>
+          <li><i class="bi bi-check-lg"></i>Add staff, students and guardians in minutes</li>
+          <li><i class="bi bi-check-lg"></i>Set up classes, terms and fee structures</li>
+          <li><i class="bi bi-check-lg"></i>Generate a conflict-free timetable in seconds</li>
+        </ul>
+      </div>
+      <div class="role-card rc-teacher">
+        <div class="role-top"><div class="role-icon"><i class="bi bi-easel2"></i></div><span class="role-micro">One tap</span></div>
+        <h3>Teacher</h3>
+        <ul>
+          <li><i class="bi bi-check-lg"></i>Take attendance for your class in a tap</li>
+          <li><i class="bi bi-check-lg"></i>Record CBC rubric results per learner</li>
+          <li><i class="bi bi-check-lg"></i>See your own timetable and classes only</li>
+        </ul>
+      </div>
+      <div class="role-card rc-accountant">
+        <div class="role-top"><div class="role-icon"><i class="bi bi-wallet2"></i></div><span class="role-micro">M-Pesa</span></div>
+        <h3>Accountant</h3>
+        <ul>
+          <li><i class="bi bi-check-lg"></i>Generate and track invoices per term</li>
+          <li><i class="bi bi-check-lg"></i>Collect fees directly by M-Pesa STK push</li>
+          <li><i class="bi bi-check-lg"></i>See exactly what's outstanding, and from whom</li>
+        </ul>
+      </div>
+      <div class="role-card rc-parent">
+        <div class="role-top"><div class="role-icon"><i class="bi bi-people"></i></div><span class="role-micro">From your phone</span></div>
+        <h3>Parent</h3>
+        <ul>
+          <li><i class="bi bi-check-lg"></i>Check your child's report card and attendance</li>
+          <li><i class="bi bi-check-lg"></i>Pay school fees straight from your phone</li>
+        </ul>
+      </div>
+      <div class="role-card rc-student">
+        <div class="role-top"><div class="role-icon"><i class="bi bi-backpack2"></i></div><span class="role-micro">Always current</span></div>
+        <h3>Student</h3>
+        <ul>
+          <li><i class="bi bi-check-lg"></i>See your own results, term by term</li>
+          <li><i class="bi bi-check-lg"></i>Check your attendance record any time</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature showcase -->
+  <section id="showcase">
+    <div class="section-head">
+      <h2>A closer look at what runs underneath.</h2>
+      <p>Three things schools tell us they actually feel the difference from.</p>
+    </div>
+
+    <div class="showcase-row">
+      <div class="showcase-text">
+        <span class="showcase-tag" style="background:rgba(74,90,240,0.1); color:var(--blue-deep);"><i class="bi bi-journal-check"></i> CBC assessments</span>
+        <h3>Report cards that write themselves.</h3>
+        <p>Teachers record rubric results as they go. The moment a term's results are in, every learner's report card — attendance, remarks and all — is ready to download as a PDF.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--rubric-me)"></i>Exceeding / Meeting / Approaching / Below, the standard CBC rubric</li>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--rubric-me)"></i>Attendance rate calculated automatically per term</li>
+        </ul>
+      </div>
+      <div class="showcase-visual">
+        <div class="mock-card mock-report">
+          <div class="mock-report-head">
+            <div>
+              <div class="mock-name">Amina Yusuf</div>
+              <div class="mock-sub">Grade 6 Blue · Term 2</div>
+            </div>
+            <span class="mock-badge" style="background:rgba(23,166,115,0.12); color:var(--leaf);">Ready</span>
+          </div>
+          <div class="mock-row"><span>Mathematics</span><span class="mock-tag" style="background:var(--rubric-ee)">EE</span></div>
+          <div class="mock-row"><span>English</span><span class="mock-tag" style="background:var(--rubric-me)">ME</span></div>
+          <div class="mock-row"><span>Science &amp; Technology</span><span class="mock-tag" style="background:var(--rubric-ee)">EE</span></div>
+          <div class="mock-row"><span>Social Studies</span><span class="mock-tag" style="background:var(--rubric-ae)">AE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="showcase-row reverse">
+      <div class="showcase-text">
+        <span class="showcase-tag" style="background:rgba(124,92,252,0.1); color:var(--plum);"><i class="bi bi-calendar2-week"></i> Timetabling</span>
+        <h3>A full-school timetable, generated, not typed in.</h3>
+        <p>Assign each teacher to their subjects and classes once. ElimuOs builds a clash-free weekly schedule for every class at once — no teacher ever double-booked across two classes.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--plum)"></i>Double periods handled automatically where needed</li>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--plum)"></i>Regenerate anytime a subject or teacher changes</li>
+        </ul>
+      </div>
+      <div class="showcase-visual">
+        <div class="mock-card mock-timetable">
+          <div class="mock-tt-head">Grade 7 Green · Mon–Fri, periods 1–5</div>
+          <div class="mock-tt-grid">
+            <div class="mock-tt-cell" style="background:var(--blue)">Math</div>
+            <div class="mock-tt-cell" style="background:var(--leaf)">Eng</div>
+            <div class="mock-tt-cell" style="background:var(--gold)">Sci</div>
+            <div class="mock-tt-cell" style="background:var(--plum)">CRE</div>
+            <div class="mock-tt-cell" style="background:var(--coral)">Kis</div>
+            <div class="mock-tt-cell" style="background:var(--gold)">Sci</div>
+            <div class="mock-tt-cell" style="background:var(--blue)">Math</div>
+            <div class="mock-tt-cell" style="background:var(--leaf)">Eng</div>
+            <div class="mock-tt-cell" style="background:var(--coral)">Kis</div>
+            <div class="mock-tt-cell" style="background:var(--plum)">CRE</div>
+            <div class="mock-tt-cell" style="background:var(--leaf)">Eng</div>
+            <div class="mock-tt-cell" style="background:var(--blue)">Math</div>
+            <div class="mock-tt-cell" style="background:var(--coral)">Kis</div>
+            <div class="mock-tt-cell" style="background:var(--gold)">Sci</div>
+            <div class="mock-tt-cell" style="background:var(--blue)">Math</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="showcase-row">
+      <div class="showcase-text">
+        <span class="showcase-tag" style="background:rgba(232,162,61,0.14); color:#95661c;"><i class="bi bi-phone-vibrate"></i> M-Pesa fees</span>
+        <h3>Fee payments that reconcile on their own.</h3>
+        <p>A parent pays by STK push straight from their phone. The payment lands against the right invoice automatically — no accountant has to match a phone number to a receipt by hand.</p>
+        <ul>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--gold)"></i>Each school's own M-Pesa till or paybill</li>
+          <li><i class="bi bi-check-circle-fill" style="color:var(--gold)"></i>Every invoice shows exactly what's still owed</li>
+        </ul>
+      </div>
+      <div class="showcase-visual">
+        <div class="mock-card mock-payment">
+          <div class="mock-pay-row"><i class="bi bi-phone"></i> STK push sent to 07•• ••• 678</div>
+          <div class="mock-pay-amount">KES 4,500</div>
+          <div class="mock-pay-status"><i class="bi bi-check-circle-fill"></i> Payment confirmed</div>
+          <div class="mock-pay-invoice">Invoice #INV-2026-0142 → Paid in full</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how-it-works">
+    <div class="section-head">
+      <h2>From a blank school to a running term.</h2>
+      <p>Three steps, and the rest of the term runs on what you set up once.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-line"></div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="dot">1</div>
+          <h3>Set up your school</h3>
+          <p>Add classes, staff, students and guardians — and your fee structure for the term.</p>
+        </div>
+        <div class="flow-step">
+          <div class="dot">2</div>
+          <h3>Generate the timetable</h3>
+          <p>Assign subjects to teachers once; the schedule is built for every class with no clashes.</p>
+        </div>
+        <div class="flow-step">
+          <div class="dot">3</div>
+          <h3>Run the term</h3>
+          <p>Attendance, assessments and fee payments flow in daily — report cards write themselves.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section id="trust">
+    <div class="section-head">
+      <h2>The parts you don't see, working properly.</h2>
+      <p>The details that matter when a system holds student records and school fees.</p>
+    </div>
+    <div class="trust-band">
+      <div class="t-item">
+        <span class="t-ic"><i class="bi bi-shield-lock-fill"></i></span>
+        <div><h4>Real tenant isolation</h4><p>Every school's data is walled off at the database level, not just hidden in the interface.</p></div>
+      </div>
+      <div class="t-item">
+        <span class="t-ic"><i class="bi bi-clock-history"></i></span>
+        <div><h4>A full audit trail</h4><p>Who created, changed or removed a record — and when — is always on record.</p></div>
+      </div>
+      <div class="t-item">
+        <span class="t-ic"><i class="bi bi-phone-vibrate"></i></span>
+        <div><h4>M-Pesa, done properly</h4><p>Parents pay by STK push; payments reconcile against invoices automatically.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section>
+    <div class="testimonial-band">
+      <i class="bi bi-quote"></i>
+      <p class="testimonial-quote">We used to spend the first two weeks of every term untangling the timetable by hand. Now it's generated before the staff meeting is even over.</p>
+      <div class="testimonial-person">
+        <span class="testimonial-avatar">MN</span>
+        <div>
+          <div class="testimonial-name">Mary Njoroge</div>
+          <div class="testimonial-role">Deputy Principal, Greenfield Academy</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="section-head">
+      <h2>Questions schools ask us first.</h2>
+      <p>If something's missing here, it's one message away.</p>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item open">
+        <button class="faq-q">Can more than one school use ElimuOs without seeing each other's data?<i class="bi bi-plus-lg"></i></button>
+        <div class="faq-a"><p>Yes — that's the foundation, not an add-on. Every school's records are isolated at the database level, so it isn't just hidden in the interface; a query that tried to reach across schools would be rejected by the database itself.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Does fee collection actually work with M-Pesa?<i class="bi bi-plus-lg"></i></button>
+        <div class="faq-a"><p>Yes. A parent gets an STK push straight to their phone, pays with their M-Pesa PIN, and the payment reconciles against the right invoice automatically — each school uses its own till or paybill number.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Is the curriculum aligned to CBC?<i class="bi bi-plus-lg"></i></button>
+        <div class="faq-a"><p>Yes — learning areas, strands, sub-strands and the EE/ME/AE/BE rubric follow the CBC structure, so assessment and report cards match what teachers already use on paper.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Can parents and students really log in themselves?<i class="bi bi-plus-lg"></i></button>
+        <div class="faq-a"><p>Yes. A parent sees their own children's report cards, attendance and invoices; a student sees only their own record. Neither can see anything belonging to another family.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section>
+    <div class="cta-band">
+      <div>
+        <h2>Ready to bring your school online?</h2>
+        <p>Set up your school and start your first term in one sitting.</p>
+      </div>
+      <a href="login.html" class="btn-elimu btn-elimu-primary">Get started <i class="bi bi-arrow-up-right"></i></a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container-xl">
+    <div class="footer-grid">
+      <div class="footer-brand-col">
+        <div class="footer-brand">
+          <span class="brand-mark" style="width:32px;height:32px;font-size:0.9rem;"><i class="bi bi-mortarboard-fill"></i></span>
+          ElimuOs
+        </div>
+        <p class="footer-tagline">One system for admissions, attendance, CBC assessments, timetables and M-Pesa fees — built for schools in Kenya.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Product</h5>
+        <a href="#roles">Who it's for</a>
+        <a href="#showcase">Product tour</a>
+        <a href="#how-it-works">How it works</a>
+      </div>
+      <div class="footer-col">
+        <h5>Trust</h5>
+        <a href="#trust">Security</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h5>Account</h5>
+        <a href="login.html">Log in</a>
+        <a href="login.html">Get started</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-fine">Built for schools in Kenya. &copy; <span id="year"></span> ElimuOs.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Mobile nav: reuses the same link set the desktop nav uses.
+  const toggle = document.getElementById('navToggle');
+  const navLinks = document.querySelector('.nav-links');
+  toggle.addEventListener('click', () => {
+    const isOpen = navLinks.style.display === 'flex';
+    navLinks.style.cssText = isOpen
+      ? ''
+      : 'display:flex; position:absolute; top:100%; left:0; right:0; background:#fff; flex-direction:column; padding:18px 24px; border-bottom:1px solid var(--line); gap:18px;';
+  });
+
+  // FAQ accordion — plain toggle, one open at a time isn't enforced on
+  // purpose (a person comparing two answers shouldn't have the first one
+  // yanked shut when they open a second).
+  document.querySelectorAll('.faq-item').forEach((item) => {
+    const q = item.querySelector('.faq-q');
+    const a = item.querySelector('.faq-a');
+    if (!a) return;
+    if (item.classList.contains('open')) a.style.maxHeight = a.scrollHeight + 'px';
+    q.addEventListener('click', () => {
+      const isOpen = item.classList.toggle('open');
+      a.style.maxHeight = isOpen ? a.scrollHeight + 'px' : '0px';
+    });
+  });
+</script>
+
+</body>
+</html>

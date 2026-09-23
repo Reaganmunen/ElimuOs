@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Academic Setup — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout only — shell lives in admin-shell.css. */
+
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+
+  .tab-row{ display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .tab-btn{
+    background: none; border: none; padding: 11px 6px; margin-right: 18px; font: inherit; font-weight: 700;
+    font-size: 0.88rem; color: var(--ink-soft); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active{ color: var(--blue-deep); border-bottom-color: var(--blue); }
+  .tab-panel{ display: none; }
+  .tab-panel.active{ display: block; }
+
+  .card-elimu h2{ font-size: 1rem; margin-bottom: 4px; }
+  .card-elimu .card-sub{ color: var(--ink-soft); font-size: 0.84rem; margin-bottom: 16px; }
+
+  .form-error{
+    font-size: 0.82rem; color: #B23350; background: rgba(240,99,122,0.09);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px; display: none;
+  }
+  .form-error.shown{ display: block; }
+
+  .year-row{
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px;
+    cursor: pointer; transition: border-color .15s ease, background-color .15s ease;
+  }
+  .year-row:hover{ border-color: var(--blue); }
+  .year-row.selected{ border-color: var(--blue); background: var(--cloud); }
+  .year-row .lbl{ font-weight: 700; font-size: 0.9rem; }
+  .year-row .dates{ font-size: 0.76rem; color: var(--ink-soft); margin-top: 2px; }
+  .current-tag{
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 700;
+    background: rgba(23,166,115,0.12); color: var(--leaf); padding: 3px 8px; border-radius: 999px; margin-left: 8px;
+  }
+  .divider{ border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+
+  .terms-table, .assign-table{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .terms-table th, .assign-table th{
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line);
+  }
+  .terms-table td, .assign-table td{ padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .terms-table tr:last-child td, .assign-table tr:last-child td{ border-bottom: none; }
+  .term-badge{
+    display: inline-flex; font-size: 0.78rem; font-weight: 700; padding: 4px 11px; border-radius: 999px;
+    background: rgba(74,90,240,0.1); color: var(--blue-deep);
+  }
+  .muted-cell{ color: var(--ink-soft); font-size: 0.82rem; }
+  .link-btn{
+    background: none; border: none; padding: 0; font: inherit; font-weight: 600; font-size: 0.8rem;
+    color: var(--blue); cursor: pointer;
+  }
+  .link-btn:hover{ text-decoration: underline; }
+  .link-btn.danger{ color: var(--coral); }
+
+  .assign-filters{ display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
+  .assign-filters .field{ margin-bottom: 0; min-width: 200px; }
+
+  .empty-state{ text-align: center; padding: 36px 20px; color: var(--ink-soft); }
+  .empty-state i{ font-size: 1.7rem; color: var(--line); margin-bottom: 10px; display: block; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link active"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Academic Setup</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+
+      <div class="page-head">
+        <div>
+          <h1>Academic Setup</h1>
+          <p>Set up academic years and terms, and assign subjects &amp; teachers to each class.</p>
+        </div>
+      </div>
+
+      <div id="pageAlertSlot"></div>
+
+      <div class="tab-row">
+        <button type="button" class="tab-btn active" data-tab="terms">Terms</button>
+        <button type="button" class="tab-btn" data-tab="assignments">Teaching Assignments</button>
+      </div>
+
+      <!-- ========== TERMS TAB ========== -->
+      <div class="tab-panel active" id="tab-terms">
+
+        <div class="card-elimu" id="termsLoading">
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        </div>
+
+        <div id="termsContent" style="display:none;">
+
+          <!-- Academic years -->
+          <div class="card-elimu">
+            <h2>Academic years</h2>
+            <p class="card-sub">Pick a year below to manage its terms. Mark one "current" so the rest of the app knows which year is active.</p>
+
+            <div class="form-error" id="yearsFormError"></div>
+            <div id="yearsList"></div>
+
+            <hr class="divider" />
+
+            <div class="fieldset-label" style="margin-top:0;">Add a new academic year</div>
+            <form id="addYearForm" novalidate>
+              <div class="field">
+                <label for="newYearLabel">Label</label>
+                <input class="input" id="newYearLabel" placeholder="e.g. 2026" required />
+              </div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="newYearStart">Start date</label>
+                  <input class="input" type="date" id="newYearStart" required />
+                </div>
+                <div class="field">
+                  <label for="newYearEnd">End date</label>
+                  <input class="input" type="date" id="newYearEnd" required />
+                </div>
+              </div>
+              <div class="field" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <input type="checkbox" id="newYearCurrent" style="width:auto;" />
+                <label for="newYearCurrent" style="margin:0;">Set as current academic year</label>
+              </div>
+              <div class="modal-actions" style="justify-content:flex-end;">
+                <button type="submit" class="btn-elimu btn-elimu-primary" id="addYearSubmit">Add year</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Terms for selected year -->
+          <div class="card-elimu">
+            <h2 id="termsCardTitle">Terms</h2>
+            <p class="card-sub" id="termsCardSub">Select an academic year above to see and add its terms.</p>
+
+            <div class="form-error" id="termsFormError"></div>
+
+            <div id="termsTableWrap" style="display:none; overflow-x:auto;">
+              <table class="terms-table">
+                <thead>
+                  <tr><th>Term</th><th>Start date</th><th>End date</th></tr>
+                </thead>
+                <tbody id="termsTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="empty-state" id="noYearSelectedState">
+              <i class="bi bi-calendar3"></i>
+              Choose an academic year to view its terms.
+            </div>
+
+            <div class="empty-state" id="noTermsState" style="display:none;">
+              <i class="bi bi-calendar-week"></i>
+              No terms yet for this academic year.
+            </div>
+
+            <hr class="divider" id="addTermDivider" style="display:none;" />
+
+            <form id="addTermForm" novalidate style="display:none;">
+              <div class="fieldset-label" style="margin-top:0;">Add a term</div>
+              <div class="field-row">
+                <div class="field">
+                  <label for="newTermNumber">Term</label>
+                  <select class="input" id="newTermNumber" required>
+                    <option value="1">Term 1</option>
+                    <option value="2">Term 2</option>
+                    <option value="3">Term 3</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="newTermStart">Start date</label>
+                  <input class="input" type="date" id="newTermStart" required />
+                </div>
+                <div class="field">
+                  <label for="newTermEnd">End date</label>
+                  <input class="input" type="date" id="newTermEnd" required />
+                </div>
+              </div>
+              <div class="modal-actions" style="justify-content:flex-end;">
+                <button type="submit" class="btn-elimu btn-elimu-primary" id="addTermSubmit">Add term</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========== TEACHING ASSIGNMENTS TAB ========== -->
+      <div class="tab-panel" id="tab-assignments">
+
+        <div class="card-elimu" id="assignLoading">
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        </div>
+
+        <div id="assignContent" style="display:none;">
+          <div class="card-elimu">
+            <h2>Assign subjects &amp; teachers</h2>
+            <p class="card-sub">Pick an academic year and a class, then assign who teaches each learning area.</p>
+
+            <div class="assign-filters">
+              <div class="field">
+                <label for="assignYearSelect">Academic year</label>
+                <select class="input" id="assignYearSelect"></select>
+              </div>
+              <div class="field">
+                <label for="assignClassSelect">Class</label>
+                <select class="input" id="assignClassSelect"><option value="">Select a class…</option></select>
+              </div>
+              <button type="button" class="btn-elimu btn-elimu-primary" id="addAssignmentBtn" disabled>
+                <i class="bi bi-plus-lg"></i> Add assignment
+              </button>
+            </div>
+
+            <div class="form-error" id="assignPageError"></div>
+
+            <div id="assignTableWrap" style="display:none; overflow-x:auto;">
+              <table class="assign-table">
+                <thead>
+                  <tr><th>Learning area</th><th>Teacher</th><th>Periods / week</th><th></th></tr>
+                </thead>
+                <tbody id="assignTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="empty-state" id="noClassSelectedState">
+              <i class="bi bi-diagram-3-fill"></i>
+              Choose a class above to view or add its teaching assignments.
+            </div>
+
+            <div class="empty-state" id="noAssignmentsState" style="display:none;">
+              <i class="bi bi-person-video3"></i>
+              No teaching assignments yet for this class.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Add / edit assignment modal -->
+<div class="modal-overlay" id="assignModal" style="display:none;">
+  <div class="modal-box" style="max-width:440px;">
+    <h3>Assign a teacher</h3>
+    <p id="assignModalSub" style="margin-bottom:14px;"></p>
+    <div class="form-error" id="assignFormError"></div>
+
+    <form id="assignForm" novalidate>
+      <div class="field">
+        <label for="assignLearningArea">Learning area</label>
+        <select class="input" id="assignLearningArea" required></select>
+        <div class="hint">Assigning an area that already has a teacher replaces that teacher.</div>
+      </div>
+      <div class="field">
+        <label for="assignTeacher">Teacher</label>
+        <select class="input" id="assignTeacher" required></select>
+      </div>
+      <div class="field">
+        <label for="assignPeriods">Periods per week</label>
+        <input class="input" type="number" id="assignPeriods" min="1" max="20" value="5" required />
+      </div>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button type="button" class="btn-elimu btn-elimu-ghost" id="assignModalCancel">Cancel</button>
+        <button type="submit" class="btn-elimu btn-elimu-primary" id="assignModalSubmit">Save assignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+
+  let academicYears = [];
+  let selectedYearId = null;   // Terms tab
+  let terms = [];
+
+  let allGrades = [];
+  let classesForYear = [];
+  let learningAreasByGrade = {}; // gradeId -> areas[]
+  let teachers = [];
+  let currentAssignments = [];
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function formError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (!msg) { el.classList.remove('shown'); el.textContent = ''; return; }
+    el.textContent = msg;
+    el.classList.add('shown');
+  }
+  function fmtDate(d) {
+    return new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    });
+  });
+
+  // ================= TERMS TAB =================
+
+  async function loadAcademicYears() {
+    const res = await api.apiFetch('/academic-years');
+    academicYears = res.data;
+  }
+
+  function renderYearsList() {
+    const list = document.getElementById('yearsList');
+    if (academicYears.length === 0) {
+      list.innerHTML = `<p style="color:var(--ink-soft); font-size:0.86rem;">No academic years yet — add your first one below.</p>`;
+      return;
+    }
+    list.innerHTML = academicYears.map(y => `
+      <div class="year-row ${String(y.id) === String(selectedYearId) ? 'selected' : ''}" data-year="${y.id}">
+        <div>
+          <span class="lbl">${y.year_label}</span>${y.is_current ? '<span class="current-tag"><i class="bi bi-check-circle-fill"></i> Current</span>' : ''}
+          <div class="dates">${fmtDate(y.start_date)} – ${fmtDate(y.end_date)}</div>
+        </div>
+        ${y.is_current ? '' : `<button type="button" class="btn-elimu btn-elimu-ghost" style="padding:6px 12px; font-size:0.78rem;" data-set-current="${y.id}">Set current</button>`}
+      </div>`).join('');
+
+    list.querySelectorAll('.year-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-set-current]')) return;
+        selectYear(row.getAttribute('data-year'));
+      });
+    });
+    list.querySelectorAll('[data-set-current]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+          await api.apiFetch(`/academic-years/${btn.getAttribute('data-set-current')}/set-current`, { method: 'PATCH' });
+          await loadAcademicYears();
+          renderYearsList();
+          populateAssignYearSelect();
+        } catch (err) {
+          formError('yearsFormError', err.message || 'Could not set this as the current year.');
+          btn.disabled = false; btn.textContent = 'Set current';
+        }
+      });
+    });
+  }
+
+  async function selectYear(yearId) {
+    selectedYearId = yearId;
+    renderYearsList();
+    const year = academicYears.find(y => String(y.id) === String(yearId));
+
+    document.getElementById('noYearSelectedState').style.display = 'none';
+    document.getElementById('termsCardSub').textContent = year
+      ? `Terms for ${year.year_label}.`
+      : 'Select an academic year above to see and add its terms.';
+    document.getElementById('addTermForm').style.display = 'block';
+    document.getElementById('addTermDivider').style.display = 'block';
+    formError('termsFormError', null);
+
+    document.getElementById('termsTableWrap').style.display = 'none';
+    document.getElementById('noTermsState').style.display = 'none';
+    document.getElementById('termsTableBody').innerHTML = `<tr><td colspan="3" class="muted-cell">Loading…</td></tr>`;
+    document.getElementById('termsTableWrap').style.display = 'block';
+
+    try {
+      const res = await api.apiFetch(`/academic-years/${yearId}/terms`);
+      terms = res.data;
+      renderTerms();
+    } catch (err) {
+      formError('termsFormError', err.message || 'Could not load terms for this year.');
+      document.getElementById('termsTableWrap').style.display = 'none';
+    }
+  }
+
+  function renderTerms() {
+    if (terms.length === 0) {
+      document.getElementById('termsTableWrap').style.display = 'none';
+      document.getElementById('noTermsState').style.display = 'block';
+      return;
+    }
+    document.getElementById('noTermsState').style.display = 'none';
+    document.getElementById('termsTableWrap').style.display = 'block';
+    document.getElementById('termsTableBody').innerHTML = terms.map(t => `
+      <tr>
+        <td><span class="term-badge">Term ${t.term_number}</span></td>
+        <td>${fmtDate(t.start_date)}</td>
+        <td>${fmtDate(t.end_date)}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('addYearForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('yearsFormError', null);
+
+    const yearLabelVal = document.getElementById('newYearLabel').value.trim();
+    const startDate = document.getElementById('newYearStart').value;
+    const endDate = document.getElementById('newYearEnd').value;
+    const setCurrent = document.getElementById('newYearCurrent').checked;
+
+    if (!yearLabelVal || !startDate || !endDate) {
+      formError('yearsFormError', 'Fill in the label, start date and end date.');
+      return;
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      formError('yearsFormError', 'End date must be after the start date.');
+      return;
+    }
+
+    const btn = document.getElementById('addYearSubmit');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      const res = await api.apiFetch('/academic-years', {
+        method: 'POST',
+        body: JSON.stringify({ yearLabel: yearLabelVal, startDate, endDate }),
+      });
+      if (setCurrent) {
+        await api.apiFetch(`/academic-years/${res.data.id}/set-current`, { method: 'PATCH' });
+      }
+      await loadAcademicYears();
+      renderYearsList();
+      populateAssignYearSelect();
+      document.getElementById('addYearForm').reset();
+      showAlert('success', 'Academic year added.');
+    } catch (err) {
+      formError('yearsFormError', err.message || 'Could not add that academic year.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add year';
+    }
+  });
+
+  document.getElementById('addTermForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('termsFormError', null);
+    if (!selectedYearId) return;
+
+    const termNumber = document.getElementById('newTermNumber').value;
+    const startDate = document.getElementById('newTermStart').value;
+    const endDate = document.getElementById('newTermEnd').value;
+
+    if (!startDate || !endDate) {
+      formError('termsFormError', 'Fill in the start and end date.');
+      return;
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      formError('termsFormError', 'End date must be after the start date.');
+      return;
+    }
+
+    const btn = document.getElementById('addTermSubmit');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      await api.apiFetch(`/academic-years/${selectedYearId}/terms`, {
+        method: 'POST',
+        body: JSON.stringify({ termNumber: Number(termNumber), startDate, endDate }),
+      });
+      const res = await api.apiFetch(`/academic-years/${selectedYearId}/terms`);
+      terms = res.data;
+      renderTerms();
+      document.getElementById('addTermForm').reset();
+      showAlert('success', 'Term added.');
+    } catch (err) {
+      formError('termsFormError', err.message || 'Could not add that term.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add term';
+    }
+  });
+
+  // ================= TEACHING ASSIGNMENTS TAB =================
+
+  async function loadCurriculumGrades() {
+    const res = await api.apiFetch('/curriculum/grades');
+    allGrades = res.data;
+  }
+  async function loadTeachers() {
+    try {
+      const res = await api.apiFetch('/users?roleCode=teacher');
+      teachers = res.data;
+    } catch (err) {
+      teachers = [];
+    }
+  }
+
+  function populateAssignYearSelect() {
+    const sel = document.getElementById('assignYearSelect');
+    const current = academicYears.find(y => y.is_current);
+    sel.innerHTML = academicYears.map(y => `<option value="${y.id}">${y.year_label}${y.is_current ? ' (current)' : ''}</option>`).join('');
+    if (current && !sel.dataset.userChanged) sel.value = current.id;
+    loadClassesForYear();
+  }
+
+  async function loadClassesForYear() {
+    const yearId = document.getElementById('assignYearSelect').value;
+    const classSel = document.getElementById('assignClassSelect');
+    classSel.innerHTML = '<option value="">Loading…</option>';
+    if (!yearId) { classSel.innerHTML = '<option value="">Select a class…</option>'; return; }
+    try {
+      const res = await api.apiFetch(`/classes?academicYearId=${yearId}`);
+      classesForYear = res.data;
+      classSel.innerHTML = '<option value="">Select a class…</option>' +
+        classesForYear.map(c => `<option value="${c.id}">${c.grade_name}${c.stream_name ? ' ' + c.stream_name : ''}</option>`).join('');
+    } catch (err) {
+      classesForYear = [];
+      classSel.innerHTML = '<option value="">Could not load classes</option>';
+    }
+    onClassChanged();
+  }
+
+  async function ensureLearningAreas(gradeId) {
+    if (learningAreasByGrade[gradeId]) return learningAreasByGrade[gradeId];
+    const res = await api.apiFetch(`/curriculum/grades/${gradeId}/learning-areas`);
+    learningAreasByGrade[gradeId] = res.data;
+    return res.data;
+  }
+
+  function selectedClass() {
+    const classId = document.getElementById('assignClassSelect').value;
+    return classesForYear.find(c => String(c.id) === String(classId)) || null;
+  }
+
+  async function onClassChanged() {
+    formError('assignPageError', null);
+    const cls = selectedClass();
+    const addBtn = document.getElementById('addAssignmentBtn');
+
+    if (!cls) {
+      addBtn.setAttribute('disabled', 'disabled');
+      document.getElementById('assignTableWrap').style.display = 'none';
+      document.getElementById('noAssignmentsState').style.display = 'none';
+      document.getElementById('noClassSelectedState').style.display = 'block';
+      currentAssignments = [];
+      return;
+    }
+    addBtn.removeAttribute('disabled');
+    document.getElementById('noClassSelectedState').style.display = 'none';
+    document.getElementById('assignTableWrap').style.display = 'block';
+    document.getElementById('assignTableBody').innerHTML = `<tr><td colspan="4" class="muted-cell">Loading…</td></tr>`;
+
+    try {
+      const [assignRes] = await Promise.all([
+        api.apiFetch(`/teaching/assignments/class/${cls.id}`),
+        ensureLearningAreas(cls.grade_id),
+      ]);
+      currentAssignments = assignRes.data;
+      renderAssignments();
+    } catch (err) {
+      formError('assignPageError', err.message || 'Could not load teaching assignments for this class.');
+      document.getElementById('assignTableWrap').style.display = 'none';
+    }
+  }
+
+  function renderAssignments() {
+    if (currentAssignments.length === 0) {
+      document.getElementById('assignTableWrap').style.display = 'none';
+      document.getElementById('noAssignmentsState').style.display = 'block';
+      return;
+    }
+    document.getElementById('noAssignmentsState').style.display = 'none';
+    document.getElementById('assignTableWrap').style.display = 'block';
+    document.getElementById('assignTableBody').innerHTML = currentAssignments.map(a => `
+      <tr>
+        <td>${a.learning_area_name}</td>
+        <td>${a.teacher_name}</td>
+        <td>${a.periods_per_week}</td>
+        <td><button class="link-btn danger" data-remove="${a.id}">Remove</button></td>
+      </tr>`).join('');
+
+    document.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Remove this teaching assignment? Any linked timetable slots will need to be re-created.')) return;
+        btn.disabled = true; btn.textContent = 'Removing…';
+        try {
+          await api.apiFetch(`/teaching/assignments/${btn.getAttribute('data-remove')}`, { method: 'DELETE' });
+          await onClassChanged();
+        } catch (err) {
+          formError('assignPageError', err.message || 'Could not remove this assignment.');
+          btn.disabled = false; btn.textContent = 'Remove';
+        }
+      });
+    });
+  }
+
+  document.getElementById('assignYearSelect').addEventListener('change', (e) => {
+    e.target.dataset.userChanged = '1';
+    loadClassesForYear();
+  });
+  document.getElementById('assignClassSelect').addEventListener('change', onClassChanged);
+
+  // ---------- Add assignment modal ----------
+  function openAssignModal() {
+    const cls = selectedClass();
+    if (!cls) return;
+    formError('assignFormError', null);
+    document.getElementById('assignForm').reset();
+    document.getElementById('assignPeriods').value = 5;
+    document.getElementById('assignModalSub').textContent = `${cls.grade_name}${cls.stream_name ? ' ' + cls.stream_name : ''}`;
+
+    const areas = learningAreasByGrade[cls.grade_id] || [];
+    document.getElementById('assignLearningArea').innerHTML = areas.length
+      ? areas.map(a => `<option value="${a.id}">${a.name}</option>`).join('')
+      : '<option value="">No learning areas set up for this grade</option>';
+
+    document.getElementById('assignTeacher').innerHTML = teachers.length
+      ? teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('')
+      : '<option value="">No teachers found — add one under Staff</option>';
+
+    document.getElementById('assignModal').style.display = 'flex';
+  }
+  document.getElementById('addAssignmentBtn').addEventListener('click', openAssignModal);
+  document.getElementById('assignModalCancel').addEventListener('click', () => {
+    document.getElementById('assignModal').style.display = 'none';
+  });
+
+  document.getElementById('assignForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('assignFormError', null);
+    const cls = selectedClass();
+    const yearId = document.getElementById('assignYearSelect').value;
+    const learningAreaId = document.getElementById('assignLearningArea').value;
+    const teacherId = document.getElementById('assignTeacher').value;
+    const periodsPerWeek = Number(document.getElementById('assignPeriods').value) || 5;
+
+    if (!cls || !learningAreaId || !teacherId) {
+      formError('assignFormError', 'Choose a learning area and a teacher.');
+      return;
+    }
+
+    const btn = document.getElementById('assignModalSubmit');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api.apiFetch('/teaching/assignments', {
+        method: 'POST',
+        body: JSON.stringify({
+          classId: cls.id, learningAreaId, teacherId, academicYearId: yearId, periodsPerWeek,
+        }),
+      });
+      document.getElementById('assignModal').style.display = 'none';
+      showAlert('success', 'Teaching assignment saved.');
+      await onClassChanged();
+    } catch (err) {
+      formError('assignFormError', err.message || 'Could not save this assignment.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save assignment';
+    }
+  });
+
+  // ---------- Boot ----------
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    try {
+      await loadAcademicYears();
+      renderYearsList();
+      document.getElementById('termsLoading').style.display = 'none';
+      document.getElementById('termsContent').style.display = 'block';
+
+      const current = academicYears.find(y => y.is_current) || academicYears[0];
+      if (current) selectYear(current.id);
+    } catch (err) {
+      document.getElementById('termsLoading').style.display = 'none';
+      showAlert('error', err.message || 'Could not load academic years.');
+    }
+
+    try {
+      await Promise.all([loadCurriculumGrades(), loadTeachers()]);
+      populateAssignYearSelect();
+      document.getElementById('assignLoading').style.display = 'none';
+      document.getElementById('assignContent').style.display = 'block';
+    } catch (err) {
+      document.getElementById('assignLoading').style.display = 'none';
+      showAlert('error', err.message || 'Could not load teaching assignment data.');
+    }
+  })();
+</script>
+
+</body>
+</html>

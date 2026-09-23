@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Register your school — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="css/theme.css">
+<style>
+  /* This form is longer than login's — give it room instead of forcing
+     the split-screen's narrower column. */
+  .auth-form-wrap.wide{ max-width: 480px; }
+</style>
+</head>
+<body>
+
+<div class="auth-shell">
+
+  <div class="auth-side">
+    <div class="auth-side-content">
+      <a href="index.html" class="brand">
+        <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+        ElimuOs
+      </a>
+      <h2>Bring your school online in one sitting.</h2>
+      <p>You'll have a working admin account the moment you submit this — classes, staff and your first term come next.</p>
+    </div>
+    <div class="auth-side-quote">
+      "We set up classes, staff and our fee structure the same afternoon we signed up."
+      <div class="who">— School Admin, St. Agnes Primary</div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-form-wrap wide">
+      <h1>Register your school</h1>
+      <p class="sub">This creates your school and your own admin account together.</p>
+
+      <div id="registerAlert"></div>
+
+      <form id="registerForm" novalidate>
+
+        <div class="fieldset-label">School details</div>
+
+        <div class="field">
+          <label for="schoolName">School name</label>
+          <input class="input" type="text" id="schoolName" required />
+          <div class="input-error-text">Enter your school's name.</div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="county">County</label>
+            <input class="input" type="text" id="county" placeholder="e.g. Nairobi" />
+          </div>
+          <div class="field">
+            <label for="subCounty">Sub-county</label>
+            <input class="input" type="text" id="subCounty" placeholder="Optional" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="address">Address</label>
+          <input class="input" type="text" id="address" placeholder="Optional" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="phone">School phone</label>
+            <input class="input" type="tel" id="phone" placeholder="Optional" />
+          </div>
+          <div class="field">
+            <label for="schoolEmail">School email</label>
+            <input class="input" type="email" id="schoolEmail" placeholder="Optional, for general inquiries" />
+          </div>
+        </div>
+
+        <div class="fieldset-label">Your admin account</div>
+        <p class="hint" style="margin-top:-8px; margin-bottom:16px;">This is what you'll use to log in — separate from the school's general contact email above.</p>
+
+        <div class="field">
+          <label for="adminFullName">Your full name</label>
+          <input class="input" type="text" id="adminFullName" required />
+          <div class="input-error-text">Enter your name.</div>
+        </div>
+
+        <div class="field">
+          <label for="adminEmail">Your email</label>
+          <input class="input" type="email" id="adminEmail" autocomplete="username" required />
+          <div class="input-error-text">Enter a valid email address.</div>
+        </div>
+
+        <div class="field">
+          <label for="adminPassword">Password</label>
+          <div class="password-field">
+            <input class="input" type="password" id="adminPassword" autocomplete="new-password" required style="padding-right:42px;" />
+            <button type="button" class="password-toggle" id="togglePassword1" aria-label="Show password"><i class="bi bi-eye"></i></button>
+          </div>
+          <div class="hint">At least 8 characters, with at least one letter and one number.</div>
+          <div class="input-error-text">Password must be at least 8 characters with a letter and a number.</div>
+        </div>
+
+        <div class="field">
+          <label for="confirmPassword">Confirm password</label>
+          <div class="password-field">
+            <input class="input" type="password" id="confirmPassword" autocomplete="new-password" required style="padding-right:42px;" />
+            <button type="button" class="password-toggle" id="togglePassword2" aria-label="Show password"><i class="bi bi-eye"></i></button>
+          </div>
+          <div class="input-error-text">Passwords don't match.</div>
+        </div>
+
+        <button type="submit" class="btn-elimu btn-elimu-primary btn-elimu-block" id="registerSubmit" style="margin-top:8px;">
+          <span id="registerSubmitText">Create school &amp; account</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const form = document.getElementById('registerForm');
+  const alertBox = document.getElementById('registerAlert');
+  const submitBtn = document.getElementById('registerSubmit');
+  const submitText = document.getElementById('registerSubmitText');
+
+  function showAlert(html) {
+    alertBox.innerHTML = `<div class="alert-elimu alert-error"><i class="bi bi-exclamation-circle-fill"></i><div>${html}</div></div>`;
+  }
+  function clearAlert() { alertBox.innerHTML = ''; }
+  function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
+    submitText.textContent = isLoading ? 'Creating your school…' : 'Create school & account';
+  }
+
+  function wireToggle(toggleId, inputId) {
+    document.getElementById(toggleId).addEventListener('click', () => {
+      const input = document.getElementById(inputId);
+      const icon = document.querySelector(`#${toggleId} i`);
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      icon.className = showing ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+  }
+  wireToggle('togglePassword1', 'adminPassword');
+  wireToggle('togglePassword2', 'confirmPassword');
+
+  // Mirrors passwordValidator.util.js's server-side rule exactly, so a
+  // person finds out before submitting rather than after a round trip.
+  function isPasswordStrong(pw) {
+    return pw.length >= 8 && /[a-zA-Z]/.test(pw) && /[0-9]/.test(pw);
+  }
+
+  function fieldEl(id) { return document.getElementById(id); }
+  function markError(id, hasError) {
+    fieldEl(id).classList.toggle('has-error', hasError);
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearAlert();
+
+    const schoolName = fieldEl('schoolName').value.trim();
+    const adminFullName = fieldEl('adminFullName').value.trim();
+    const adminEmail = fieldEl('adminEmail').value.trim();
+    const adminPassword = fieldEl('adminPassword').value;
+    const confirmPassword = fieldEl('confirmPassword').value;
+
+    let valid = true;
+    markError('schoolName', !schoolName); if (!schoolName) valid = false;
+    markError('adminFullName', !adminFullName); if (!adminFullName) valid = false;
+    markError('adminEmail', !adminEmail); if (!adminEmail) valid = false;
+
+    const passwordOk = isPasswordStrong(adminPassword);
+    markError('adminPassword', !passwordOk); if (!passwordOk) valid = false;
+
+    const matches = adminPassword === confirmPassword && confirmPassword.length > 0;
+    markError('confirmPassword', !matches); if (!matches) valid = false;
+
+    if (!valid) return;
+
+    setLoading(true);
+    try {
+      const { status, body } = await window.ElimuOs.auth.registerSchool({
+        schoolName,
+        county: fieldEl('county').value.trim() || undefined,
+        subCounty: fieldEl('subCounty').value.trim() || undefined,
+        address: fieldEl('address').value.trim() || undefined,
+        phone: fieldEl('phone').value.trim() || undefined,
+        email: fieldEl('schoolEmail').value.trim() || undefined,
+        adminFullName,
+        adminEmail,
+        adminPassword,
+      });
+
+      if (status === 201) {
+        window.location.href = '/admin/dashboard.html';
+        return;
+      }
+
+      showAlert(body?.message || 'Something went wrong. Please try again.');
+      setLoading(false);
+    } catch (err) {
+      showAlert('Could not reach the server. Check your connection and try again.');
+      setLoading(false);
+    }
+  });
+</script>
+
+</body>
+</html>

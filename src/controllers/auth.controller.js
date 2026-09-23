@@ -84,7 +84,12 @@ const login = asyncHandler(async (req, res) => {
   if (matches.length === 1) {
     user = matches[0];
   } else if (schoolId) {
-    user = matches.find((m) => m.school_id === Number(schoolId));
+    // school_id comes back from pg as a string (bigint columns are parsed
+    // as strings by node-postgres to avoid precision loss), so compare as
+    // strings rather than coercing to Number — a strict `===` against
+    // Number(schoolId) here always failed, making the school picker
+    // permanently unusable (every selection hit this 401).
+    user = matches.find((m) => String(m.school_id) === String(schoolId));
     if (!user) throw new ApiError(401, 'Invalid email or password');
   } else {
     return sendSuccess(res, 300, {

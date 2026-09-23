@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Timetable — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout only — shell lives in admin-shell.css. */
+
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+
+  .tab-row{ display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .tab-btn{
+    background: none; border: none; padding: 11px 6px; margin-right: 18px; font: inherit; font-weight: 700;
+    font-size: 0.88rem; color: var(--ink-soft); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active{ color: var(--blue-deep); border-bottom-color: var(--blue); }
+  .tab-panel{ display: none; }
+  .tab-panel.active{ display: block; }
+
+  .form-error{
+    font-size: 0.82rem; color: #B23350; background: rgba(240,99,122,0.09);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px; display: none;
+  }
+  .form-error.shown{ display: block; }
+  .info-note{
+    font-size: 0.82rem; color: var(--blue-deep); background: rgba(74,90,240,0.08);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px;
+  }
+
+  .day-picker{ display: flex; gap: 8px; flex-wrap: wrap; }
+  .day-chip{
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
+    border: 1.5px solid #D7DAEE; font-size: 0.84rem; font-weight: 600; cursor: pointer; user-select: none;
+  }
+  .day-chip input{ width: auto; margin: 0; }
+  .day-chip.checked{ border-color: var(--blue); background: rgba(74,90,240,0.08); color: var(--blue-deep); }
+
+  .break-row{ display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; }
+  .break-row .field{ margin-bottom: 0; }
+  .break-row .field.small{ max-width: 130px; }
+  .break-row .field.grow{ flex: 1; min-width: 140px; }
+
+  .muted-cell{ color: var(--ink-soft); font-size: 0.82rem; }
+  .link-btn{
+    background: none; border: none; padding: 0; font: inherit; font-weight: 600; font-size: 0.8rem;
+    color: var(--blue); cursor: pointer;
+  }
+  .link-btn:hover{ text-decoration: underline; }
+  .link-btn.danger{ color: var(--coral); }
+
+  .unplaced-row{ display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+  .unplaced-row:last-child{ border-bottom: none; }
+
+  .tt-table{ width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  .tt-table th{
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line);
+  }
+  .tt-table td{ padding: 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .tt-table tr:last-child td{ border-bottom: none; }
+  .day-badge{
+    display: inline-flex; font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--cloud); color: var(--ink-soft);
+  }
+
+  .empty-state{ text-align: center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state i{ font-size: 1.8rem; color: var(--line); margin-bottom: 10px; display: block; }
+
+  .grade-term-picker{ display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
+  .grade-term-picker .field{ margin-bottom: 0; min-width: 190px; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link active"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Timetable</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+
+      <div class="page-head">
+        <div>
+          <h1>Timetable</h1>
+          <p>Set the school's daily schedule, then generate the whole timetable at once from your teaching assignments.</p>
+        </div>
+      </div>
+
+      <div id="pageAlertSlot"></div>
+
+      <div class="tab-row">
+        <button type="button" class="tab-btn active" data-tab="generate">Generate</button>
+        <button type="button" class="tab-btn" data-tab="view">View &amp; edit by class</button>
+      </div>
+
+      <!-- ===================== GENERATE TAB ===================== -->
+      <div class="tab-panel active" id="tab-generate">
+
+        <div class="card-elimu">
+          <h3 style="font-size:0.98rem; margin-bottom:2px;">Daily schedule</h3>
+          <p style="font-size:0.84rem; color:var(--ink-soft); margin-bottom:18px;">How the school day is structured. The generator uses this to place every period.</p>
+
+          <div class="form-error" id="configFormError"></div>
+
+          <form id="configForm">
+            <div class="field">
+              <label>Working days</label>
+              <div class="day-picker" id="dayPicker">
+                <label class="day-chip"><input type="checkbox" value="1" /> Mon</label>
+                <label class="day-chip"><input type="checkbox" value="2" /> Tue</label>
+                <label class="day-chip"><input type="checkbox" value="3" /> Wed</label>
+                <label class="day-chip"><input type="checkbox" value="4" /> Thu</label>
+                <label class="day-chip"><input type="checkbox" value="5" /> Fri</label>
+                <label class="day-chip"><input type="checkbox" value="6" /> Sat</label>
+                <label class="day-chip"><input type="checkbox" value="7" /> Sun</label>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="periodsPerDay">Periods per day</label>
+                <input class="input" type="number" min="1" max="15" id="periodsPerDay" required />
+              </div>
+              <div class="field">
+                <label for="periodDuration">Period length (minutes)</label>
+                <input class="input" type="number" min="1" id="periodDuration" required />
+              </div>
+              <div class="field">
+                <label for="dayStartTime">School day starts</label>
+                <input class="input" type="time" id="dayStartTime" required />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Breaks <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+              <div id="breaksList"></div>
+              <button type="button" class="btn-elimu btn-elimu-ghost" id="addBreakBtn" style="margin-top:6px;"><i class="bi bi-plus-lg"></i> Add a break</button>
+            </div>
+
+            <button type="submit" class="btn-elimu btn-elimu-primary" id="saveConfigBtn" style="margin-top:8px;">Save schedule</button>
+          </form>
+        </div>
+
+        <div class="card-elimu">
+          <h3 style="font-size:0.98rem; margin-bottom:2px;">Generate the timetable</h3>
+          <p style="font-size:0.84rem; color:var(--ink-soft); margin-bottom:16px;">
+            Builds a fresh timetable for every class in the school at once, from the teaching assignments set up for the chosen academic year.
+            This replaces any timetable already generated for that year — existing periods aren't kept.
+          </p>
+
+          <div class="form-error" id="generateFormError"></div>
+
+          <div class="field-row" style="align-items:flex-end;">
+            <div class="field">
+              <label for="genYearSelect">Academic year</label>
+              <select class="input" id="genYearSelect"><option value="">Select year…</option></select>
+            </div>
+            <div class="field" style="display:flex; align-items:center;">
+              <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-weight:600;">
+                <input type="checkbox" id="allowDoublePeriods" style="width:auto;" checked /> Allow double periods
+              </label>
+            </div>
+          </div>
+          <button type="button" class="btn-elimu btn-elimu-primary" id="generateBtn"><i class="bi bi-magic"></i> Generate timetable</button>
+
+          <div id="generateResult" style="margin-top:20px; display:none;">
+            <div class="info-note" id="generateSummary"></div>
+            <div id="unplacedSection" style="display:none;">
+              <div style="font-family:'Plus Jakarta Sans'; font-weight:700; font-size:0.8rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin:16px 0 8px;">Couldn't be placed automatically</div>
+              <div id="unplacedList"></div>
+              <p class="muted-cell" style="margin-top:8px;">Add these manually from "View &amp; edit by class", or lower that subject's periods-per-week and generate again.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== VIEW & EDIT TAB ===================== -->
+      <div class="tab-panel" id="tab-view">
+
+        <div class="grade-term-picker">
+          <div class="field">
+            <label for="viewClassSelect">Class</label>
+            <select class="input" id="viewClassSelect"><option value="">Select a class…</option></select>
+          </div>
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="addSlotBtn" disabled><i class="bi bi-plus-lg"></i> Add slot manually</button>
+        </div>
+
+        <div id="viewEmptyHint" class="empty-state card-elimu">
+          <i class="bi bi-calendar3"></i>
+          <span>Pick a class above to see its weekly timetable.</span>
+        </div>
+
+        <div class="card-elimu" id="viewLoading" style="display:none;">
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+          <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        </div>
+
+        <div class="card-elimu" id="viewTableCard" style="display:none; padding:20px 20px 8px;">
+          <div style="overflow-x:auto;">
+            <table class="tt-table">
+              <thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Teacher</th><th></th></tr></thead>
+              <tbody id="viewTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="empty-state card-elimu" id="viewNoSlots" style="display:none;">
+          <i class="bi bi-calendar-x"></i>
+          <span>No timetable slots for this class yet.</span>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Add slot manually modal -->
+<div class="modal-overlay" id="slotModal" style="display:none;">
+  <div class="modal-box" style="max-width:460px;">
+    <h3>Add a timetable slot</h3>
+    <div class="form-error" id="slotFormError"></div>
+    <div class="field">
+      <label for="slotAssignmentSelect">Subject &amp; teacher</label>
+      <select class="input" id="slotAssignmentSelect"><option value="">Loading…</option></select>
+    </div>
+    <div class="field">
+      <label for="slotDaySelect">Day</label>
+      <select class="input" id="slotDaySelect">
+        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="slotStartTime">Start time</label>
+        <input class="input" type="time" id="slotStartTime" required />
+      </div>
+      <div class="field">
+        <label for="slotEndTime">End time</label>
+        <input class="input" type="time" id="slotEndTime" required />
+      </div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="slotModalCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="slotModalSubmit">Add slot</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+
+  const DAY_NAMES = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' };
+  let academicYears = [];
+  let classList = [];
+  let breaks = [];
+  let currentAssignments = [];
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function formError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (!msg) { el.classList.remove('shown'); el.textContent = ''; return; }
+    el.textContent = msg;
+    el.classList.add('shown');
+  }
+  function classLabel(cls) {
+    return `${cls.grade_name}${cls.stream_name ? ' ' + cls.stream_name : ''}`;
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+    });
+  });
+
+  // ===================== CONFIG =====================
+
+  function renderBreaks() {
+    document.getElementById('breaksList').innerHTML = breaks.map((b, i) => `
+      <div class="break-row" data-idx="${i}">
+        <div class="field small">
+          <label>After period</label>
+          <input class="input break-after" type="number" min="1" value="${b.after_period}" />
+        </div>
+        <div class="field small">
+          <label>Minutes</label>
+          <input class="input break-mins" type="number" min="1" value="${b.duration_minutes}" />
+        </div>
+        <div class="field grow">
+          <label>Label</label>
+          <input class="input break-label" value="${b.label || ''}" placeholder="e.g. Lunch" />
+        </div>
+        <button type="button" class="link-btn danger" data-remove-break="${i}" style="margin-bottom:12px;">Remove</button>
+      </div>`).join('');
+    document.getElementById('breaksList').querySelectorAll('[data-remove-break]').forEach(btn => {
+      btn.addEventListener('click', () => { breaks.splice(Number(btn.getAttribute('data-remove-break')), 1); renderBreaks(); });
+    });
+  }
+  document.getElementById('addBreakBtn').addEventListener('click', () => {
+    breaks.push({ after_period: 2, duration_minutes: 20, label: '' });
+    renderBreaks();
+  });
+
+  function readBreaksFromForm() {
+    const rows = document.querySelectorAll('#breaksList .break-row');
+    return Array.from(rows).map(row => ({
+      after_period: Number(row.querySelector('.break-after').value),
+      duration_minutes: Number(row.querySelector('.break-mins').value),
+      label: row.querySelector('.break-label').value.trim() || undefined,
+    }));
+  }
+
+  async function loadConfig() {
+    try {
+      const res = await api.apiFetch('/teaching/timetable/config');
+      const c = res.data;
+      document.querySelectorAll('#dayPicker input').forEach(input => {
+        input.checked = c.workingDays.includes(Number(input.value));
+        input.closest('.day-chip').classList.toggle('checked', input.checked);
+      });
+      document.getElementById('periodsPerDay').value = c.periodsPerDay;
+      document.getElementById('periodDuration').value = c.periodDurationMinutes;
+      document.getElementById('dayStartTime').value = String(c.dayStartTime).slice(0, 5);
+      breaks = (c.breaks || []).map(b => ({ ...b }));
+      renderBreaks();
+    } catch (err) {
+      showAlert('error', err.message || 'Could not load the timetable schedule.');
+    }
+  }
+
+  document.querySelectorAll('#dayPicker .day-chip').forEach(chip => {
+    chip.querySelector('input').addEventListener('change', (e) => {
+      chip.classList.toggle('checked', e.target.checked);
+    });
+  });
+
+  document.getElementById('configForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('configFormError', null);
+    const workingDays = Array.from(document.querySelectorAll('#dayPicker input:checked')).map(i => Number(i.value));
+    if (workingDays.length === 0) { formError('configFormError', 'Pick at least one working day.'); return; }
+
+    const btn = document.getElementById('saveConfigBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api.apiFetch('/teaching/timetable/config', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          workingDays,
+          periodsPerDay: Number(document.getElementById('periodsPerDay').value),
+          periodDurationMinutes: Number(document.getElementById('periodDuration').value),
+          dayStartTime: document.getElementById('dayStartTime').value,
+          breaks: readBreaksFromForm(),
+        }),
+      });
+      showAlert('success', 'Schedule saved.');
+    } catch (err) {
+      formError('configFormError', err.message || 'Could not save the schedule.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save schedule';
+    }
+  });
+
+  // ===================== GENERATE =====================
+
+  function populateYearSelect(sel) {
+    sel.innerHTML = '<option value="">Select year…</option>' + academicYears.map(y => `<option value="${y.id}">${y.year_label}${y.is_current ? ' (current)' : ''}</option>`).join('');
+    const current = academicYears.find(y => y.is_current);
+    if (current) sel.value = current.id;
+  }
+
+  function classAndTeacherLabel(item) {
+    const cls = classList.find(c => String(c.id) === String(item.classId));
+    return { classLabel: cls ? classLabel(cls) : `Class #${item.classId}` };
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    formError('generateFormError', null);
+    const academicYearId = document.getElementById('genYearSelect').value;
+    if (!academicYearId) { formError('generateFormError', 'Choose an academic year first.'); return; }
+    if (!confirm('This replaces any timetable already generated for this academic year. Continue?')) return;
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating…';
+    try {
+      const res = await api.apiFetch('/teaching/timetable/generate', {
+        method: 'POST',
+        body: JSON.stringify({ academicYearId, allowDoublePeriods: document.getElementById('allowDoublePeriods').checked }),
+      });
+      const { slots, unplaced } = res.data;
+      document.getElementById('generateResult').style.display = 'block';
+      document.getElementById('generateSummary').innerHTML =
+        `<i class="bi bi-check-circle-fill"></i> Placed ${slots.length} period${slots.length === 1 ? '' : 's'}` +
+        (unplaced.length ? ` — ${unplaced.length} couldn't be placed automatically.` : ' — every period was placed.');
+
+      if (unplaced.length) {
+        document.getElementById('unplacedSection').style.display = 'block';
+        document.getElementById('unplacedList').innerHTML = unplaced.map(u => {
+          const { classLabel: cl } = classAndTeacherLabel(u);
+          return `<div class="unplaced-row"><span>${cl} — ${u.length === 2 ? 'double period' : 'single period'}</span><span class="muted-cell">teaching assignment #${u.teachingAssignmentId}</span></div>`;
+        }).join('');
+      } else {
+        document.getElementById('unplacedSection').style.display = 'none';
+      }
+      showAlert('success', 'Timetable generated.');
+    } catch (err) {
+      formError('generateFormError', err.message || 'Could not generate the timetable.');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-magic"></i> Generate timetable';
+    }
+  });
+
+  // ===================== VIEW & EDIT BY CLASS =====================
+
+  function populateClassSelect(sel) {
+    sel.innerHTML = '<option value="">Select a class…</option>' + classList.map(c => `<option value="${c.id}">${classLabel(c)}</option>`).join('');
+  }
+
+  async function loadClassTimetable(classId) {
+    document.getElementById('viewEmptyHint').style.display = 'none';
+    document.getElementById('viewNoSlots').style.display = 'none';
+    document.getElementById('viewTableCard').style.display = 'none';
+    document.getElementById('viewLoading').style.display = 'block';
+    try {
+      const res = await api.apiFetch(`/teaching/timetable/class/${classId}`);
+      const slots = res.data;
+      document.getElementById('viewLoading').style.display = 'none';
+      if (slots.length === 0) {
+        document.getElementById('viewNoSlots').style.display = 'block';
+        return;
+      }
+      document.getElementById('viewTableCard').style.display = 'block';
+      document.getElementById('viewTableBody').innerHTML = slots.map(s => `
+        <tr>
+          <td><span class="day-badge">${DAY_NAMES[s.day_of_week]}</span></td>
+          <td class="muted-cell">${s.start_time.slice(0,5)}–${s.end_time.slice(0,5)}</td>
+          <td>${s.learning_area_name}</td>
+          <td class="muted-cell">${s.teacher_name}</td>
+          <td><button class="link-btn danger" data-remove-slot="${s.id}">Remove</button></td>
+        </tr>`).join('');
+      document.getElementById('viewTableBody').querySelectorAll('[data-remove-slot]').forEach(btn => {
+        btn.addEventListener('click', () => removeSlot(btn.getAttribute('data-remove-slot'), classId));
+      });
+    } catch (err) {
+      document.getElementById('viewLoading').style.display = 'none';
+      showAlert('error', err.message || 'Could not load this class\'s timetable.');
+    }
+  }
+
+  async function removeSlot(slotId, classId) {
+    if (!confirm('Remove this timetable slot?')) return;
+    try {
+      await api.apiFetch(`/teaching/timetable/${slotId}`, { method: 'DELETE' });
+      await loadClassTimetable(classId);
+    } catch (err) {
+      showAlert('error', err.message || 'Could not remove this slot.');
+    }
+  }
+
+  document.getElementById('viewClassSelect').addEventListener('change', (e) => {
+    const classId = e.target.value;
+    document.getElementById('addSlotBtn').disabled = !classId;
+    if (classId) loadClassTimetable(classId);
+    else {
+      document.getElementById('viewEmptyHint').style.display = 'block';
+      document.getElementById('viewTableCard').style.display = 'none';
+      document.getElementById('viewNoSlots').style.display = 'none';
+    }
+  });
+
+  // ---- Add slot manually ----
+  document.getElementById('addSlotBtn').addEventListener('click', async () => {
+    const classId = document.getElementById('viewClassSelect').value;
+    if (!classId) return;
+    formError('slotFormError', null);
+    document.getElementById('slotStartTime').value = '';
+    document.getElementById('slotEndTime').value = '';
+    document.getElementById('slotAssignmentSelect').innerHTML = '<option value="">Loading…</option>';
+    document.getElementById('slotModal').style.display = 'flex';
+    try {
+      const res = await api.apiFetch(`/teaching/assignments/class/${classId}`);
+      currentAssignments = res.data;
+      document.getElementById('slotAssignmentSelect').innerHTML = currentAssignments.length
+        ? currentAssignments.map(a => `<option value="${a.id}">${a.learning_area_name} — ${a.teacher_name}</option>`).join('')
+        : '<option value="">No teaching assignments set for this class</option>';
+    } catch (err) {
+      document.getElementById('slotAssignmentSelect').innerHTML = '<option value="">Could not load assignments</option>';
+    }
+  });
+  document.getElementById('slotModalCancel').addEventListener('click', () => {
+    document.getElementById('slotModal').style.display = 'none';
+  });
+  document.getElementById('slotModalSubmit').addEventListener('click', async () => {
+    formError('slotFormError', null);
+    const teachingAssignmentId = document.getElementById('slotAssignmentSelect').value;
+    const dayOfWeek = Number(document.getElementById('slotDaySelect').value);
+    const startTime = document.getElementById('slotStartTime').value;
+    const endTime = document.getElementById('slotEndTime').value;
+    if (!teachingAssignmentId) { formError('slotFormError', 'Choose a subject and teacher.'); return; }
+    if (!startTime || !endTime) { formError('slotFormError', 'Set both a start and end time.'); return; }
+
+    const btn = document.getElementById('slotModalSubmit');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      await api.apiFetch('/teaching/timetable', {
+        method: 'POST',
+        body: JSON.stringify({ teachingAssignmentId, dayOfWeek, startTime: `${startTime}:00`, endTime: `${endTime}:00` }),
+      });
+      document.getElementById('slotModal').style.display = 'none';
+      await loadClassTimetable(document.getElementById('viewClassSelect').value);
+    } catch (err) {
+      formError('slotFormError', err.message || 'Could not add this slot — it may overlap an existing one.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add slot';
+    }
+  });
+
+  // ---------- Boot ----------
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    try {
+      const [yearsRes, classesRes] = await Promise.all([
+        api.apiFetch('/academic-years'),
+        api.apiFetch('/classes'),
+      ]);
+      academicYears = yearsRes.data;
+      classList = classesRes.data;
+      populateYearSelect(document.getElementById('genYearSelect'));
+      populateClassSelect(document.getElementById('viewClassSelect'));
+    } catch (err) {
+      showAlert('error', 'Could not load academic years or classes.');
+    }
+
+    await loadConfig();
+  })();
+</script>
+
+</body>
+</html>

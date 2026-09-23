@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Classes — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout for this page only — see dashboard.html's note
+     on the same convention: the shell lives in admin-shell.css, this is
+     just the classes table + modal bits unique to this page. */
+
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+  .page-head-actions{ display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+  .year-select{ min-width: 190px; }
+
+  .classes-table{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .classes-table th{
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line);
+  }
+  .classes-table td{ padding: 13px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .classes-table tr:last-child td{ border-bottom: none; }
+  .class-name{ font-weight: 700; }
+  .class-year-tag{ color: var(--ink-soft); font-size: 0.8rem; }
+  .teacher-tag{
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; background: rgba(232,162,61,0.14); color: #8A5B14;
+  }
+  .muted-cell{ color: var(--ink-soft); font-size: 0.82rem; }
+  .count-pill{
+    display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 0.84rem;
+  }
+  .count-pill i{ color: var(--blue); font-size: 0.8rem; }
+  .row-actions{ display: flex; gap: 8px; align-items: center; }
+  .link-btn{
+    background: none; border: none; padding: 0; font: inherit; font-weight: 600; font-size: 0.8rem;
+    color: var(--blue); cursor: pointer;
+  }
+  .link-btn:hover{ text-decoration: underline; }
+  .link-btn:disabled{ color: var(--ink-soft); cursor: not-allowed; }
+
+  .form-error{
+    font-size: 0.82rem; color: #B23350; background: rgba(240,99,122,0.09);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px; display: none;
+  }
+  .form-error.shown{ display: block; }
+
+  .empty-state{ text-align: center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state i{ font-size: 1.8rem; color: var(--line); margin-bottom: 10px; display: block; }
+  .empty-state .btn-elimu{ margin-top: 14px; }
+
+  /* Academic-years management modal */
+  .year-row{
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 8px;
+  }
+  .year-row .lbl{ font-weight: 700; font-size: 0.88rem; }
+  .year-row .dates{ font-size: 0.76rem; color: var(--ink-soft); }
+  .current-tag{
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 700;
+    background: rgba(23,166,115,0.12); color: var(--leaf); padding: 3px 8px; border-radius: 999px; margin-left: 8px;
+  }
+  .divider{ border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+
+  /* Roster modal */
+  .roster-row{ display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+  .roster-row:last-child{ border-bottom: none; }
+  .roster-name{ font-weight: 600; }
+  .roster-meta{ font-size: 0.76rem; color: var(--ink-soft); }
+  .status-pill{ font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(23,166,115,0.12); color: var(--leaf); text-transform: capitalize; }
+  .status-pill.withdrawn{ background: rgba(240,99,122,0.1); color: #B23350; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link active"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Classes</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+
+      <div class="page-head">
+        <div>
+          <h1>Classes</h1>
+          <p>The classes students are grouped into — one per grade/stream, per academic year.</p>
+        </div>
+        <div class="page-head-actions">
+          <select class="input year-select" id="yearFilter"><option value="">All academic years</option></select>
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="manageYearsBtn"><i class="bi bi-calendar3"></i> Academic years</button>
+          <button type="button" class="btn-elimu btn-elimu-primary" id="addClassBtn"><i class="bi bi-plus-lg"></i> Add class</button>
+        </div>
+      </div>
+
+      <div id="subscriptionAlertSlot"></div>
+      <div id="pageAlertSlot"></div>
+
+      <div class="card-elimu" id="loadingState">
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+      </div>
+
+      <div class="card-elimu" id="tableCard" style="display:none; padding:20px 20px 8px;">
+        <div style="overflow-x:auto;">
+          <table class="classes-table">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Academic year</th>
+                <th>Class teacher</th>
+                <th>Students</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="classesTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- No academic year exists at all yet — classes can't be created without one. -->
+      <div class="empty-state card-elimu" id="noYearState" style="display:none;">
+        <i class="bi bi-calendar3"></i>
+        You'll need an academic year before you can add classes.
+        <div><button type="button" class="btn-elimu btn-elimu-primary" id="noYearCta">Set up academic year</button></div>
+      </div>
+
+      <!-- Academic year(s) exist, but no classes yet (or none for the selected filter). -->
+      <div class="empty-state card-elimu" id="emptyState" style="display:none;">
+        <i class="bi bi-diagram-3-fill"></i>
+        <span id="emptyStateText">No classes yet — click "Add class" to create the first one.</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Add / edit class modal -->
+<div class="modal-overlay" id="classModal" style="display:none;">
+  <div class="modal-box" style="max-width:460px;">
+    <h3 id="classModalTitle">Add a class</h3>
+    <div class="form-error" id="classFormError"></div>
+
+    <form id="classForm" novalidate>
+      <div class="field">
+        <label for="classAcademicYear">Academic year</label>
+        <select class="input" id="classAcademicYear" required></select>
+      </div>
+
+      <div class="field-row" id="gradeFieldRow">
+        <div class="field">
+          <label for="classEducationLevel">Education level</label>
+          <select class="input" id="classEducationLevel"></select>
+        </div>
+        <div class="field">
+          <label for="classGrade">Grade</label>
+          <select class="input" id="classGrade" required></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="classStreamName">Stream name <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+        <input class="input" id="classStreamName" placeholder="e.g. North, Blue, A" />
+        <div class="hint">Leave blank if this grade only has one class this year.</div>
+      </div>
+
+      <div class="field">
+        <label for="classTeacherSelect">Class teacher <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+        <select class="input" id="classTeacherSelect">
+          <option value="">— Not assigned yet —</option>
+        </select>
+      </div>
+
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button type="button" class="btn-elimu btn-elimu-ghost" id="classModalCancel">Cancel</button>
+        <button type="submit" class="btn-elimu btn-elimu-primary" id="classModalSubmit">Create class</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Roster modal -->
+<div class="modal-overlay" id="rosterModal" style="display:none;">
+  <div class="modal-box" style="max-width:460px;">
+    <h3 id="rosterModalTitle">Roster</h3>
+    <p id="rosterModalSub" style="margin-bottom:14px;"></p>
+    <div id="rosterList" style="max-height:360px; overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-elimu btn-elimu-primary" id="rosterModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage academic years modal -->
+<div class="modal-overlay" id="yearsModal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;">
+    <h3>Academic years</h3>
+    <p style="margin-bottom:16px;">Classes belong to an academic year. Mark one "current" so the dashboard and reports know which year is active.</p>
+
+    <div class="form-error" id="yearsFormError"></div>
+    <div id="yearsList"></div>
+
+    <hr class="divider" />
+
+    <div class="fieldset-label" style="margin-top:0;">Add a new academic year</div>
+    <form id="addYearForm" novalidate>
+      <div class="field">
+        <label for="newYearLabel">Label</label>
+        <input class="input" id="newYearLabel" placeholder="e.g. 2026" required />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="newYearStart">Start date</label>
+          <input class="input" type="date" id="newYearStart" required />
+        </div>
+        <div class="field">
+          <label for="newYearEnd">End date</label>
+          <input class="input" type="date" id="newYearEnd" required />
+        </div>
+      </div>
+      <div class="field" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <input type="checkbox" id="newYearCurrent" style="width:auto;" />
+        <label for="newYearCurrent" style="margin:0;">Set as current academic year</label>
+      </div>
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button type="button" class="btn-elimu btn-elimu-ghost" id="yearsModalClose">Done</button>
+        <button type="submit" class="btn-elimu btn-elimu-primary" id="addYearSubmit">Add year</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+  const B = window.ElimuOs.billing;
+
+  let academicYears = [];
+  let educationLevels = [];
+  let gradesByLevel = {};   // educationLevelId -> grades[]
+  let allGrades = [];
+  let teachers = [];
+  let classList = [];
+  let editingClassId = null;
+  let seatsBlocked = false;
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function clearAlert() { document.getElementById('pageAlertSlot').innerHTML = ''; }
+
+  function formError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (!msg) { el.classList.remove('shown'); el.textContent = ''; return; }
+    el.textContent = msg;
+    el.classList.add('shown');
+  }
+
+  function classLabel(cls) {
+    return `${cls.grade_name}${cls.stream_name ? ' ' + cls.stream_name : ''}`;
+  }
+  function yearLabel(id) {
+    const y = academicYears.find(y => String(y.id) === String(id));
+    return y ? y.year_label : '—';
+  }
+  function teacherName(id) {
+    const t = teachers.find(t => String(t.user_id) === String(id));
+    return t ? t.full_name : null;
+  }
+
+  // ---------- Subscription gate ----------
+  async function loadSubscriptionGate() {
+    const slot = document.getElementById('subscriptionAlertSlot');
+    try {
+      const sub = await B.getMine();
+      seatsBlocked = B.blocksNewSeats(sub);
+
+      const addBtn = document.getElementById('addClassBtn');
+      if (seatsBlocked) {
+        addBtn.setAttribute('disabled', 'disabled');
+        addBtn.title = 'Start a trial or resolve billing before adding classes';
+      } else {
+        addBtn.removeAttribute('disabled');
+        addBtn.removeAttribute('title');
+      }
+
+      const alert = B.gateAlert(sub);
+      slot.innerHTML = alert
+        ? `<div class="alert-elimu alert-${alert.tone === 'error' ? 'error' : 'warn'}"><i class="bi ${alert.icon}"></i><div>${alert.html}</div></div>`
+        : '';
+    } catch (err) {
+      // Non-fatal — if we can't confirm billing status, don't block the page over it.
+    }
+  }
+
+  // ---------- Loaders ----------
+  async function loadAcademicYears() {
+    const res = await api.apiFetch('/academic-years');
+    academicYears = res.data;
+  }
+  async function loadCurriculum() {
+    const [levelsRes, gradesRes] = await Promise.all([
+      api.apiFetch('/curriculum/education-levels'),
+      api.apiFetch('/curriculum/grades'),
+    ]);
+    educationLevels = levelsRes.data;
+    allGrades = gradesRes.data;
+    gradesByLevel = {};
+    allGrades.forEach(g => {
+      (gradesByLevel[g.education_level_id] = gradesByLevel[g.education_level_id] || []).push(g);
+    });
+  }
+  async function loadTeachers() {
+    try {
+      const res = await api.apiFetch('/staff');
+      teachers = res.data.filter(s => s.role_code === 'teacher');
+    } catch (err) {
+      teachers = [];
+    }
+  }
+  async function loadClasses() {
+    const yearId = document.getElementById('yearFilter').value;
+    const qs = yearId ? `?academicYearId=${yearId}` : '';
+    const res = await api.apiFetch(`/classes${qs}`);
+    classList = res.data;
+  }
+
+  function populateYearFilter() {
+    const sel = document.getElementById('yearFilter');
+    const current = academicYears.find(y => y.is_current);
+    sel.innerHTML = '<option value="">All academic years</option>' +
+      academicYears.map(y => `<option value="${y.id}">${y.year_label}${y.is_current ? ' (current)' : ''}</option>`).join('');
+    if (current && !sel.dataset.userChanged) sel.value = current.id;
+  }
+
+  // ---------- Render ----------
+  function render() {
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (academicYears.length === 0) {
+      document.getElementById('tableCard').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('noYearState').style.display = 'block';
+      return;
+    }
+    document.getElementById('noYearState').style.display = 'none';
+
+    if (classList.length === 0) {
+      document.getElementById('tableCard').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      const yearId = document.getElementById('yearFilter').value;
+      document.getElementById('emptyStateText').textContent = yearId
+        ? `No classes yet for ${yearLabel(yearId)} — click "Add class" to create one.`
+        : 'No classes yet — click "Add class" to create the first one.';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('tableCard').style.display = 'block';
+
+    const body = document.getElementById('classesTableBody');
+    body.innerHTML = classList.map(c => {
+      const tname = teacherName(c.class_teacher_id);
+      const teacherCell = tname
+        ? `<span class="teacher-tag"><i class="bi bi-person-fill"></i> ${tname}</span>`
+        : `<span class="muted-cell">Not assigned</span>`;
+      return `
+        <tr>
+          <td><div class="class-name">${classLabel(c)}</div></td>
+          <td><span class="class-year-tag">${yearLabel(c.academic_year_id)}</span></td>
+          <td>${teacherCell}</td>
+          <td><span class="count-pill"><i class="bi bi-people-fill"></i> ${c.student_count}</span></td>
+          <td class="row-actions">
+            <button class="link-btn" data-roster="${c.id}">Roster</button>
+            <button class="link-btn" data-edit="${c.id}">Edit</button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    body.querySelectorAll('[data-roster]').forEach(btn => {
+      btn.addEventListener('click', () => openRosterModal(btn.getAttribute('data-roster')));
+    });
+    body.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-edit')));
+    });
+  }
+
+  async function refreshAndRender() {
+    try {
+      await loadClasses();
+      render();
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      showAlert('error', err.message || 'Could not load classes.');
+    }
+  }
+
+  // ---------- Roster modal ----------
+  async function openRosterModal(classId) {
+    const cls = classList.find(c => String(c.id) === String(classId));
+    document.getElementById('rosterModalTitle').textContent = cls ? classLabel(cls) : 'Roster';
+    document.getElementById('rosterModalSub').textContent = cls ? `${yearLabel(cls.academic_year_id)} · ${cls.student_count} student${cls.student_count === 1 ? '' : 's'}` : '';
+    const list = document.getElementById('rosterList');
+    list.innerHTML = `<div class="skeleton" style="height:14px; margin:10px 0;"></div>`;
+    document.getElementById('rosterModal').style.display = 'flex';
+
+    try {
+      const res = await api.apiFetch(`/classes/${classId}/students`);
+      const students = res.data;
+      if (students.length === 0) {
+        list.innerHTML = `<p style="color:var(--ink-soft); font-size:0.86rem;">No students in this class yet.</p>`;
+        return;
+      }
+      list.innerHTML = students.map(s => `
+        <div class="roster-row">
+          <div>
+            <div class="roster-name">${s.full_name}</div>
+            <div class="roster-meta">${s.admission_number}${s.gender ? ' · ' + s.gender : ''}</div>
+          </div>
+          <span class="status-pill ${s.status !== 'active' ? 'withdrawn' : ''}">${s.status}</span>
+        </div>`).join('');
+    } catch (err) {
+      list.innerHTML = `<p style="color:var(--ink-soft); font-size:0.86rem;">Couldn't load the roster.</p>`;
+    }
+  }
+  document.getElementById('rosterModalClose').addEventListener('click', () => {
+    document.getElementById('rosterModal').style.display = 'none';
+  });
+
+  // ---------- Add / edit class modal ----------
+  function populateEducationLevels(selectEl) {
+    selectEl.innerHTML = educationLevels.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  }
+  function populateGrades(selectEl, educationLevelId) {
+    const grades = gradesByLevel[educationLevelId] || [];
+    selectEl.innerHTML = grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  }
+  function populateAcademicYearSelect(selectEl) {
+    const current = academicYears.find(y => y.is_current);
+    selectEl.innerHTML = academicYears.map(y => `<option value="${y.id}">${y.year_label}${y.is_current ? ' (current)' : ''}</option>`).join('');
+    if (current) selectEl.value = current.id;
+  }
+  function populateTeacherSelect(selectEl, currentTeacherId) {
+    selectEl.innerHTML = '<option value="">— Not assigned yet —</option>' +
+      teachers.map(t => {
+        const takenBy = classList.find(c => String(c.class_teacher_id) === String(t.user_id) && String(c.class_teacher_id) !== String(currentTeacherId));
+        return `<option value="${t.user_id}">${t.full_name}${takenBy ? ` (already class teacher of ${classLabel(takenBy)})` : ''}</option>`;
+      }).join('');
+  }
+
+  function openAddModal() {
+    if (seatsBlocked) return;
+    if (academicYears.length === 0) {
+      formError('yearsFormError', null);
+      document.getElementById('addYearForm').reset();
+      renderYearsList();
+      document.getElementById('yearsModal').style.display = 'flex';
+      return;
+    }
+    editingClassId = null;
+    document.getElementById('classModalTitle').textContent = 'Add a class';
+    document.getElementById('classModalSubmit').textContent = 'Create class';
+    document.getElementById('gradeFieldRow').style.display = 'flex';
+    document.getElementById('classForm').reset();
+    formError('classFormError', null);
+
+    populateAcademicYearSelect(document.getElementById('classAcademicYear'));
+    populateEducationLevels(document.getElementById('classEducationLevel'));
+    populateGrades(document.getElementById('classGrade'), document.getElementById('classEducationLevel').value);
+    populateTeacherSelect(document.getElementById('classTeacherSelect'), null);
+
+    document.getElementById('classModal').style.display = 'flex';
+  }
+
+  function openEditModal(classId) {
+    const cls = classList.find(c => String(c.id) === String(classId));
+    if (!cls) return;
+    editingClassId = classId;
+    document.getElementById('classModalTitle').textContent = `Edit ${classLabel(cls)}`;
+    document.getElementById('classModalSubmit').textContent = 'Save changes';
+    document.getElementById('gradeFieldRow').style.display = 'none'; // grade + academic year are fixed after creation
+    formError('classFormError', null);
+
+    populateAcademicYearSelect(document.getElementById('classAcademicYear'));
+    document.getElementById('classAcademicYear').value = cls.academic_year_id;
+    document.getElementById('classAcademicYear').disabled = true;
+    document.getElementById('classStreamName').value = cls.stream_name || '';
+    populateTeacherSelect(document.getElementById('classTeacherSelect'), cls.class_teacher_id);
+    document.getElementById('classTeacherSelect').value = cls.class_teacher_id || '';
+
+    document.getElementById('classModal').style.display = 'flex';
+  }
+
+  document.getElementById('addClassBtn').addEventListener('click', openAddModal);
+  document.getElementById('noYearCta').addEventListener('click', () => document.getElementById('yearsModal').style.display = 'flex');
+  document.getElementById('classModalCancel').addEventListener('click', () => {
+    document.getElementById('classModal').style.display = 'none';
+    document.getElementById('classAcademicYear').disabled = false;
+  });
+  document.getElementById('classEducationLevel').addEventListener('change', (e) => {
+    populateGrades(document.getElementById('classGrade'), e.target.value);
+  });
+
+  document.getElementById('classForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('classFormError', null);
+
+    const academicYearId = document.getElementById('classAcademicYear').value;
+    const streamName = document.getElementById('classStreamName').value.trim();
+    const classTeacherId = document.getElementById('classTeacherSelect').value;
+
+    const submitBtn = document.getElementById('classModalSubmit');
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = 'Saving…';
+
+    try {
+      if (editingClassId) {
+        await api.apiFetch(`/classes/${editingClassId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            streamName: streamName || null,
+            classTeacherId: classTeacherId || null,
+          }),
+        });
+        showAlert('success', 'Class updated.');
+      } else {
+        const gradeId = document.getElementById('classGrade').value;
+        if (!gradeId) { formError('classFormError', 'Choose a grade.'); submitBtn.disabled = false; submitBtn.textContent = originalLabel; return; }
+        await api.apiFetch('/classes', {
+          method: 'POST',
+          body: JSON.stringify({
+            gradeId, academicYearId,
+            streamName: streamName || undefined,
+            classTeacherId: classTeacherId || undefined,
+          }),
+        });
+        showAlert('success', 'Class created.');
+      }
+      document.getElementById('classModal').style.display = 'none';
+      document.getElementById('classAcademicYear').disabled = false;
+      await refreshAndRender();
+    } catch (err) {
+      formError('classFormError', err.message || 'Could not save this class.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+
+  // ---------- Manage academic years ----------
+  function renderYearsList() {
+    const list = document.getElementById('yearsList');
+    if (academicYears.length === 0) {
+      list.innerHTML = `<p style="color:var(--ink-soft); font-size:0.86rem;">No academic years yet — add your first one below.</p>`;
+      return;
+    }
+    list.innerHTML = academicYears.map(y => `
+      <div class="year-row">
+        <div>
+          <span class="lbl">${y.year_label}</span>${y.is_current ? '<span class="current-tag"><i class="bi bi-check-circle-fill"></i> Current</span>' : ''}
+          <div class="dates">${new Date(y.start_date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })} – ${new Date(y.end_date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        </div>
+        ${y.is_current ? '' : `<button type="button" class="btn-elimu btn-elimu-ghost" style="padding:6px 12px; font-size:0.78rem;" data-set-current="${y.id}">Set current</button>`}
+      </div>`).join('');
+
+    list.querySelectorAll('[data-set-current]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+          await api.apiFetch(`/academic-years/${btn.getAttribute('data-set-current')}/set-current`, { method: 'PATCH' });
+          await loadAcademicYears();
+          renderYearsList();
+          populateYearFilter();
+          await refreshAndRender();
+        } catch (err) {
+          formError('yearsFormError', err.message || 'Could not set this as the current year.');
+          btn.disabled = false; btn.textContent = 'Set current';
+        }
+      });
+    });
+  }
+
+  document.getElementById('manageYearsBtn').addEventListener('click', () => {
+    formError('yearsFormError', null);
+    document.getElementById('addYearForm').reset();
+    renderYearsList();
+    document.getElementById('yearsModal').style.display = 'flex';
+  });
+  document.getElementById('yearsModalClose').addEventListener('click', async () => {
+    document.getElementById('yearsModal').style.display = 'none';
+    // Picking up a first-ever academic year unblocks class creation, so
+    // re-render the page state (noYearState -> table/emptyState) on close.
+    populateYearFilter();
+    await refreshAndRender();
+  });
+
+  document.getElementById('addYearForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('yearsFormError', null);
+
+    const yearLabelVal = document.getElementById('newYearLabel').value.trim();
+    const startDate = document.getElementById('newYearStart').value;
+    const endDate = document.getElementById('newYearEnd').value;
+    const setCurrent = document.getElementById('newYearCurrent').checked;
+
+    if (!yearLabelVal || !startDate || !endDate) {
+      formError('yearsFormError', 'Fill in the label, start date and end date.');
+      return;
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      formError('yearsFormError', 'End date must be after the start date.');
+      return;
+    }
+
+    const btn = document.getElementById('addYearSubmit');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      const res = await api.apiFetch('/academic-years', {
+        method: 'POST',
+        body: JSON.stringify({ yearLabel: yearLabelVal, startDate, endDate }),
+      });
+      if (setCurrent) {
+        await api.apiFetch(`/academic-years/${res.data.id}/set-current`, { method: 'PATCH' });
+      }
+      await loadAcademicYears();
+      renderYearsList();
+      populateYearFilter();
+      document.getElementById('addYearForm').reset();
+    } catch (err) {
+      formError('yearsFormError', err.message || 'Could not add that academic year.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add year';
+    }
+  });
+
+  document.getElementById('yearFilter').addEventListener('change', (e) => {
+    e.target.dataset.userChanged = '1';
+    refreshAndRender();
+  });
+
+  // ---------- Boot ----------
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    try {
+      await Promise.all([loadAcademicYears(), loadCurriculum(), loadTeachers()]);
+      populateYearFilter();
+      await refreshAndRender();
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      showAlert('error', err.message || 'Could not load this page.');
+    }
+
+    loadSubscriptionGate();
+  })();
+</script>
+
+</body>
+</html>

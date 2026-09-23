@@ -1,0 +1,220 @@
+/* ElimuOs admin shell.
+   The layout every /admin/*.html page shares: sidebar, topbar, content
+   area, the generic card/skeleton/status-chip primitives, and the
+   plan-grid + modal components billing.html needs. Built on top of the
+   tokens in theme.css (colors, radii, fonts) — load theme.css first.
+   Page-specific one-off layout (hero cards, stat grids, mini calendars…)
+   stays inline in that page, as noted in dashboard.html. */
+
+/* ---------- Shell frame ---------- */
+.admin-shell{
+  display: flex;
+  min-height: 100vh;
+  background: var(--cloud);
+}
+
+/* ---------- Sidebar ---------- */
+.admin-sidebar{
+  width: 248px;
+  flex-shrink: 0;
+  background: var(--white);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 22px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.admin-sidebar .brand{ padding: 0 10px; margin-bottom: 28px; }
+
+.admin-nav{ display: flex; flex-direction: column; gap: 3px; }
+.admin-nav-link{
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  font-size: 0.88rem; font-weight: 600; color: var(--ink-soft);
+  transition: background-color .15s ease, color .15s ease;
+}
+.admin-nav-link i{ font-size: 1rem; width: 18px; text-align: center; flex-shrink: 0; }
+.admin-nav-link:hover{ background: var(--cloud); color: var(--ink); }
+.admin-nav-link.active{ background: rgba(74,90,240,0.1); color: var(--blue-deep); }
+.admin-nav-link.active i{ color: var(--blue); }
+.admin-nav-link.disabled{ opacity: 0.45; pointer-events: none; cursor: not-allowed; }
+
+.admin-nav-section{
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.72rem;
+  color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 0 12px; margin: 20px 0 8px;
+}
+
+.admin-sidebar-foot{
+  margin-top: auto; padding: 14px 12px 4px;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-soft);
+}
+
+/* ---------- Main column ---------- */
+.admin-main{
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar{
+  position: sticky; top: 0; z-index: 5;
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 32px;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.admin-topbar h1{ font-size: 1.15rem; }
+.admin-topbar-right{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.user-chip{
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 10px 6px 6px; border-radius: 999px;
+  cursor: pointer; transition: background-color .15s ease;
+  margin-left: 6px;
+}
+.user-chip:hover{ background: var(--cloud); }
+.user-avatar{
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(160deg, var(--blue), var(--blue-deep));
+  color: var(--white); display: flex; align-items: center; justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.8rem;
+}
+.user-chip-name{ font-size: 0.85rem; font-weight: 700; line-height: 1.3; }
+.user-chip-role{ font-size: 0.74rem; color: var(--ink-soft); text-transform: capitalize; line-height: 1.3; }
+
+/* ---------- Content area ---------- */
+.admin-content{
+  flex: 1;
+  padding: 28px 32px 48px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+.admin-content-narrow{ max-width: 760px; }
+
+/* ---------- Generic card ---------- */
+.card-elimu{
+  background: var(--white);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 32px -22px rgba(18,23,43,0.14);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.card-elimu:last-child{ margin-bottom: 0; }
+
+/* ---------- Skeleton loading state ---------- */
+.skeleton{
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(100deg, var(--line) 30%, #F0F1FA 50%, var(--line) 70%);
+  background-size: 200% 100%;
+  animation: elimu-shimmer 1.3s ease-in-out infinite;
+}
+@keyframes elimu-shimmer{
+  0%{ background-position: 140% 0; }
+  100%{ background-position: -40% 0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .skeleton{ animation: none; background: var(--line); }
+}
+
+/* ---------- Status chip ---------- */
+.status-chip{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 13px; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+  background: var(--cloud); color: var(--ink-soft);
+}
+.status-chip.info{ background: rgba(74,90,240,0.1); color: var(--blue-deep); }
+.status-chip.ok{ background: rgba(23,166,115,0.1); color: var(--leaf); }
+.status-chip.warn{ background: rgba(232,162,61,0.14); color: #8A5B14; }
+.status-chip.error{ background: rgba(240,99,122,0.1); color: #B23350; }
+
+/* ---------- Plan grid / plan card (billing) ---------- */
+.plan-grid{
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px; margin-top: 18px;
+}
+.plan-card{
+  position: relative;
+  background: var(--white);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 20px 20px 22px;
+}
+.plan-card.current{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,90,240,0.12); }
+.plan-card h3{ font-size: 1.02rem; margin-bottom: 8px; }
+.plan-card-badge{
+  position: absolute; top: -10px; right: 16px;
+  background: var(--blue); color: var(--white);
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 4px 10px; border-radius: 999px;
+}
+.plan-price{ font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.5rem; margin-bottom: 10px; }
+.plan-price span{ font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.8rem; color: var(--ink-soft); }
+.plan-feature-list{ list-style: none; margin: 14px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.plan-feature-list li{ display: flex; align-items: flex-start; gap: 8px; font-size: 0.84rem; color: var(--ink); }
+.plan-feature-list i{ color: var(--leaf); margin-top: 2px; flex-shrink: 0; font-size: 0.85rem; }
+
+/* ---------- Usage bar (billing) ---------- */
+.usage-label{ font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; margin-top: 4px; }
+.usage-bar-track{
+  height: 9px; border-radius: 999px; background: var(--cloud);
+  border: 1px solid var(--line); overflow: hidden; margin-top: 8px;
+}
+.usage-bar-fill{ height: 100%; border-radius: 999px; background: var(--blue); transition: width .3s ease; }
+.usage-bar-fill.warn{ background: var(--gold); }
+.usage-bar-fill.error{ background: var(--coral); }
+
+/* ---------- Danger button variant ---------- */
+.btn-elimu-danger{ background: var(--coral); color: var(--white); }
+.btn-elimu-danger:hover{ background: #D94E67; color: var(--white); }
+
+/* ---------- Modals ---------- */
+.modal-overlay{
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(18,23,43,0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-box{
+  background: var(--white); border-radius: var(--radius-lg);
+  padding: 28px 26px; max-width: 420px; width: 100%;
+  box-shadow: 0 30px 60px -30px rgba(18,23,43,0.35);
+}
+.modal-box h3{ font-size: 1.1rem; margin-bottom: 10px; }
+.modal-box p{ font-size: 0.88rem; color: var(--ink-soft); line-height: 1.55; }
+.modal-actions{ display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+
+/* ---------- Responsive ---------- */
+/* Below this width there isn't room for both a fixed sidebar and real
+   content, and the markup has no JS-driven off-canvas toggle to open it
+   again — so rather than hide it (trapping anyone on a small screen),
+   this narrows it and shrinks the content padding to fit. */
+@media (max-width: 900px){
+  .admin-sidebar{ width: 200px; padding: 18px 12px; }
+  .admin-topbar{ padding: 12px 18px; }
+  .admin-content{ padding: 20px 18px 40px; }
+  .user-chip-name, .user-chip-role{ display: none; }
+}
+
+@media (max-width: 640px){
+  .admin-shell{ flex-direction: column; }
+  .admin-sidebar{
+    width: 100%; height: auto; position: static;
+    flex-direction: row; align-items: center; padding: 12px 16px;
+    overflow-x: auto;
+  }
+  .admin-sidebar .brand{ margin: 0 16px 0 0; flex-shrink: 0; }
+  .admin-nav{ flex-direction: row; gap: 4px; }
+  .admin-nav-link{ padding: 8px 10px; white-space: nowrap; }
+  .admin-nav-section, .admin-sidebar-foot{ display: none; }
+  .admin-content{ padding: 18px 16px 36px; }
+}

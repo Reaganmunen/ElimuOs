@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Billing — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link active"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="#" class="admin-nav-link disabled" title="Coming soon"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="#" class="admin-nav-link disabled" title="Coming soon"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="#" class="admin-nav-link disabled" title="Coming soon"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Billing &amp; Subscription</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content admin-content-narrow">
+
+      <div id="pageAlertSlot"></div>
+
+      <!-- Loading skeleton -->
+      <div id="loadingState" class="card-elimu">
+        <div class="skeleton" style="height:18px; width:180px; margin-bottom:14px;"></div>
+        <div class="skeleton" style="height:12px; width:100%; margin-bottom:8px;"></div>
+        <div class="skeleton" style="height:12px; width:70%;"></div>
+      </div>
+
+      <!-- State A: no live subscription — pick a plan to start a trial -->
+      <div id="noSubState" style="display:none;">
+        <div class="card-elimu" style="text-align:center;">
+          <i class="bi bi-rocket-takeoff-fill" style="font-size:1.8rem; color:var(--blue);"></i>
+          <h2 style="font-size:1.15rem; margin:10px 0 6px;">Start your free trial</h2>
+          <p style="color:var(--ink-soft); font-size:0.9rem;">Pick a plan below to activate a 14-day trial for your school. No payment needed to start.</p>
+        </div>
+        <div class="plan-grid" id="startTrialPlanGrid"></div>
+      </div>
+
+      <!-- State B: has a subscription row (trial / active / past_due) -->
+      <div id="hasSubState" style="display:none;">
+
+        <div class="card-elimu">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+            <div>
+              <div class="usage-label" style="margin-bottom:4px;">Current plan</div>
+              <h2 style="font-size:1.3rem;" id="currentPlanName">—</h2>
+            </div>
+            <span class="status-chip" id="currentStatusChip"></span>
+          </div>
+
+          <div id="planMetaRow" style="display:flex; gap:28px; flex-wrap:wrap; margin-top:18px;">
+            <div>
+              <div class="usage-label">Price</div>
+              <div style="font-weight:700;" id="planPrice">—</div>
+            </div>
+            <div id="periodBlock" style="display:none;">
+              <div class="usage-label" id="periodLabel">Current period</div>
+              <div style="font-weight:700;" id="periodValue">—</div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px;">
+            <div class="usage-label" id="usageLabel">Student usage</div>
+            <div class="usage-bar-track"><div class="usage-bar-fill" id="usageBarFill" style="width:0%;"></div></div>
+            <div class="usage-label" id="usageDetail">—</div>
+          </div>
+
+          <div style="margin-top:22px; display:flex; gap:10px;">
+            <button class="btn-elimu btn-elimu-ghost" id="cancelSubBtn"><i class="bi bi-x-circle"></i> Cancel subscription</button>
+          </div>
+        </div>
+
+        <div class="card-elimu">
+          <h3 style="font-size:1rem; margin-bottom:2px;">Available plans</h3>
+          <p style="color:var(--ink-soft); font-size:0.85rem;">Switching takes effect immediately — no payment is collected here yet, so treat this as requesting the change.</p>
+          <div class="plan-grid" id="switchPlanGrid"></div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Confirm-cancel modal -->
+<div class="modal-overlay" id="cancelModal" style="display:none;">
+  <div class="modal-box">
+    <h3>Cancel your subscription?</h3>
+    <p>Your school will lose access once this takes effect. You can start a new trial afterwards, but any current billing period is forfeited.</p>
+    <div class="modal-actions">
+      <button class="btn-elimu btn-elimu-ghost" id="cancelModalDismiss">Keep subscription</button>
+      <button class="btn-elimu btn-elimu-danger" id="cancelModalConfirm">Yes, cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm-switch-plan modal -->
+<div class="modal-overlay" id="switchModal" style="display:none;">
+  <div class="modal-box">
+    <h3 id="switchModalTitle">Switch plan?</h3>
+    <p id="switchModalBody">Your plan will change immediately.</p>
+    <div class="modal-actions">
+      <button class="btn-elimu btn-elimu-ghost" id="switchModalDismiss">Not now</button>
+      <button class="btn-elimu btn-elimu-primary" id="switchModalConfirm">Confirm switch</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/billing.js"></script>
+<script>
+  const B = window.ElimuOs.billing;
+  let currentSub = null;
+  let usage = null;
+  let pendingPlanId = null;
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-exclamation-triangle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function clearAlert() { document.getElementById('pageAlertSlot').innerHTML = ''; }
+
+  function featureListHtml(features) {
+    let items = [];
+    if (Array.isArray(features)) items = features;
+    else if (features && typeof features === 'object') items = Object.values(features).map(String);
+    if (items.length === 0) return '';
+    return `<ul class="plan-feature-list">${items.map(f => `<li><i class="bi bi-check-circle-fill"></i>${f}</li>`).join('')}</ul>`;
+  }
+
+  function planCardHtml(plan, { isCurrent, actionHtml }) {
+    return `
+      <div class="plan-card ${isCurrent ? 'current' : ''}">
+        ${isCurrent ? '<span class="plan-card-badge">Current plan</span>' : ''}
+        <h3>${plan.name}</h3>
+        <div class="plan-price">${B.formatKes(plan.monthly_price_kes)}<span> /mo</span></div>
+        <div class="usage-label">${plan.max_students ? `Up to ${plan.max_students} students` : 'Unlimited students'}</div>
+        ${featureListHtml(plan.features)}
+        ${actionHtml}
+      </div>`;
+  }
+
+  async function renderNoSubState(plans) {
+    document.getElementById('noSubState').style.display = 'block';
+    const grid = document.getElementById('startTrialPlanGrid');
+    if (plans.length === 0) {
+      grid.innerHTML = `<div class="card-elimu">No plans are available to subscribe to yet — contact ElimuOs support.</div>`;
+      return;
+    }
+    grid.innerHTML = plans.map(plan => planCardHtml(plan, {
+      isCurrent: false,
+      actionHtml: `<button class="btn-elimu btn-elimu-primary btn-elimu-block" data-start-trial="${plan.id}" style="margin-top:6px;">Start trial</button>`,
+    })).join('');
+
+    grid.querySelectorAll('[data-start-trial]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Starting…';
+        try {
+          await B.startTrial(btn.getAttribute('data-start-trial'));
+          window.location.reload();
+        } catch (err) {
+          showAlert('error', err.message || 'Could not start the trial.');
+          btn.disabled = false;
+          btn.textContent = 'Start trial';
+        }
+      });
+    });
+  }
+
+  function renderUsageBar(maxStudents) {
+    const bar = document.getElementById('usageBarFill');
+    const detail = document.getElementById('usageDetail');
+    if (maxStudents == null) {
+      bar.style.width = '100%';
+      bar.className = 'usage-bar-fill';
+      detail.textContent = usage ? `${usage.count}${usage.isFloor ? '+' : ''} active students — unlimited on this plan` : 'Unlimited students on this plan';
+      return;
+    }
+    if (!usage) { detail.textContent = `Limit: ${maxStudents} students`; return; }
+    const pct = Math.min(100, Math.round((usage.count / maxStudents) * 100));
+    bar.style.width = `${pct}%`;
+    bar.className = 'usage-bar-fill' + (pct >= 100 ? ' error' : pct >= 80 ? ' warn' : '');
+    detail.textContent = `${usage.count}${usage.isFloor ? '+' : ''} of ${maxStudents} students used`;
+  }
+
+  async function renderHasSubState(sub, plans) {
+    currentSub = sub;
+    document.getElementById('hasSubState').style.display = 'block';
+
+    document.getElementById('currentPlanName').textContent = sub.plan_name || '—';
+    const chip = B.statusChip(sub);
+    const chipEl = document.getElementById('currentStatusChip');
+    chipEl.className = `status-chip ${chip.tone}`;
+    chipEl.innerHTML = chip.html;
+
+    document.getElementById('planPrice').textContent = `${B.formatKes(sub.monthly_price_kes)} / month`;
+
+    const periodBlock = document.getElementById('periodBlock');
+    const periodLabel = document.getElementById('periodLabel');
+    const periodValue = document.getElementById('periodValue');
+    if (sub.status === 'trial' && sub.trial_ends_at) {
+      periodBlock.style.display = 'block';
+      periodLabel.textContent = 'Trial ends';
+      periodValue.textContent = new Date(sub.trial_ends_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
+    } else if (sub.current_period_end) {
+      periodBlock.style.display = 'block';
+      periodLabel.textContent = 'Renews';
+      periodValue.textContent = new Date(sub.current_period_end).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    renderUsageBar(sub.max_students);
+
+    // Plan switch grid — every active plan, current one marked and
+    // inert, others get a "Switch" button.
+    const grid = document.getElementById('switchPlanGrid');
+    grid.innerHTML = plans.map(plan => {
+      const isCurrent = plan.id === sub.plan_id;
+      const action = isCurrent
+        ? ''
+        : `<button class="btn-elimu btn-elimu-ghost btn-elimu-block" data-switch-to="${plan.id}" data-switch-name="${plan.name}" style="margin-top:6px;">Switch to this plan</button>`;
+      return planCardHtml(plan, { isCurrent, actionHtml: action });
+    }).join('');
+
+    grid.querySelectorAll('[data-switch-to]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingPlanId = btn.getAttribute('data-switch-to');
+        document.getElementById('switchModalTitle').textContent = `Switch to ${btn.getAttribute('data-switch-name')}?`;
+        document.getElementById('switchModalBody').textContent =
+          'This takes effect immediately. If the new plan has a lower student limit than you currently use, the switch will be blocked until you free up seats.';
+        document.getElementById('switchModal').style.display = 'flex';
+      });
+    });
+
+    document.getElementById('cancelSubBtn').onclick = () => {
+      document.getElementById('cancelModal').style.display = 'flex';
+    };
+  }
+
+  function wireModals() {
+    document.getElementById('cancelModalDismiss').onclick = () => { document.getElementById('cancelModal').style.display = 'none'; };
+    document.getElementById('cancelModalConfirm').onclick = async () => {
+      const btn = document.getElementById('cancelModalConfirm');
+      btn.disabled = true; btn.textContent = 'Cancelling…';
+      try {
+        await B.cancel();
+        window.location.reload();
+      } catch (err) {
+        document.getElementById('cancelModal').style.display = 'none';
+        showAlert('error', err.message || 'Could not cancel the subscription.');
+        btn.disabled = false; btn.textContent = 'Yes, cancel';
+      }
+    };
+
+    document.getElementById('switchModalDismiss').onclick = () => { document.getElementById('switchModal').style.display = 'none'; };
+    document.getElementById('switchModalConfirm').onclick = async () => {
+      const btn = document.getElementById('switchModalConfirm');
+      btn.disabled = true; btn.textContent = 'Switching…';
+      try {
+        await B.changePlan(pendingPlanId);
+        window.location.reload();
+      } catch (err) {
+        document.getElementById('switchModal').style.display = 'none';
+        showAlert('error', err.message || 'Could not switch plans.');
+        btn.disabled = false; btn.textContent = 'Confirm switch';
+      }
+    };
+  }
+
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    window.ElimuOs.api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    wireModals();
+
+    try {
+      const [sub, plans] = await Promise.all([B.getMine(), B.listPlans()]);
+      document.getElementById('loadingState').style.display = 'none';
+
+      if (B.hasLiveStatus(sub)) {
+        // Fire off the usage estimate in parallel — render with what we
+        // have, then fill the bar in once it resolves so a slow
+        // /students call never blocks the rest of the page.
+        B.estimateStudentUsage().then(u => { usage = u; renderUsageBar(sub.max_students); }).catch(() => {});
+        await renderHasSubState(sub, plans);
+      } else {
+        await renderNoSubState(plans);
+      }
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      showAlert('error', err.message || 'Could not load billing information.');
+    }
+  })();
+</script>
+
+</body>
+</html>

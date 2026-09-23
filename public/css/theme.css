@@ -1,0 +1,204 @@
+/* ElimuOs shared design system.
+   Loaded by every page — colors, type, buttons and form primitives live
+   here once instead of being copy-pasted into each HTML file. Page-specific
+   layout (hero sections, dashboards, etc.) stays inline in that page. */
+
+:root{
+  --ink: #12172B;
+  --ink-soft: #5B6178;
+  --blue: #4A5AF0;
+  --blue-deep: #3543C4;
+  --cloud: #F5F6FE;
+  --line: #E7E9F5;
+  --white: #FFFFFF;
+  --leaf: #17A673;
+  --gold: #E8A23D;
+  --plum: #7C5CFC;
+  --coral: #F0637A;
+  --rubric-ee: #16a34a;
+  --rubric-me: #2563eb;
+  --rubric-ae: #d97706;
+  --rubric-be: #dc2626;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+}
+
+*{ box-sizing: border-box; }
+html{ scroll-behavior: smooth; }
+
+body{
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .display{
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+a{ text-decoration: none; color: inherit; }
+
+.container-xl{ max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+.container-narrow{ max-width: 440px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------- Buttons ---------- */
+.btn-elimu{
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 24px; border-radius: 999px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; font-size: 0.96rem;
+  border: 1.5px solid transparent;
+  transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease, opacity .18s ease;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-elimu-primary{ background: var(--blue); color: var(--white); box-shadow: 0 10px 24px -8px rgba(74,90,240,0.55); }
+.btn-elimu-primary:hover{ background: var(--blue-deep); transform: translateY(-2px); box-shadow: 0 14px 28px -8px rgba(74,90,240,0.6); color: var(--white); }
+.btn-elimu-primary:disabled{ opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-elimu-ghost{ background: transparent; color: var(--ink); border-color: #D7DAEE; }
+.btn-elimu-ghost:hover{ border-color: var(--blue); color: var(--blue-deep); }
+.btn-elimu-block{ width: 100%; }
+
+/* ---------- Brand mark (nav / auth header) ---------- */
+.brand{ display: flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.18rem; }
+.brand-mark{ width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(160deg, var(--blue), var(--blue-deep)); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.05rem; box-shadow: 0 8px 16px -6px rgba(74,90,240,0.55); flex-shrink: 0; }
+
+/* ---------- Form fields ---------- */
+.field{ margin-bottom: 18px; }
+.field label{ display: block; font-size: 0.86rem; font-weight: 600; color: var(--ink); margin-bottom: 7px; }
+.field .hint{ font-size: 0.78rem; color: var(--ink-soft); margin-top: 6px; }
+.field-row{ display: flex; gap: 14px; }
+.field-row .field{ flex: 1; }
+
+.input, select.input{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid #D7DAEE;
+  background: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.94rem;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(18,23,43,0.04);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.input:focus, select.input:focus{
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 4px rgba(74,90,240,0.12);
+}
+.input.has-error{ border-color: var(--coral); }
+.input-error-text{ font-size: 0.8rem; color: var(--coral); margin-top: 6px; display: none; }
+.input.has-error + .input-error-text{ display: block; }
+
+/* Browsers (Chrome especially) tint an autofilled field with their own
+   yellow/lavender background, which fights this design's own white
+   fields — this forces it back to white instead of fixing it once per
+   browser's default. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus{
+  -webkit-box-shadow: 0 0 0 1000px var(--white) inset;
+  -webkit-text-fill-color: var(--ink);
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.password-field{ position: relative; }
+.password-toggle{
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 1.05rem;
+  padding: 4px;
+}
+
+/* ---------- Alerts ---------- */
+.alert-elimu{
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 13px 15px; border-radius: var(--radius-sm);
+  font-size: 0.88rem; line-height: 1.5; margin-bottom: 20px;
+}
+.alert-error{ background: rgba(240,99,122,0.09); color: #B23350; }
+.alert-warn{ background: rgba(232,162,61,0.12); color: #8A5B14; }
+.alert-elimu i{ margin-top: 2px; flex-shrink: 0; }
+
+/* ---------- Auth page shell (login / register) ---------- */
+.auth-shell{ min-height: 100vh; display: flex; }
+.auth-side{
+  flex: 1;
+  background: linear-gradient(160deg, var(--ink), #232a4d);
+  color: white;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.auth-side::before, .auth-side::after{
+  content: ''; position: absolute; border-radius: 50%; filter: blur(70px);
+}
+.auth-side::before{ width: 360px; height: 360px; background: var(--blue); opacity: 0.35; top: -100px; right: -100px; }
+.auth-side::after{ width: 300px; height: 300px; background: var(--gold); opacity: 0.18; bottom: -80px; left: -80px; }
+.auth-side-content{ position: relative; z-index: 1; }
+.auth-side .brand{ color: white; }
+.auth-side h2{ color: white; font-size: 1.8rem; font-weight: 800; line-height: 1.25; margin: 40px 0 14px; max-width: 18ch; }
+.auth-side p{ color: rgba(255,255,255,0.72); font-size: 0.98rem; line-height: 1.6; max-width: 34ch; }
+.auth-side-quote{
+  position: relative; z-index: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.86);
+}
+.auth-side-quote .who{ margin-top: 14px; font-size: 0.82rem; color: rgba(255,255,255,0.55); font-weight: 600; }
+
+.auth-form-side{ flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+.auth-form-wrap{ width: 100%; max-width: 400px; }
+.auth-form-wrap .brand{ margin-bottom: 36px; }
+.auth-form-wrap h1{ font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; }
+.auth-form-wrap .sub{ color: var(--ink-soft); font-size: 0.94rem; margin-bottom: 30px; }
+.auth-switch{ text-align: center; margin-top: 26px; font-size: 0.9rem; color: var(--ink-soft); }
+.auth-switch a{ color: var(--blue); font-weight: 600; }
+.auth-switch a:hover{ text-decoration: underline; }
+
+/* The actual bounded panel the form sits inside — without this, the
+   title/fields/button were just floating loose on the white page with
+   nothing marking where the form starts or ends. */
+.auth-card{
+  background: var(--white);
+  border: 1.5px solid #D7DAEE;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 30px 60px -30px rgba(18,23,43,0.16);
+  padding: 40px 36px;
+}
+@media (max-width: 480px){
+  .auth-card{ padding: 30px 22px; }
+}
+
+.school-pick-list{ display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+.school-pick{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border: 1.5px solid #D7DAEE; border-radius: var(--radius-sm);
+  cursor: pointer; transition: border-color .15s ease, background-color .15s ease;
+  font-weight: 600; font-size: 0.94rem;
+}
+.school-pick:hover{ border-color: var(--blue); background: var(--cloud); }
+.school-pick.selected{ border-color: var(--blue); background: var(--cloud); color: var(--blue-deep); }
+.school-pick i{ color: var(--ink-soft); }
+.school-pick.selected i{ color: var(--blue); }
+
+.fieldset-label{
+  font-family: 'Plus Jakarta Sans'; font-weight: 700; font-size: 0.86rem;
+  color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em;
+  margin: 26px 0 14px;
+}
+.fieldset-label:first-child{ margin-top: 0; }
+
+@media (max-width: 860px){
+  .auth-side{ display: none; }
+}

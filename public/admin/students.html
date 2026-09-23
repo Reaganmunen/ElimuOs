@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Students — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout for this page only — see dashboard.html's note
+     on the same convention: the shell lives in admin-shell.css, this is
+     just the students table + modal bits unique to this page. */
+
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+
+  .filter-row{ display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-box{ position: relative; flex: 1; min-width: 220px; max-width: 340px; }
+  .search-box i{ position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--ink-soft); font-size: 0.88rem; }
+  .search-box input{ padding-left: 36px; }
+  .status-filter{ min-width: 150px; }
+
+  .usage-card{ display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .usage-card .usage-text{ font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
+  .usage-card .usage-bar-track{ flex: 1; min-width: 160px; margin-top: 0; }
+
+  .students-table{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .students-table th{
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line);
+  }
+  .students-table td{ padding: 13px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .students-table tr:last-child td{ border-bottom: none; }
+  .student-name{ font-weight: 700; }
+  .student-adm{ color: var(--ink-soft); font-size: 0.8rem; }
+  .muted-cell{ color: var(--ink-soft); font-size: 0.82rem; }
+  .status-pill{ font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: rgba(23,166,115,0.12); color: var(--leaf); text-transform: capitalize; }
+  .status-pill.withdrawn{ background: rgba(240,99,122,0.1); color: #B23350; }
+  .portal-tag{
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 600; background: rgba(74,90,240,0.1); color: var(--blue-deep);
+  }
+  .row-actions{ display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .link-btn{
+    background: none; border: none; padding: 0; font: inherit; font-weight: 600; font-size: 0.8rem;
+    color: var(--blue); cursor: pointer;
+  }
+  .link-btn:hover{ text-decoration: underline; }
+  .link-btn.danger{ color: var(--coral); }
+  .link-btn:disabled{ color: var(--ink-soft); cursor: not-allowed; text-decoration: none; }
+
+  .form-error{
+    font-size: 0.82rem; color: #B23350; background: rgba(240,99,122,0.09);
+    border-radius: var(--radius-sm); padding: 10px 13px; margin-bottom: 16px; display: none;
+  }
+  .form-error.shown{ display: block; }
+
+  .conditional-field{ display: none; }
+  .conditional-field.shown{ display: block; }
+
+  .empty-state{ text-align: center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state i{ font-size: 1.8rem; color: var(--line); margin-bottom: 10px; display: block; }
+
+  .load-more-row{ text-align: center; padding: 16px 0 4px; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link active"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Students</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole"></div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+
+      <div class="page-head">
+        <div>
+          <h1>Students</h1>
+          <p>Your school's learners — enrol new ones, place them in classes, and set up portal logins for results and invoices.</p>
+        </div>
+        <button type="button" class="btn-elimu btn-elimu-primary" id="addStudentBtn"><i class="bi bi-person-plus-fill"></i> Add student</button>
+      </div>
+
+      <div id="subscriptionAlertSlot"></div>
+      <div id="pageAlertSlot"></div>
+
+      <div class="card-elimu usage-card" id="usageCard" style="display:none;">
+        <span class="usage-text" id="usageText"></span>
+        <div class="usage-bar-track"><div class="usage-bar-fill" id="usageBarFill" style="width:0%;"></div></div>
+      </div>
+
+      <div class="filter-row">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input class="input" id="searchInput" placeholder="Search by name or admission number…" />
+        </div>
+        <select class="input status-filter" id="statusFilter">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="withdrawn">Withdrawn</option>
+        </select>
+      </div>
+
+      <div class="card-elimu" id="loadingState">
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+        <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+      </div>
+
+      <div class="card-elimu" id="tableCard" style="display:none; padding:20px 20px 8px;">
+        <div style="overflow-x:auto;">
+          <table class="students-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th>Gender</th>
+                <th>Status</th>
+                <th>Portal login</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody"></tbody>
+          </table>
+        </div>
+        <div class="load-more-row" id="loadMoreRow" style="display:none;">
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="loadMoreBtn">Load more</button>
+        </div>
+      </div>
+
+      <div class="empty-state card-elimu" id="emptyState" style="display:none;">
+        <i class="bi bi-people-fill"></i>
+        <span id="emptyStateText">No students yet — click "Add student" to enrol the first one.</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Add / edit student modal -->
+<div class="modal-overlay" id="studentModal" style="display:none;">
+  <div class="modal-box" style="max-width:500px;">
+    <h3 id="studentModalTitle">Add a student</h3>
+    <div class="form-error" id="studentFormError"></div>
+
+    <form id="studentForm" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="admissionNumber">Admission number</label>
+          <input class="input" id="admissionNumber" required />
+        </div>
+        <div class="field">
+          <label for="fullName">Full name</label>
+          <input class="input" id="fullName" required />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="dateOfBirth">Date of birth <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+          <input class="input" type="date" id="dateOfBirth" />
+        </div>
+        <div class="field">
+          <label for="genderSelect">Gender <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+          <select class="input" id="genderSelect">
+            <option value="">— Not set —</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="upiNumber">UPI number <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+          <input class="input" id="upiNumber" />
+        </div>
+        <div class="field" id="classFieldWrap">
+          <label for="classSelect">Class <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+          <select class="input" id="classSelect">
+            <option value="">— Not placed yet —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field conditional-field" id="portalToggleField" style="display:block;">
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:0; font-weight:600;">
+          <input type="checkbox" id="createPortalToggle" style="width:auto;" />
+          Create a portal login for this student
+        </label>
+        <div class="hint">Lets them sign in to check their results and fee invoices. Most schools only set this up for older learners — you can always add it later from this list.</div>
+      </div>
+
+      <div class="conditional-field" id="portalFields">
+        <div class="field">
+          <label for="portalEmail">Student's email</label>
+          <input class="input" type="email" id="portalEmail" />
+        </div>
+        <div class="field">
+          <label for="portalPassword">Temporary password</label>
+          <input class="input" type="password" id="portalPassword" />
+          <div class="hint">At least 8 characters, with a mix of letters and numbers. They can change it after signing in.</div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="justify-content:space-between;">
+        <button type="button" class="btn-elimu btn-elimu-ghost" id="studentModalCancel">Cancel</button>
+        <button type="submit" class="btn-elimu btn-elimu-primary" id="studentModalSubmit">Enrol student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Transfer class modal -->
+<div class="modal-overlay" id="transferModal" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <h3 id="transferModalTitle">Transfer class</h3>
+    <div class="form-error" id="transferFormError"></div>
+    <div class="field">
+      <label for="transferClassSelect">New class</label>
+      <select class="input" id="transferClassSelect"></select>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="transferModalCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="transferModalConfirm">Transfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create portal account modal (existing student with no login yet) -->
+<div class="modal-overlay" id="portalModal" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <h3 id="portalModalTitle">Create portal login</h3>
+    <p style="margin-bottom:16px;">They'll be able to sign in to check results and fee invoices.</p>
+    <div class="form-error" id="portalFormError"></div>
+    <div class="field">
+      <label for="portalModalEmail">Student's email</label>
+      <input class="input" type="email" id="portalModalEmail" />
+    </div>
+    <div class="field">
+      <label for="portalModalPassword">Temporary password</label>
+      <input class="input" type="password" id="portalModalPassword" />
+      <div class="hint">At least 8 characters, with a mix of letters and numbers.</div>
+    </div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="portalModalCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="portalModalConfirm">Create login</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+  const B = window.ElimuOs.billing;
+
+  const PAGE_SIZE = 50;
+  let classList = [];
+  let studentList = [];
+  let offset = 0;
+  let seatsBlocked = false;
+  let capReached = false;
+  let searchDebounce = null;
+  let transferTargetId = null;
+  let portalTargetId = null;
+
+  function showAlert(kind, html) {
+    const cls = kind === 'error' ? 'alert-error' : 'alert-warn';
+    const icon = kind === 'error' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill';
+    document.getElementById('pageAlertSlot').innerHTML =
+      `<div class="alert-elimu ${cls}"><i class="bi ${icon}"></i><div>${html}</div></div>`;
+  }
+  function clearAlert() { document.getElementById('pageAlertSlot').innerHTML = ''; }
+
+  function formError(elId, msg) {
+    const el = document.getElementById(elId);
+    if (!msg) { el.classList.remove('shown'); el.textContent = ''; return; }
+    el.textContent = msg;
+    el.classList.add('shown');
+  }
+
+  function classLabel(cls) {
+    if (!cls) return null;
+    return `${cls.grade_name}${cls.stream_name ? ' ' + cls.stream_name : ''}`;
+  }
+  function classById(id) {
+    return classList.find(c => String(c.id) === String(id));
+  }
+
+  // ---------- Subscription / seat gate ----------
+  function refreshAddButtonState() {
+    const btn = document.getElementById('addStudentBtn');
+    if (seatsBlocked) {
+      btn.setAttribute('disabled', 'disabled');
+      btn.title = 'Start a trial or resolve billing before adding students';
+    } else if (capReached) {
+      btn.setAttribute('disabled', 'disabled');
+      btn.title = 'This plan\'s student limit has been reached — upgrade to add more';
+    } else {
+      btn.removeAttribute('disabled');
+      btn.removeAttribute('title');
+    }
+  }
+
+  async function loadSubscriptionGate() {
+    const slot = document.getElementById('subscriptionAlertSlot');
+    try {
+      const sub = await B.getMine();
+      seatsBlocked = B.blocksNewSeats(sub);
+
+      const alert = B.gateAlert(sub);
+      slot.innerHTML = alert
+        ? `<div class="alert-elimu alert-${alert.tone === 'error' ? 'error' : 'warn'}"><i class="bi ${alert.icon}"></i><div>${alert.html}</div></div>`
+        : '';
+
+      // Usage bar — only meaningful when the plan actually caps seats.
+      if (sub && sub.max_students != null) {
+        const usage = await B.estimateStudentUsage(Math.max(sub.max_students + 1, 100));
+        capReached = usage.count >= sub.max_students;
+        const pct = Math.min(100, Math.round((usage.count / sub.max_students) * 100));
+        document.getElementById('usageCard').style.display = 'flex';
+        document.getElementById('usageText').textContent = `${usage.count}${usage.isFloor ? '+' : ''} / ${sub.max_students} students`;
+        const fill = document.getElementById('usageBarFill');
+        fill.style.width = `${pct}%`;
+        fill.className = `usage-bar-fill ${pct >= 100 ? 'error' : pct >= 85 ? 'warn' : ''}`;
+      } else {
+        capReached = false;
+        document.getElementById('usageCard').style.display = 'none';
+      }
+      refreshAddButtonState();
+    } catch (err) {
+      // Non-fatal — if we can't confirm billing status, don't block the page over it.
+    }
+  }
+
+  // ---------- Loaders ----------
+  async function loadClasses() {
+    try {
+      const res = await api.apiFetch('/classes');
+      classList = res.data;
+    } catch (err) {
+      classList = []; // Non-fatal — students list still works, just without class labels/pickers.
+    }
+  }
+
+  function populateClassSelect(selectEl, { includeEmpty, currentClassId }) {
+    selectEl.innerHTML = (includeEmpty ? '<option value="">— Not placed yet —</option>' : '')
+      + classList.map(c => `<option value="${c.id}">${classLabel(c)}</option>`).join('');
+    if (currentClassId) selectEl.value = currentClassId;
+  }
+
+  async function fetchStudents({ reset }) {
+    if (reset) offset = 0;
+    const q = document.getElementById('searchInput').value.trim();
+    const status = document.getElementById('statusFilter').value;
+    const params = new URLSearchParams({ limit: PAGE_SIZE, offset });
+    if (q) params.set('q', q);
+    if (status) params.set('status', status);
+    const res = await api.apiFetch(`/students?${params.toString()}`);
+    if (reset) studentList = res.data;
+    else studentList = studentList.concat(res.data);
+    document.getElementById('loadMoreRow').style.display = res.data.length === PAGE_SIZE ? 'block' : 'none';
+    offset += res.data.length;
+  }
+
+  // ---------- Render ----------
+  function render() {
+    document.getElementById('loadingState').style.display = 'none';
+
+    if (studentList.length === 0) {
+      document.getElementById('tableCard').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      const hasFilter = document.getElementById('searchInput').value.trim() || document.getElementById('statusFilter').value;
+      document.getElementById('emptyStateText').textContent = hasFilter
+        ? 'No students match this search.'
+        : 'No students yet — click "Add student" to enrol the first one.';
+      return;
+    }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('tableCard').style.display = 'block';
+
+    const body = document.getElementById('studentsTableBody');
+    body.innerHTML = studentList.map(s => {
+      const cls = classById(s.current_class_id);
+      const classCell = cls ? classLabel(cls) : `<span class="muted-cell">Not placed</span>`;
+      const portalCell = s.user_id
+        ? `<span class="portal-tag"><i class="bi bi-check-circle-fill"></i> Active</span>`
+        : `<button class="link-btn" data-portal="${s.id}" data-name="${s.full_name}">Create login</button>`;
+      const withdrawn = s.status !== 'active';
+      return `
+        <tr>
+          <td><div class="student-name">${s.full_name}</div><div class="student-adm">${s.admission_number}</div></td>
+          <td>${classCell}</td>
+          <td><span class="muted-cell">${s.gender ? (s.gender[0].toUpperCase() + s.gender.slice(1)) : '—'}</span></td>
+          <td><span class="status-pill ${withdrawn ? 'withdrawn' : ''}">${s.status}</span></td>
+          <td>${portalCell}</td>
+          <td class="row-actions">
+            <button class="link-btn" data-edit="${s.id}">Edit</button>
+            <button class="link-btn" data-transfer="${s.id}" ${withdrawn ? 'disabled' : ''}>Transfer</button>
+            <button class="link-btn danger" data-withdraw="${s.id}" data-name="${s.full_name}" ${withdrawn ? 'disabled' : ''}>Withdraw</button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    body.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-edit')));
+    });
+    body.querySelectorAll('[data-transfer]:not(:disabled)').forEach(btn => {
+      btn.addEventListener('click', () => openTransferModal(btn.getAttribute('data-transfer')));
+    });
+    body.querySelectorAll('[data-withdraw]:not(:disabled)').forEach(btn => {
+      btn.addEventListener('click', () => withdrawStudent(btn.getAttribute('data-withdraw'), btn.getAttribute('data-name')));
+    });
+    body.querySelectorAll('[data-portal]').forEach(btn => {
+      btn.addEventListener('click', () => openPortalModal(btn.getAttribute('data-portal'), btn.getAttribute('data-name')));
+    });
+  }
+
+  async function refreshList(reset) {
+    try {
+      await fetchStudents({ reset });
+      render();
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      showAlert('error', err.message || 'Could not load students.');
+    }
+  }
+
+  // ---------- Add / edit student ----------
+  function togglePortalFields() {
+    const on = document.getElementById('createPortalToggle').checked;
+    document.getElementById('portalFields').classList.toggle('shown', on);
+    document.getElementById('portalEmail').required = on;
+    document.getElementById('portalPassword').required = on;
+  }
+  document.getElementById('createPortalToggle').addEventListener('change', togglePortalFields);
+
+  let editingStudentId = null;
+
+  function openAddModal() {
+    if (seatsBlocked || capReached) return;
+    editingStudentId = null;
+    document.getElementById('studentModalTitle').textContent = 'Add a student';
+    document.getElementById('studentModalSubmit').textContent = 'Enrol student';
+    document.getElementById('studentForm').reset();
+    formError('studentFormError', null);
+    document.getElementById('admissionNumber').disabled = false;
+    document.getElementById('classFieldWrap').style.display = 'block';
+    document.getElementById('portalToggleField').style.display = 'block';
+    togglePortalFields();
+    populateClassSelect(document.getElementById('classSelect'), { includeEmpty: true });
+    document.getElementById('studentModal').style.display = 'flex';
+  }
+
+  function openEditModal(studentId) {
+    const s = studentList.find(x => String(x.id) === String(studentId));
+    if (!s) return;
+    editingStudentId = studentId;
+    document.getElementById('studentModalTitle').textContent = `Edit ${s.full_name}`;
+    document.getElementById('studentModalSubmit').textContent = 'Save changes';
+    formError('studentFormError', null);
+
+    document.getElementById('admissionNumber').value = s.admission_number;
+    document.getElementById('admissionNumber').disabled = true; // not editable after enrolment
+    document.getElementById('fullName').value = s.full_name;
+    document.getElementById('dateOfBirth').value = s.date_of_birth ? s.date_of_birth.slice(0, 10) : '';
+    document.getElementById('genderSelect').value = s.gender || '';
+    document.getElementById('upiNumber').value = s.upi_number || '';
+
+    // Class and portal-account setup are handled by their own actions
+    // (Transfer / Create login) once a student exists — this form only
+    // covers the fields the update endpoint actually accepts.
+    document.getElementById('classFieldWrap').style.display = 'none';
+    document.getElementById('portalToggleField').style.display = 'none';
+    document.getElementById('portalFields').classList.remove('shown');
+    document.getElementById('createPortalToggle').checked = false;
+
+    document.getElementById('studentModal').style.display = 'flex';
+  }
+
+  document.getElementById('addStudentBtn').addEventListener('click', openAddModal);
+  document.getElementById('studentModalCancel').addEventListener('click', () => {
+    document.getElementById('studentModal').style.display = 'none';
+  });
+
+  document.getElementById('studentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('studentFormError', null);
+
+    const fullName = document.getElementById('fullName').value.trim();
+    const dateOfBirth = document.getElementById('dateOfBirth').value;
+    const gender = document.getElementById('genderSelect').value;
+    const upiNumber = document.getElementById('upiNumber').value.trim();
+
+    const submitBtn = document.getElementById('studentModalSubmit');
+    submitBtn.disabled = true;
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = 'Saving…';
+
+    try {
+      if (editingStudentId) {
+        await api.apiFetch(`/students/${editingStudentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fullName, dateOfBirth: dateOfBirth || null, gender: gender || null, upiNumber: upiNumber || null,
+          }),
+        });
+        showAlert('success', 'Student updated.');
+        document.getElementById('studentModal').style.display = 'none';
+        await refreshList(true);
+      } else {
+        const admissionNumber = document.getElementById('admissionNumber').value.trim();
+        const classId = document.getElementById('classSelect').value;
+        if (!admissionNumber || !fullName) {
+          formError('studentFormError', 'Admission number and full name are required.');
+          return;
+        }
+
+        const createPortal = document.getElementById('createPortalToggle').checked;
+        const portalEmail = document.getElementById('portalEmail').value.trim();
+        const portalPassword = document.getElementById('portalPassword').value;
+        if (createPortal && (!portalEmail || !portalPassword)) {
+          formError('studentFormError', 'Provide an email and password for the portal login, or untick that option.');
+          return;
+        }
+
+        const created = await api.apiFetch('/students', {
+          method: 'POST',
+          body: JSON.stringify({
+            admissionNumber, fullName,
+            dateOfBirth: dateOfBirth || undefined,
+            gender: gender || undefined,
+            upiNumber: upiNumber || undefined,
+            currentClassId: classId || undefined,
+          }),
+        });
+
+        if (createPortal) {
+          try {
+            await api.apiFetch(`/students/${created.data.id}/portal-account`, {
+              method: 'POST',
+              body: JSON.stringify({ email: portalEmail, password: portalPassword }),
+            });
+          } catch (portalErr) {
+            document.getElementById('studentModal').style.display = 'none';
+            showAlert('error', `${fullName} was enrolled, but the portal login could not be created: ${portalErr.message || 'unknown error'}. You can try again from this list.`);
+            await refreshList(true);
+            await loadSubscriptionGate();
+            return;
+          }
+        }
+
+        showAlert('success', `${fullName} was enrolled${createPortal ? ' with a portal login' : ''}.`);
+        document.getElementById('studentModal').style.display = 'none';
+        await refreshList(true);
+        await loadSubscriptionGate();
+      }
+    } catch (err) {
+      formError('studentFormError', err.message || 'Could not save this student.');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  });
+
+  // ---------- Transfer class ----------
+  function openTransferModal(studentId) {
+    const s = studentList.find(x => String(x.id) === String(studentId));
+    if (!s) return;
+    transferTargetId = studentId;
+    formError('transferFormError', null);
+    document.getElementById('transferModalTitle').textContent = `Transfer ${s.full_name}`;
+    populateClassSelect(document.getElementById('transferClassSelect'), { includeEmpty: false, currentClassId: s.current_class_id });
+    document.getElementById('transferModal').style.display = 'flex';
+  }
+  document.getElementById('transferModalCancel').addEventListener('click', () => {
+    document.getElementById('transferModal').style.display = 'none';
+  });
+  document.getElementById('transferModalConfirm').addEventListener('click', async () => {
+    const newClassId = document.getElementById('transferClassSelect').value;
+    if (!newClassId) return;
+    const btn = document.getElementById('transferModalConfirm');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      await api.apiFetch(`/students/${transferTargetId}/transfer-class`, {
+        method: 'PATCH',
+        body: JSON.stringify({ newClassId }),
+      });
+      document.getElementById('transferModal').style.display = 'none';
+      clearAlert();
+      await refreshList(true);
+    } catch (err) {
+      formError('transferFormError', err.message || 'Could not transfer this student.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Transfer';
+    }
+  });
+
+  // ---------- Withdraw ----------
+  async function withdrawStudent(studentId, name) {
+    if (!confirm(`Withdraw ${name}? Their record is kept for history, but they'll no longer show as active. This can't be undone from here.`)) return;
+    try {
+      await api.apiFetch(`/students/${studentId}`, { method: 'DELETE' });
+      clearAlert();
+      await refreshList(true);
+      await loadSubscriptionGate();
+    } catch (err) {
+      showAlert('error', err.message || 'Could not withdraw this student.');
+    }
+  }
+
+  // ---------- Create portal login (existing student) ----------
+  function openPortalModal(studentId, name) {
+    portalTargetId = studentId;
+    formError('portalFormError', null);
+    document.getElementById('portalModalTitle').textContent = `Create portal login — ${name}`;
+    document.getElementById('portalModalEmail').value = '';
+    document.getElementById('portalModalPassword').value = '';
+    document.getElementById('portalModal').style.display = 'flex';
+  }
+  document.getElementById('portalModalCancel').addEventListener('click', () => {
+    document.getElementById('portalModal').style.display = 'none';
+  });
+  document.getElementById('portalModalConfirm').addEventListener('click', async () => {
+    formError('portalFormError', null);
+    const email = document.getElementById('portalModalEmail').value.trim();
+    const password = document.getElementById('portalModalPassword').value;
+    if (!email || !password) {
+      formError('portalFormError', 'Email and password are both required.');
+      return;
+    }
+    const btn = document.getElementById('portalModalConfirm');
+    btn.disabled = true; btn.textContent = 'Creating…';
+    try {
+      await api.apiFetch(`/students/${portalTargetId}/portal-account`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      document.getElementById('portalModal').style.display = 'none';
+      showAlert('success', 'Portal login created.');
+      await refreshList(true);
+    } catch (err) {
+      formError('portalFormError', err.message || 'Could not create the portal login.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create login';
+    }
+  });
+
+  // ---------- Search / filter / pagination ----------
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => refreshList(true), 350);
+  });
+  document.getElementById('statusFilter').addEventListener('change', () => refreshList(true));
+  document.getElementById('loadMoreBtn').addEventListener('click', () => refreshList(false));
+
+  // ---------- Boot ----------
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    await loadClasses();
+    await refreshList(true);
+    await loadSubscriptionGate();
+  })();
+</script>
+
+</body>
+</html>
