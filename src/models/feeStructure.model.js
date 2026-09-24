@@ -47,4 +47,36 @@ async function remove(schoolId, feeStructureId, actorUserId) {
   });
 }
 
-module.exports = { create, listByGradeAndTerm, remove };
+/**
+ * Edits one fee item. Existing invoices are unaffected: invoice generation
+ * copies each item's name/amount into invoice_items at that moment, so only
+ * invoices generated AFTER this edit pick up the new figures. Both the old
+ * and new values go in the audit trail, since this changes what gets billed.
+ */
+async function update(schoolId, feeStructureId, { itemName, amount, isMandatory }, actorUserId) {
+  return withTenantClient(schoolId, async (client) => {
+    const before = await client.query(
+      `SELECT item_name, amount, is_mandatory FROM fee_structures WHERE id = $1 AND school_id = $2`,
+      [feeStructureId, schoolId]
+    );
+    if (before.rows.length === 0) return null;
+
+    const result = await client.query(
+      `UPDATE fee_structures
+       SET item_name = COALESCE($3, item_name), amount = COALESCE($4, amount), is_mandatory = COALESCE($5, is_mandatory)
+       WHERE id = $1 AND school_id = $2 RETURNING *`,
+      [feeStructureId, schoolId, itemName ?? null, amount ?? null, isMandatory ?? null]
+    );
+    const fee = result.rows[0];
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'update', tableName: 'fee_structures', recordId: feeStructureId,
+      details: {
+        from: { itemName: before.rows[0].item_name, amount: before.rows[0].amount, isMandatory: before.rows[0].is_mandatory },
+        to: { itemName: fee.item_name, amount: fee.amount, isMandatory: fee.is_mandatory },
+      },
+    });
+    return fee;
+  });
+}
+
+module.exports = { create, listByGradeAndTerm, update, remove };

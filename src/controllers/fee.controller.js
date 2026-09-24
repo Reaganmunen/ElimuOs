@@ -23,6 +23,24 @@ const listFeeStructures = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, fees);
 });
 
+const updateFeeStructure = asyncHandler(async (req, res) => {
+  const { itemName, amount, isMandatory } = req.body;
+  if (itemName === undefined && amount === undefined && isMandatory === undefined) {
+    throw new ApiError(400, 'Provide at least one of itemName, amount or isMandatory');
+  }
+  if (itemName !== undefined && !String(itemName).trim()) throw new ApiError(400, 'itemName cannot be empty');
+  if (amount !== undefined && (!Number.isFinite(Number(amount)) || Number(amount) < 0)) {
+    throw new ApiError(400, 'amount must be a number of 0 or more');
+  }
+  const fee = await feeStructureModel.update(req.user.school_id, req.params.id, {
+    itemName: itemName === undefined ? undefined : String(itemName).trim(),
+    amount: amount === undefined ? undefined : Number(amount),
+    isMandatory,
+  }, req.user.id);
+  if (!fee) throw new ApiError(404, 'Fee structure not found');
+  return sendSuccess(res, 200, fee, 'Fee structure updated');
+});
+
 const deleteFeeStructure = asyncHandler(async (req, res) => {
   const result = await feeStructureModel.remove(req.user.school_id, req.params.id, req.user.id);
   if (!result) throw new ApiError(404, 'Fee structure not found');
@@ -100,7 +118,7 @@ const voidPayment = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  createFeeStructure, listFeeStructures, deleteFeeStructure,
+  createFeeStructure, listFeeStructures, updateFeeStructure, deleteFeeStructure,
   generateInvoice, getInvoice, listStudentInvoices, listOutstandingInvoices,
   recordPayment, listInvoicePayments, listStudentPayments, voidPayment,
 };

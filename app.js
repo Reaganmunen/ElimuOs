@@ -12,6 +12,14 @@ const ApiError = require('./src/utils/ApiError');
 
 const app = express();
 
+// Behind a reverse proxy / PaaS (Render, Railway, Heroku, nginx…) every request
+// arrives from the proxy's IP, so the per-IP rate limiters would treat ALL users
+// as one. Set TRUST_PROXY to the number of proxy hops in front of the app
+// (usually 1). Leave unset when clients connect directly — trusting
+// X-Forwarded-For without a proxy lets anyone spoof their IP past the limiters.
+const trustProxyHops = Number(process.env.TRUST_PROXY);
+if (Number.isInteger(trustProxyHops) && trustProxyHops > 0) app.set('trust proxy', trustProxyHops);
+
 app.use(
   helmet({
     // Allow the CDN-hosted Bootstrap/Google Fonts the landing page pulls in.

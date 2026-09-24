@@ -75,6 +75,7 @@
   // token the first call just stored. Every concurrent caller now
   // awaits the SAME in-flight refresh instead of starting its own.
   let inflightRefresh = null;
+  let lastRetryAfter = null; // seconds, from the server's Retry-After on the last 429
 
   async function silentRefresh() {
     if (inflightRefresh) return inflightRefresh;
@@ -88,7 +89,10 @@
         body: JSON.stringify({ refreshToken }),
       });
 
-      if (res.status === 429) return 'rate_limited';
+      if (res.status === 429) {
+        lastRetryAfter = Number(res.headers?.get?.('Retry-After')) || null;
+        return 'rate_limited';
+      }
 
       if (!res.ok) {
         clearSession();
@@ -140,13 +144,18 @@
     // Back off briefly and retry a couple of times; this should be rare
     // now that refresh has its own generous limiter, and only fires for
     // real if something is refreshing in a tight loop.
-    for (let attempt = 0; ok === 'rate_limited' && attempt < 3; attempt++) {
+    // Retrying only helps for a brief throttle. When the server says to wait a long
+    // time (a fixed-window limiter), retries can't succeed — they'd only add more hits.
+    for (let attempt = 0; ok === 'rate_limited' && attempt < 3 && !(lastRetryAfter > 10); attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
       ok = await silentRefresh();
     }
 
     if (ok === 'rate_limited') {
-      alert("You're refreshing this too quickly — please wait a moment and reload the page.");
+      const mins = lastRetryAfter ? Math.ceil(lastRetryAfter / 60) : 0;
+      alert(mins > 1
+        ? `Too many page loads from this network just now. Please try again in about ${mins} minutes — you have not been signed out.`
+        : "You're refreshing this too quickly — please wait a moment and reload the page.");
       return null;
     }
     if (!ok) {

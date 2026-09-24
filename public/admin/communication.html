@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Communication — ElimuOs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout only — shell lives in admin-shell.css. */
+  .page-head{ margin-bottom:16px; } .page-head h1{ font-size:1.3rem; } .page-head p{ color:var(--ink-soft); font-size:.88rem; margin-top:3px; }
+  .filter-row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px; }
+  .filter-row .field{ margin-bottom:0; min-width:200px; }
+  .tabs{ display:flex; gap:6px; margin-bottom:16px; border-bottom:1px solid var(--line); }
+  .tab-btn{ background:none; border:none; border-bottom:2.5px solid transparent; padding:10px 14px; font:600 .9rem 'Plus Jakarta Sans',sans-serif; color:var(--ink-soft); cursor:pointer; margin-bottom:-1px; }
+  .tab-btn.active{ color:var(--blue-deep); border-bottom-color:var(--blue); }
+  .data-table{ width:100%; border-collapse:collapse; font-size:.88rem; }
+  .data-table th{ text-align:left; font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:700; padding:0 12px 10px; border-bottom:1px solid var(--line); }
+  .data-table td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .data-table tr:last-child td{ border-bottom:none; }
+  .row-title{ font-weight:700; } .muted-cell{ color:var(--ink-soft); font-size:.82rem; }
+  .link-btn{ background:none; border:none; padding:0; font:inherit; font-weight:600; font-size:.8rem; color:var(--blue); cursor:pointer; }
+  .link-btn:hover{ text-decoration:underline; } .link-btn.danger{ color:var(--coral); }
+  .form-error{ font-size:.82rem; color:#B23350; background:rgba(240,99,122,.09); border-radius:var(--radius-sm); padding:10px 13px; margin-bottom:16px; display:none; }
+  .form-error.shown{ display:block; }
+  .empty-state{ text-align:center; padding:40px 20px; color:var(--ink-soft); } .empty-state i{ font-size:1.8rem; color:var(--line); margin-bottom:10px; display:block; }
+  .modal-box.wide{ max-width:620px; max-height:90vh; overflow-y:auto; }
+  textarea.input{ min-height:110px; resize:vertical; line-height:1.5; }
+  .sec-label{ font:700 .8rem 'Plus Jakarta Sans',sans-serif; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin:20px 0 10px; }
+
+  .chip-list{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .picked-chip{ display:inline-flex; align-items:center; gap:8px; background:var(--cloud); border:1.5px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.84rem; font-weight:600; }
+  .picked-chip button{ background:none; border:none; color:var(--ink-soft); cursor:pointer; padding:0; }
+  .pick-list{ max-height:190px; overflow-y:auto; border:1.5px solid var(--line); border-radius:var(--radius-sm); margin-top:6px; }
+  .pick-row{ padding:9px 12px; cursor:pointer; font-size:.86rem; border-bottom:1px solid var(--line); }
+  .pick-row:last-child{ border-bottom:none; } .pick-row:hover{ background:var(--cloud); }
+  .counter{ font-size:.78rem; color:var(--ink-soft); text-align:right; margin-top:6px; }
+  .stat-row{ display:flex; gap:22px; flex-wrap:wrap; margin:12px 0 4px; font-size:.9rem; }
+  .stat-row b{ font:800 1.3rem 'Plus Jakarta Sans',sans-serif; display:block; }
+
+</style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span> ElimuOs</a>
+    <nav class="admin-nav">
+      <a href="dashboard.html" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="billing.html" class="admin-nav-link"><i class="bi bi-credit-card-fill"></i> Billing</a>
+      <div class="admin-nav-section">School</div>
+      <a href="students.html" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="guardians.html" class="admin-nav-link"><i class="bi bi-person-hearts"></i> Guardians</a>
+      <a href="staff.html" class="admin-nav-link"><i class="bi bi-person-badge-fill"></i> Staff</a>
+      <a href="classes.html" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="academic-setup.html" class="admin-nav-link"><i class="bi bi-journal-bookmark-fill"></i> Academic Setup</a>
+      <a href="timetable.html" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="attendance.html" class="admin-nav-link"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="fees.html" class="admin-nav-link"><i class="bi bi-cash-coin"></i> Fees</a>
+      <a href="communication.html" class="admin-nav-link active"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <a href="reports.html" class="admin-nav-link"><i class="bi bi-bar-chart-fill"></i> Reports</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1>Communication</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div><div class="user-chip-name" id="userName">Loading…</div><div class="user-chip-role" id="userRole"></div></div>
+          <i class="bi bi-chevron-down" style="font-size:.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+    <main class="admin-content">
+
+      <div class="page-head"><h1>Communication</h1><p>Send SMS or email to guardians — a whole class at once, or hand-picked guardians — and keep reusable templates.</p></div>
+      <div id="pageAlertSlot"></div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="compose">Send message</button>
+        <button class="tab-btn" data-tab="templates">Templates</button>
+        <button class="tab-btn" data-tab="settings">Sender settings</button>
+      </div>
+
+      <div data-pane="compose">
+        <div class="card-elimu">
+          <div class="form-error" id="composeError"></div>
+          <div class="field-row">
+            <div class="field"><label for="channelSel">Channel</label>
+              <select class="input" id="channelSel"><option value="sms">SMS</option><option value="email">Email</option></select></div>
+            <div class="field"><label for="audienceSel">Send to</label>
+              <select class="input" id="audienceSel"><option value="class">Every guardian in a class</option><option value="guardians">Specific guardians</option></select></div>
+          </div>
+          <p class="muted-cell" id="sendingAs" style="margin:-6px 0 16px;"></p>
+          <div class="field" id="classField"><label for="classSel">Class</label><select class="input" id="classSel"><option value="">Loading…</option></select></div>
+          <div class="field" id="guardianField" style="display:none;">
+            <label for="guardianSearch">Guardians</label>
+            <input class="input" id="guardianSearch" placeholder="Search by name or phone…" autocomplete="off" />
+            <div class="pick-list" id="guardianResults" style="display:none;"></div>
+            <div class="chip-list" id="guardianChips"></div>
+          </div>
+          <div class="field"><label for="templateSel">Start from a template <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+            <select class="input" id="templateSel"><option value="">— None —</option></select></div>
+          <div class="field" id="subjectField" style="display:none;"><label for="subjectInput">Subject</label><input class="input" id="subjectInput" /></div>
+          <div class="field"><label for="bodyInput">Message</label><textarea class="input" id="bodyInput"></textarea><div class="counter" id="bodyCounter">0 characters</div></div>
+          <div style="text-align:right;"><button type="button" class="btn-elimu btn-elimu-primary" id="sendBtn"><i class="bi bi-send-fill"></i> Send message</button></div>
+        </div>
+        <div class="card-elimu" id="resultCard" style="display:none;"></div>
+      </div>
+
+      <div data-pane="templates" style="display:none;">
+        <div style="text-align:right; margin-bottom:14px;"><button type="button" class="btn-elimu btn-elimu-primary" id="addTemplateBtn"><i class="bi bi-plus-lg"></i> New template</button></div>
+        <div class="card-elimu" style="padding:20px 20px 8px;" id="templatesCard"></div>
+      </div>
+
+      <div data-pane="settings" style="display:none;">
+        <div class="form-error" id="settingsError"></div>
+        <div class="card-elimu" id="smsCard">
+          <h3 style="font-size:1.02rem; margin-bottom:4px;"><i class="bi bi-phone-fill"></i> SMS</h3>
+          <p class="muted-cell" style="margin-bottom:16px;">Messages go to your guardians only, and always with your school's settings.</p>
+          <div class="field"><label for="smsMode">Send SMS through</label>
+            <select class="input" id="smsMode"><option value="platform">The shared ElimuOs account</option><option value="own">My school's own Africa's Talking account</option></select>
+            <div class="hint" id="smsPlatformNote"></div></div>
+          <div class="field"><label for="smsSenderId">Sender ID <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+            <input class="input" id="smsSenderId" maxlength="11" placeholder="e.g. ALPHASCH" />
+            <div class="hint">Shown to parents as the sender. Up to 11 letters/numbers, no spaces. It must be approved by Africa's Talking first — an unapproved ID makes messages fail.</div></div>
+          <div id="smsOwnFields" style="display:none;">
+            <div class="field-row">
+              <div class="field"><label for="atUsername">Africa's Talking username</label><input class="input" id="atUsername" autocomplete="off" /><div class="hint">Use <b>sandbox</b> to test.</div></div>
+              <div class="field"><label for="atApiKey">API key</label><input class="input" type="password" id="atApiKey" autocomplete="new-password" /></div>
+            </div>
+          </div>
+          <div class="field-row" style="align-items:flex-end;">
+            <div class="field" style="margin-bottom:0;"><label for="testPhone">Send a test SMS to</label><input class="input" id="testPhone" placeholder="07XXXXXXXX" /></div>
+            <button type="button" class="btn-elimu btn-elimu-ghost" id="testSmsBtn">Send test</button>
+          </div>
+          <div class="hint" id="smsTestResult"></div>
+        </div>
+
+        <div class="card-elimu" id="emailCard">
+          <h3 style="font-size:1.02rem; margin-bottom:4px;"><i class="bi bi-envelope-fill"></i> Email</h3>
+          <p class="muted-cell" style="margin-bottom:16px;">Choose how your school's emails are sent, and who they appear to come from.</p>
+          <div class="field"><label for="emailMode">Send email through</label>
+            <select class="input" id="emailMode"><option value="platform">The shared ElimuOs mail server</option><option value="own">My school's own SMTP server</option></select>
+            <div class="hint" id="emailPlatformNote"></div></div>
+          <div class="field-row">
+            <div class="field"><label for="fromName">From name</label><input class="input" id="fromName" maxlength="60" placeholder="Defaults to your school name" /></div>
+            <div class="field"><label for="replyTo">Reply-to address</label><input class="input" type="email" id="replyTo" placeholder="Defaults to your school email" /><div class="hint">Where parents' replies go.</div></div>
+          </div>
+          <div id="emailOwnFields" style="display:none;">
+            <div class="field-row">
+              <div class="field" style="flex:2;"><label for="smtpHost">SMTP host</label><input class="input" id="smtpHost" placeholder="smtp.yourdomain.com" /></div>
+              <div class="field"><label for="smtpPort">Port</label><select class="input" id="smtpPort"><option>587</option><option>465</option><option>25</option><option>2525</option></select></div>
+            </div>
+            <label style="display:flex; align-items:center; gap:8px; font-weight:600; font-size:.86rem; margin:-4px 0 16px;"><input type="checkbox" id="smtpSecure" style="width:auto;" /> Use SSL/TLS from the start (normally for port 465)</label>
+            <div class="field-row">
+              <div class="field"><label for="smtpUser">SMTP username</label><input class="input" id="smtpUser" autocomplete="off" /></div>
+              <div class="field"><label for="smtpPassword">SMTP password</label><input class="input" type="password" id="smtpPassword" autocomplete="new-password" /></div>
+            </div>
+            <div class="field"><label for="smtpFromEmail">Send from address</label><input class="input" type="email" id="smtpFromEmail" placeholder="info@yourschool.ac.ke" /><div class="hint">Must be an address your SMTP server is allowed to send as.</div></div>
+          </div>
+          <div class="field-row" style="align-items:flex-end;">
+            <div class="field" style="margin-bottom:0;"><label for="testEmail">Send a test email to</label><input class="input" type="email" id="testEmail" /></div>
+            <button type="button" class="btn-elimu btn-elimu-ghost" id="testEmailBtn">Send test</button>
+          </div>
+          <div class="hint" id="emailTestResult"></div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+          <span class="muted-cell" id="settingsDirtyNote">Test messages use your <b>saved</b> settings.</span>
+          <button type="button" class="btn-elimu btn-elimu-primary" id="saveSettingsBtn"><i class="bi bi-check2"></i> Save sender settings</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal" style="display:none;">
+  <div class="modal-box"><h3>Send this message?</h3><p id="confirmText"></p>
+    <div class="modal-actions"><button type="button" class="btn-elimu btn-elimu-ghost" id="confirmCancel">Cancel</button>
+    <button type="button" class="btn-elimu btn-elimu-primary" id="confirmSend">Send now</button></div></div>
+</div>
+<div class="modal-overlay" id="templateModal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;"><h3>New template</h3>
+    <div class="form-error" id="templateError"></div>
+    <div class="field"><label for="tplName">Name</label><input class="input" id="tplName" placeholder="e.g. Fee reminder" /></div>
+    <div class="field"><label for="tplChannel">Channel</label><select class="input" id="tplChannel"><option value="sms">SMS</option><option value="email">Email</option></select></div>
+    <div class="field"><label for="tplBody">Message</label><textarea class="input" id="tplBody"></textarea>
+      <div class="hint">Write the full text. Placeholders like {{name}} are not filled in automatically when sending, so leave them out.</div></div>
+    <div class="modal-actions" style="justify-content:space-between;"><button type="button" class="btn-elimu btn-elimu-ghost" id="tplCancel">Cancel</button>
+    <button type="button" class="btn-elimu btn-elimu-primary" id="tplSave">Save template</button></div></div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const classLabel = (c) => `${c.grade_name}${c.stream_name ? ' ' + c.stream_name : ''}`;
+  function showAlert(kind, html) {
+    const ok = kind !== 'error';
+    $('pageAlertSlot').innerHTML = `<div class="alert-elimu ${ok ? 'alert-warn' : 'alert-error'}"><i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}"></i><div>${html}</div></div>`;
+  }
+  function formError(id, msg) { const el = $(id); el.textContent = msg || ''; el.classList.toggle('shown', !!msg); }
+  function initTabs(onChange) {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((x) => x.classList.toggle('active', x === b));
+      document.querySelectorAll('[data-pane]').forEach((p) => { p.style.display = p.dataset.pane === b.dataset.tab ? 'block' : 'none'; });
+      if (onChange) onChange(b.dataset.tab);
+    }));
+  }
+  async function bootShell() {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
+    if (!user) return null;
+    $('userName').textContent = user.full_name;
+    $('userRole').textContent = user.role_code.replace('_', ' ');
+    $('userAvatar').textContent = user.full_name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+    $('userChip').addEventListener('click', () => { if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout(); });
+    api.apiFetch('/schools/me').then((r) => { $('schoolNameFoot').textContent = r.data.name; }).catch(() => { $('schoolNameFoot').textContent = ''; });
+    return user;
+  }
+
+  let templates = [], classes = [], picked = new Map(), pendingPayload = null, searchDebounce = null;
+  const PLACEHOLDER = /{{\s*\w+\s*}}/;
+
+  const isEmail = () => $('channelSel').value === 'email';
+
+  function syncChannel() {
+    $('subjectField').style.display = isEmail() ? 'block' : 'none';
+    if (typeof describeSender === 'function') describeSender();
+    const cur = $('templateSel').value;
+    $('templateSel').innerHTML = '<option value="">— None —</option>' + templates
+      .filter((t) => t.channel === $('channelSel').value)
+      .map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');
+    $('templateSel').value = cur && [...$('templateSel').options].some((o) => o.value === cur) ? cur : '';
+    updateCounter();
+  }
+  function updateCounter() {
+    const n = $('bodyInput').value.length;
+    $('bodyCounter').textContent = isEmail() ? `${n} characters` : `${n} characters · ${Math.max(1, Math.ceil(n / 160))} SMS part(s) per guardian`;
+  }
+  function renderChips() {
+    $('guardianChips').innerHTML = [...picked.values()].map((g) =>
+      `<span class="picked-chip">${esc(g.full_name)} <button type="button" data-rm="${esc(g.id)}">&times;</button></span>`).join('');
+    $('guardianChips').querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { picked.delete(b.dataset.rm); renderChips(); }));
+  }
+
+  async function loadBase() {
+    const [c, t] = await Promise.all([api.apiFetch('/classes'), api.apiFetch('/communications/templates')]);
+    classes = c.data; templates = t.data;
+    $('classSel').innerHTML = '<option value="">Select a class…</option>' + classes
+      .map((x) => `<option value="${esc(x.id)}">${esc(classLabel(x))} (${Number(x.student_count)} students)</option>`).join('');
+    syncChannel(); renderTemplates();
+  }
+
+  function renderTemplates() {
+    const card = $('templatesCard');
+    if (!templates.length) { card.innerHTML = '<div class="empty-state"><i class="bi bi-chat-square-text"></i>No templates yet — create one to reuse common messages.</div>'; return; }
+    card.innerHTML = `<div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>Name</th><th>Channel</th><th>Message</th></tr></thead><tbody>${templates.map((t) =>
+      `<tr><td class="row-title">${esc(t.name)}</td><td><span class="status-chip info">${esc(t.channel.toUpperCase())}</span></td><td class="muted-cell" style="white-space:pre-wrap;">${esc(t.body_template)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  function buildPayload() {
+    formError('composeError', null);
+    const channel = $('channelSel').value, body = $('bodyInput').value.trim(), subject = $('subjectInput').value.trim();
+    const byClass = $('audienceSel').value === 'class';
+    if (byClass && !$('classSel').value) return formError('composeError', 'Pick a class to send to.'), null;
+    if (!byClass && picked.size === 0) return formError('composeError', 'Pick at least one guardian.'), null;
+    if (channel === 'email' && !subject) return formError('composeError', 'An email needs a subject.'), null;
+    if (!body) return formError('composeError', 'Write a message first.'), null;
+    if (PLACEHOLDER.test(body) || PLACEHOLDER.test(subject)) {
+      return formError('composeError', 'This message still contains {{placeholders}}. They are not filled in per guardian when sending, so replace them with real text first.'), null;
+    }
+    const payload = { channel, body };
+    if (channel === 'email') payload.subject = subject;
+    if (byClass) payload.classId = $('classSel').value; else payload.guardianIds = [...picked.keys()];
+    const audience = byClass ? `every guardian in ${classLabel(classes.find((c) => c.id === payload.classId))}` : `${picked.size} selected guardian(s)`;
+    return { payload, audience };
+  }
+
+  function renderResult(m) {
+    const recips = m.recipients || [];
+    const ok = recips.filter((r) => r.delivery_status === 'delivered').length, bad = recips.filter((r) => r.delivery_status === 'failed').length;
+    const chip = (s) => `<span class="status-chip ${s === 'delivered' || s === 'sent' ? 'ok' : s === 'failed' ? 'error' : 'warn'}">${esc(s || 'queued')}</span>`;
+    const card = $('resultCard');
+    card.innerHTML = `<h3 style="font-size:1.05rem;">Delivery result ${chip(m.status)}</h3>
+      <div class="stat-row"><div><b>${recips.length}</b>Recipients</div><div><b style="color:var(--leaf)">${ok}</b>Delivered</div><div><b style="color:var(--coral)">${bad}</b>Failed</div></div>
+      ${bad ? '<p class="muted-cell" style="margin:6px 0 0;">Failures are usually a missing or badly formatted phone/email on the guardian, or the provider rejecting the number.</p>' : ''}
+      <div style="overflow-x:auto; margin-top:14px;"><table class="data-table"><thead><tr><th>Guardian</th><th>${m.channel === 'email' ? 'Email' : 'Phone'}</th><th>Status</th></tr></thead><tbody>${recips.map((r) =>
+      `<tr><td class="row-title">${esc(r.guardian_name || '—')}</td><td class="muted-cell">${esc((m.channel === 'email' ? r.guardian_email : r.guardian_phone) || 'none on file')}</td><td>${chip(r.delivery_status)}</td></tr>`).join('')}</tbody></table></div>`;
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('channelSel').addEventListener('change', syncChannel);
+  $('bodyInput').addEventListener('input', updateCounter);
+  $('audienceSel').addEventListener('change', () => {
+    const byClass = $('audienceSel').value === 'class';
+    $('classField').style.display = byClass ? 'block' : 'none';
+    $('guardianField').style.display = byClass ? 'none' : 'block';
+  });
+  $('templateSel').addEventListener('change', () => {
+    const t = templates.find((x) => x.id === $('templateSel').value);
+    if (t) { $('bodyInput').value = t.body_template; updateCounter(); }
+  });
+
+  $('guardianSearch').addEventListener('input', (e) => {
+    clearTimeout(searchDebounce);
+    const q = e.target.value.trim(), box = $('guardianResults');
+    if (!q) { box.style.display = 'none'; return; }
+    searchDebounce = setTimeout(async () => {
+      try {
+        const res = await api.apiFetch(`/guardians?limit=10&offset=0&q=${encodeURIComponent(q)}`);
+        box.innerHTML = res.data.length ? res.data.map((g) => `<div class="pick-row" data-id="${esc(g.id)}">${esc(g.full_name)} <span class="muted-cell">· ${esc(isEmail() ? (g.email || 'no email') : (g.phone || 'no phone'))}</span></div>`).join('')
+          : '<div class="pick-row muted-cell">No matching guardians.</div>';
+        box.querySelectorAll('[data-id]').forEach((row) => row.addEventListener('click', () => {
+          const g = res.data.find((x) => String(x.id) === row.dataset.id);
+          picked.set(String(g.id), g); renderChips(); box.style.display = 'none'; $('guardianSearch').value = '';
+        }));
+        box.style.display = 'block';
+      } catch (err) { /* non-fatal */ }
+    }, 300);
+  });
+
+  $('sendBtn').addEventListener('click', () => {
+    const built = buildPayload();
+    if (!built) return;
+    pendingPayload = built.payload;
+    $('confirmText').textContent = `This will send the ${built.payload.channel.toUpperCase()} to ${built.audience}. It can't be recalled once sent.`;
+    $('confirmModal').style.display = 'flex';
+  });
+  $('confirmCancel').addEventListener('click', () => { $('confirmModal').style.display = 'none'; });
+  $('confirmSend').addEventListener('click', async () => {
+    const btn = $('confirmSend');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await api.apiFetch('/communications/send', { method: 'POST', body: JSON.stringify(pendingPayload) });
+      $('confirmModal').style.display = 'none';
+      renderResult(res.data);
+      $('bodyInput').value = ''; $('subjectInput').value = ''; $('templateSel').value = ''; picked.clear(); renderChips(); updateCounter();
+    } catch (err) {
+      $('confirmModal').style.display = 'none';
+      formError('composeError', err.message || 'Could not send this message.');
+    } finally { btn.disabled = false; btn.textContent = 'Send now'; }
+  });
+
+  $('addTemplateBtn').addEventListener('click', () => {
+    formError('templateError', null); ['tplName', 'tplBody'].forEach((id) => { $(id).value = ''; });
+    $('tplChannel').value = 'sms'; $('templateModal').style.display = 'flex';
+  });
+  $('tplCancel').addEventListener('click', () => { $('templateModal').style.display = 'none'; });
+  $('tplSave').addEventListener('click', async () => {
+    const name = $('tplName').value.trim(), bodyTemplate = $('tplBody').value.trim();
+    if (!name || !bodyTemplate) return formError('templateError', 'Name and message are both required.');
+    const btn = $('tplSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await api.apiFetch('/communications/templates', { method: 'POST', body: JSON.stringify({ name, channel: $('tplChannel').value, bodyTemplate }) });
+      templates.push(res.data); templates.sort((a, b) => a.name.localeCompare(b.name));
+      $('templateModal').style.display = 'none'; renderTemplates(); syncChannel();
+    } catch (err) { formError('templateError', err.message || 'Could not save this template.'); }
+    finally { btn.disabled = false; btn.textContent = 'Save template'; }
+  });
+
+  // ---------- Sender settings ----------
+  let settings = null, platformOk = { sms: false, email: false }, encryptionOk = true, dirty = false;
+  const S = (id) => $(id);
+  const SECRET_HINT = 'Saved — leave blank to keep it';
+
+  function currentSchoolName() { const t = $('schoolNameFoot').textContent; return t && t !== 'Loading school…' ? t : 'your school'; }
+  function describeSender() {
+    if (!settings) { $('sendingAs').textContent = ''; return; }
+    if (isEmail()) {
+      $('sendingAs').textContent = `Email from “${settings.fromName || currentSchoolName()}” · replies go to ${settings.replyTo || 'your school profile email'} · ${settings.emailMode === 'own' ? 'your own SMTP server' : 'shared ElimuOs mail'}.`;
+    } else {
+      $('sendingAs').textContent = `SMS from ${settings.smsSenderId ? 'sender ID “' + settings.smsSenderId + '”' : 'the default sender'} · ${settings.smsMode === 'own' ? "your own Africa's Talking account" : 'shared ElimuOs account'}.`;
+    }
+  }
+  function toggleOwn() {
+    S('smsOwnFields').style.display = S('smsMode').value === 'own' ? 'block' : 'none';
+    S('emailOwnFields').style.display = S('emailMode').value === 'own' ? 'block' : 'none';
+  }
+  function fillSettings() {
+    const x = settings;
+    S('smsMode').value = x.smsMode; S('smsSenderId').value = x.smsSenderId; S('atUsername').value = x.atUsername;
+    S('atApiKey').value = ''; S('atApiKey').placeholder = x.atApiKeySet ? SECRET_HINT : '';
+    S('emailMode').value = x.emailMode; S('fromName').value = x.fromName; S('replyTo').value = x.replyTo;
+    S('smtpHost').value = x.smtpHost; S('smtpPort').value = String(x.smtpPort); S('smtpSecure').checked = x.smtpSecure;
+    S('smtpUser').value = x.smtpUser; S('smtpPassword').value = ''; S('smtpPassword').placeholder = x.smtpPasswordSet ? SECRET_HINT : '';
+    S('smtpFromEmail').value = x.smtpFromEmail;
+    S('smsMode').querySelector('[value=platform]').disabled = !platformOk.sms;
+    S('emailMode').querySelector('[value=platform]').disabled = !platformOk.email;
+    S('smsPlatformNote').textContent = platformOk.sms ? '' : "The shared SMS account isn't set up on this server — use your own Africa's Talking account.";
+    S('emailPlatformNote').textContent = platformOk.email ? 'Emails are sent under your school name; replies go to your reply-to address.' : "The shared mail server isn't set up on this server — use your own SMTP server.";
+    toggleOwn(); dirty = false; describeSender();
+  }
+  async function loadSettings() {
+    try {
+      const res = await api.apiFetch('/communications/settings');
+      settings = res.data.settings; platformOk = res.data.platform; encryptionOk = res.data.encryptionAvailable;
+      fillSettings();
+    } catch (err) { $('sendingAs').textContent = ''; }
+  }
+  function collectSettings() {
+    const body = {
+      smsMode: S('smsMode').value, smsSenderId: S('smsSenderId').value.trim(), atUsername: S('atUsername').value.trim(),
+      emailMode: S('emailMode').value, fromName: S('fromName').value.trim(), replyTo: S('replyTo').value.trim(),
+      smtpHost: S('smtpHost').value.trim(), smtpPort: Number(S('smtpPort').value), smtpSecure: S('smtpSecure').checked,
+      smtpUser: S('smtpUser').value.trim(), smtpFromEmail: S('smtpFromEmail').value.trim(),
+    };
+    // Secrets are only sent when typed — leaving them blank keeps what's saved.
+    if (S('atApiKey').value.trim()) body.atApiKey = S('atApiKey').value.trim();
+    if (S('smtpPassword').value) body.smtpPassword = S('smtpPassword').value;
+    return body;
+  }
+  document.querySelectorAll('#smsCard input, #smsCard select, #emailCard input, #emailCard select').forEach((el) => {
+    el.addEventListener('input', () => { if (!/^test/.test(el.id)) { dirty = true; S('settingsDirtyNote').innerHTML = '<b style="color:#8A5B14;">Unsaved changes</b> — save before sending a test.'; } });
+  });
+  S('smsMode').addEventListener('change', toggleOwn); S('emailMode').addEventListener('change', toggleOwn);
+
+  S('saveSettingsBtn').addEventListener('click', async () => {
+    formError('settingsError', null);
+    const btn = S('saveSettingsBtn'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await api.apiFetch('/communications/settings', { method: 'PUT', body: JSON.stringify(collectSettings()) });
+      settings = res.data; fillSettings(); syncChannel();
+      S('settingsDirtyNote').innerHTML = 'Saved. Test messages use your <b>saved</b> settings.';
+      showAlert('ok', 'Sender settings saved.');
+    } catch (err) { formError('settingsError', err.message || 'Could not save sender settings.'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="bi bi-check2"></i> Save sender settings'; }
+  });
+
+  async function runTest(channel, inputId, btnId, outId) {
+    const out = S(outId), to = S(inputId).value.trim();
+    out.style.color = ''; formError('settingsError', null);
+    if (dirty) { out.textContent = 'Save your changes first — the test uses your saved settings.'; out.style.color = '#B23350'; return; }
+    if (!to) { out.textContent = 'Enter where to send the test.'; out.style.color = '#B23350'; return; }
+    const btn = S(btnId); btn.disabled = true; btn.textContent = 'Sending…'; out.textContent = '';
+    try {
+      await api.apiFetch('/communications/settings/test', { method: 'POST', body: JSON.stringify({ channel, to }) });
+      out.textContent = 'Sent. Check the recipient — delivery can take a moment.'; out.style.color = 'var(--leaf)';
+    } catch (err) { out.textContent = err.message || 'The test failed.'; out.style.color = '#B23350'; }
+    finally { btn.disabled = false; btn.textContent = 'Send test'; }
+  }
+  S('testSmsBtn').addEventListener('click', () => runTest('sms', 'testPhone', 'testSmsBtn', 'smsTestResult'));
+  S('testEmailBtn').addEventListener('click', () => runTest('email', 'testEmail', 'testEmailBtn', 'emailTestResult'));
+
+  initTabs();
+  (async () => {
+    const user = await bootShell();
+    if (!user) return;
+    loadSettings();
+    try { await loadBase(); } catch (err) { showAlert('error', esc(err.message || 'Could not load classes and templates.')); }
+  })();
+
+</script>
+</body>
+</html>

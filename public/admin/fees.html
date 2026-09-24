@@ -257,6 +257,17 @@
               <button type="submit" class="btn-elimu btn-elimu-primary" id="addStructureBtn">Add item</button>
             </form>
             <div class="form-error" id="structureFormError"></div>
+
+            <div style="margin-top:26px; padding-top:18px; border-top:1px solid var(--line);">
+              <div style="font-weight:700; font-size:0.88rem; margin-bottom:4px;">Copy from another term</div>
+              <p style="font-size:0.82rem; color:var(--ink-soft); margin-bottom:12px;">Start this grade's items from a previous term or year, then adjust amounts with Edit. Items already listed here (same name) are skipped.</p>
+              <div class="grade-term-picker" style="margin-bottom:0;">
+                <div class="field"><label for="copyYearSelect">From year</label><select class="input" id="copyYearSelect"><option value="">Select year…</option></select></div>
+                <div class="field"><label for="copyTermSelect">From term</label><select class="input" id="copyTermSelect" disabled><option value="">Select year first…</option></select></div>
+                <button type="button" class="btn-elimu btn-elimu-ghost" id="copyStructuresBtn"><i class="bi bi-files"></i> Copy items here</button>
+              </div>
+              <div class="form-error" id="copyFormError" style="margin-top:12px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -302,6 +313,22 @@
 </div>
 
 <!-- Generate invoice modal -->
+<!-- Edit fee item modal -->
+<div class="modal-overlay" id="editItemModal" style="display:none;">
+  <div class="modal-box" style="max-width:440px;">
+    <h3>Edit fee item</h3>
+    <p style="margin-bottom:16px;">Changes apply to invoices generated from now on. Invoices already generated keep the amounts they were created with.</p>
+    <div class="form-error" id="editItemError"></div>
+    <div class="field"><label for="editItemName">Item name</label><input class="input" id="editItemName" /></div>
+    <div class="field"><label for="editItemAmount">Amount (KES)</label><input class="input" type="number" min="0" step="1" id="editItemAmount" /></div>
+    <label style="display:flex; align-items:center; gap:7px; font-weight:600; font-size:0.86rem;"><input type="checkbox" id="editItemMandatory" style="width:auto;" /> Mandatory</label>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="editItemCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="editItemSave">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="invoiceModal" style="display:none;">
   <div class="modal-box wide">
     <h3>Generate an invoice</h3>
@@ -463,26 +490,44 @@
   function populateGradeSelect(sel) {
     sel.innerHTML = '<option value="">Select grade…</option>' + grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
   }
-  function populateYearSelect(sel) {
-    sel.innerHTML = '<option value="">Select year…</option>' + academicYears.map(y => `<option value="${y.id}">${y.year_label}${y.is_current ? ' (current)' : ''}</option>`).join('');
+  const escH = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /**
+   * Fills a term <select> for whatever year is currently chosen in yearSel,
+   * defaulting to the term whose dates include today (else the first term).
+   * Setting a <select>'s .value from code does NOT fire "change", so anything
+   * that pre-selects a year must call this itself — that's what used to leave
+   * the term picker stuck on "Select year first…" with the current year already
+   * chosen. Returns a promise so callers can await the terms being ready.
+   */
+  async function fillTermSelect(yearSel, termSel) {
+    const yearId = yearSel.value;
+    if (!yearId) { termSel.innerHTML = '<option value="">Select year first…</option>'; termSel.disabled = true; termSel.dispatchEvent(new Event('change')); return; }
+    termSel.disabled = false;
+    termSel.innerHTML = '<option value="">Loading…</option>';
+    try {
+      const terms = await loadTermsForYear(yearId);
+      if (yearSel.value !== yearId) return; // year changed again while loading — a newer call owns the select
+      termSel.innerHTML = terms.length
+        ? terms.map(t => `<option value="${t.id}">Term ${t.term_number}</option>`).join('')
+        : '<option value="">No terms set for this year</option>';
+      const today = new Date().toISOString().slice(0, 10);
+      const now = terms.find(t => String(t.start_date).slice(0, 10) <= today && today <= String(t.end_date).slice(0, 10));
+      if (now) termSel.value = now.id;
+    } catch (err) {
+      termSel.innerHTML = '<option value="">Could not load terms</option>';
+    }
+    termSel.dispatchEvent(new Event('change')); // lets dependent UI (e.g. the fee items list) react to the default term
+  }
+  // Fills a year <select> (current year preselected) and, when a term select is given, its terms too.
+  async function populateYearSelect(sel, termSel) {
+    sel.innerHTML = '<option value="">Select year…</option>' + academicYears.map(y => `<option value="${y.id}">${escH(y.year_label)}${y.is_current ? ' (current)' : ''}</option>`).join('');
     const current = academicYears.find(y => y.is_current);
     if (current) sel.value = current.id;
+    if (termSel) await fillTermSelect(sel, termSel);
   }
-  async function wireYearTermPair(yearSel, termSel) {
-    yearSel.addEventListener('change', async () => {
-      const yearId = yearSel.value;
-      if (!yearId) { termSel.innerHTML = '<option value="">Select year first…</option>'; termSel.disabled = true; return; }
-      termSel.disabled = false;
-      termSel.innerHTML = '<option value="">Loading…</option>';
-      try {
-        const terms = await loadTermsForYear(yearId);
-        termSel.innerHTML = terms.length
-          ? terms.map(t => `<option value="${t.id}">Term ${t.term_number}</option>`).join('')
-          : '<option value="">No terms set for this year</option>';
-      } catch (err) {
-        termSel.innerHTML = '<option value="">Could not load terms</option>';
-      }
-    });
+  function wireYearTermPair(yearSel, termSel) {
+    yearSel.addEventListener('change', () => fillTermSelect(yearSel, termSel));
   }
 
   // ===================== INVOICES =====================
@@ -538,9 +583,7 @@
     document.getElementById('invoiceStudentPicked').innerHTML = '';
     document.getElementById('invoiceDueDate').value = '';
     formError('invoiceFormError', null);
-    populateYearSelect(document.getElementById('invoiceYearSelect'));
-    document.getElementById('invoiceTermSelect').innerHTML = '<option value="">Select year first…</option>';
-    document.getElementById('invoiceTermSelect').disabled = true;
+    populateYearSelect(document.getElementById('invoiceYearSelect'), document.getElementById('invoiceTermSelect'));
   }
 
   document.getElementById('generateInvoiceBtn').addEventListener('click', () => {
@@ -767,12 +810,16 @@
     } else {
       list.innerHTML = currentStructureItems.map(item => `
         <div class="item-row">
-          <span>${item.item_name}${item.is_mandatory ? '' : '<span class="mandatory-tag">optional</span>'}</span>
+          <span>${escH(item.item_name)}${item.is_mandatory ? '' : '<span class="mandatory-tag">optional</span>'}</span>
           <span style="display:flex; align-items:center; gap:14px;">
             ${B.formatKes(item.amount)}
+            <button class="link-btn" data-edit="${item.id}">Edit</button>
             <button class="link-btn danger" data-remove="${item.id}">Remove</button>
           </span>
         </div>`).join('');
+      list.querySelectorAll('[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => openEditItem(btn.getAttribute('data-edit')));
+      });
       list.querySelectorAll('[data-remove]').forEach(btn => {
         btn.addEventListener('click', () => removeStructureItem(btn.getAttribute('data-remove')));
       });
@@ -822,6 +869,86 @@
       formError('structureFormError', err.message || 'Could not add this fee item.');
     } finally {
       btn.disabled = false; btn.textContent = 'Add item';
+    }
+  });
+
+  // ---------- Edit a fee item ----------
+  let editingItemId = null;
+  function openEditItem(id) {
+    const item = currentStructureItems.find(i => String(i.id) === String(id));
+    if (!item) return;
+    editingItemId = item.id;
+    document.getElementById('editItemName').value = item.item_name;
+    document.getElementById('editItemAmount').value = Number(item.amount);
+    document.getElementById('editItemMandatory').checked = !!item.is_mandatory;
+    formError('editItemError', null);
+    document.getElementById('editItemModal').style.display = 'flex';
+  }
+  document.getElementById('editItemCancel').addEventListener('click', () => {
+    document.getElementById('editItemModal').style.display = 'none';
+  });
+  document.getElementById('editItemSave').addEventListener('click', async () => {
+    const itemName = document.getElementById('editItemName').value.trim();
+    const amountRaw = document.getElementById('editItemAmount').value;
+    const amount = Number(amountRaw);
+    if (!itemName || amountRaw === '' || !Number.isFinite(amount) || amount < 0) {
+      formError('editItemError', 'Enter an item name and an amount of 0 or more.'); return;
+    }
+    const btn = document.getElementById('editItemSave');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const res = await api.apiFetch(`/fees/structures/${editingItemId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ itemName, amount, isMandatory: document.getElementById('editItemMandatory').checked }),
+      });
+      currentStructureItems = currentStructureItems.map(i => String(i.id) === String(editingItemId) ? res.data : i);
+      renderStructures();
+      document.getElementById('editItemModal').style.display = 'none';
+    } catch (err) {
+      formError('editItemError', err.message || 'Could not save this fee item.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save changes';
+    }
+  });
+
+  // ---------- Copy items from another term ----------
+  wireYearTermPair(document.getElementById('copyYearSelect'), document.getElementById('copyTermSelect'));
+  document.getElementById('copyStructuresBtn').addEventListener('click', async () => {
+    formError('copyFormError', null);
+    const gradeId = document.getElementById('structGradeSelect').value;
+    const targetTermId = document.getElementById('structTermSelect').value;
+    const sourceTermId = document.getElementById('copyTermSelect').value;
+    if (!sourceTermId) { formError('copyFormError', 'Choose the year and term to copy from.'); return; }
+    if (sourceTermId === targetTermId) { formError('copyFormError', 'That is the term you are already viewing — pick a different one to copy from.'); return; }
+
+    const btn = document.getElementById('copyStructuresBtn');
+    btn.disabled = true;
+    try {
+      const src = await api.apiFetch(`/fees/structures?gradeId=${gradeId}&termId=${sourceTermId}`);
+      const have = new Set(currentStructureItems.map(i => i.item_name.trim().toLowerCase()));
+      const toCopy = src.data.filter(i => !have.has(i.item_name.trim().toLowerCase()));
+      if (src.data.length === 0) { formError('copyFormError', 'The chosen term has no fee items for this grade.'); return; }
+      if (toCopy.length === 0) { formError('copyFormError', 'Every item from that term is already listed here.'); return; }
+      const skipped = src.data.length - toCopy.length;
+      if (!confirm(`Copy ${toCopy.length} item(s) into this term${skipped ? ` (${skipped} already here, skipped)` : ''}?`)) return;
+
+      let done = 0;
+      try {
+        for (const item of toCopy) { // sequential: keeps order, and a failure stops cleanly with a true count
+          await api.apiFetch('/fees/structures', {
+            method: 'POST',
+            body: JSON.stringify({ gradeId, termId: targetTermId, itemName: item.item_name, amount: Number(item.amount), isMandatory: item.is_mandatory }),
+          });
+          done += 1;
+        }
+      } catch (err) {
+        formError('copyFormError', `Copied ${done} of ${toCopy.length} items, then stopped: ${err.message || 'request failed'}. Nothing is duplicated if you run it again.`);
+      }
+      await loadStructures(gradeId, targetTermId);
+    } catch (err) {
+      formError('copyFormError', err.message || 'Could not copy these items.');
+    } finally {
+      btn.disabled = false;
     }
   });
 
@@ -894,7 +1021,8 @@
 
     await Promise.all([loadGrades(), loadAcademicYears()]);
     populateGradeSelect(document.getElementById('structGradeSelect'));
-    populateYearSelect(document.getElementById('structYearSelect'));
+    populateYearSelect(document.getElementById('copyYearSelect'), document.getElementById('copyTermSelect'));
+    populateYearSelect(document.getElementById('structYearSelect'), document.getElementById('structTermSelect'));
 
     await loadInvoices();
     loadPaymentConfig();

@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  createFeeStructure, listFeeStructures, deleteFeeStructure,
+  createFeeStructure, listFeeStructures, updateFeeStructure, deleteFeeStructure,
   generateInvoice, getInvoice, listStudentInvoices, listOutstandingInvoices,
   recordPayment, listInvoicePayments, listStudentPayments, voidPayment,
 } = require('../controllers/fee.controller');
@@ -13,6 +13,7 @@ router.use(authenticate);
 // Fee structures
 router.post('/structures', restrictTo('school_admin', 'accountant'), createFeeStructure);
 router.get('/structures', restrictTo('school_admin', 'accountant'), listFeeStructures);
+router.patch('/structures/:id', restrictTo('school_admin'), updateFeeStructure);
 router.delete('/structures/:id', restrictTo('school_admin'), deleteFeeStructure);
 
 // Invoices

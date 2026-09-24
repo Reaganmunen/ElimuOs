@@ -27,6 +27,7 @@ const listTemplates = asyncHandler(async (req, res) => {
 const sendBroadcast = asyncHandler(async (req, res) => {
   const { channel, subject, body, classId, guardianIds } = req.body;
   if (!channel || !body) throw new ApiError(400, 'channel and body are required');
+  if (!['sms', 'email'].includes(channel)) throw new ApiError(400, 'channel must be "sms" or "email"');
   if (!classId && (!Array.isArray(guardianIds) || guardianIds.length === 0)) {
     throw new ApiError(400, 'Provide either classId or a non-empty guardianIds array');
   }
@@ -41,6 +42,12 @@ const sendBroadcast = asyncHandler(async (req, res) => {
   if (guardians.length === 0) {
     throw new ApiError(400, 'No guardians found for the given class/guardianIds');
   }
+
+  // Resolve THIS school's own sender (shared account + its sender identity, or its own
+  // accounts) and validate it BEFORE saving anything, so a misconfigured school gets a
+  // clear error instead of a saved-but-undeliverable message.
+  const sender = await notificationProvider.forSchool(req.user.school_id);
+  await sender.prepare(channel);
 
   const { message, recipients } = await communicationModel.createMessage(req.user.school_id, {
     senderId: req.user.id,
@@ -60,7 +67,7 @@ const sendBroadcast = asyncHandler(async (req, res) => {
       continue; // eslint-disable-line no-continue
     }
     try {
-      const result = await notificationProvider.send(channel, { to: destination, subject, body });
+      const result = await sender.send(channel, { to: destination, subject, body });
       await communicationModel.updateRecipientStatus(req.user.school_id, recipientRow.id, {
         deliveryStatus: 'delivered', providerMessageId: result.providerMessageId,
       });
@@ -71,6 +78,7 @@ const sendBroadcast = asyncHandler(async (req, res) => {
     }
   }
 
+  sender.close();
   await communicationModel.markMessageStatus(req.user.school_id, message.id, anySucceeded ? 'sent' : 'failed');
   const finalMessage = await communicationModel.getMessageWithRecipients(req.user.school_id, message.id);
 
