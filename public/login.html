@@ -34,47 +34,49 @@
     <div class="auth-form-wrap">
       <a href="index.html" class="brand d-none">ElimuOs</a>
 
-      <!-- Step 1: email + password -->
-      <div id="loginStep">
-        <h1>Log in</h1>
-        <p class="sub">One login for every school and every role.</p>
+      <div class="auth-card">
+        <!-- Step 1: email + password -->
+        <div id="loginStep">
+          <h1>Log in</h1>
+          <p class="sub">One login for every school and every role.</p>
 
-        <div id="loginAlert"></div>
+          <div id="loginAlert"></div>
 
-        <form id="loginForm" novalidate>
-          <div class="field">
-            <label for="email">Email address</label>
-            <input class="input" type="email" id="email" name="email" autocomplete="email" required />
-            <div class="input-error-text">Enter your email address.</div>
-          </div>
-
-          <div class="field">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <label for="password" style="margin-bottom:0;">Password</label>
-              <a href="forgot-password.html" style="font-size:0.82rem; color:var(--blue); font-weight:600;">Forgot password?</a>
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="email">Email address</label>
+              <input class="input" type="email" id="email" name="email" autocomplete="email" required />
+              <div class="input-error-text">Enter your email address.</div>
             </div>
-            <div class="password-field" style="margin-top:7px;">
-              <input class="input" type="password" id="password" name="password" autocomplete="current-password" required style="padding-right:42px;" />
-              <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+
+            <div class="field">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label for="password" style="margin-bottom:0;">Password</label>
+                <a href="forgot-password.html" style="font-size:0.82rem; color:var(--blue); font-weight:600;">Forgot password?</a>
+              </div>
+              <div class="password-field" style="margin-top:7px;">
+                <input class="input" type="password" id="password" name="password" autocomplete="current-password" required style="padding-right:42px;" />
+                <button type="button" class="password-toggle" id="togglePassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+              </div>
+              <div class="input-error-text">Enter your password.</div>
             </div>
-            <div class="input-error-text">Enter your password.</div>
-          </div>
 
-          <button type="submit" class="btn-elimu btn-elimu-primary btn-elimu-block" id="loginSubmit">
-            <span id="loginSubmitText">Log in</span>
-          </button>
-        </form>
-      </div>
+            <button type="submit" class="btn-elimu btn-elimu-primary btn-elimu-block" id="loginSubmit">
+              <span id="loginSubmitText">Log in</span>
+            </button>
+          </form>
+        </div>
 
-      <!-- Step 2: pick a school (only shown if the email matches more than one) -->
-      <div id="schoolStep" style="display:none;">
-        <h1>Which school?</h1>
-        <p class="sub" id="schoolStepSub">This email is used at more than one school — pick yours to continue.</p>
+        <!-- Step 2: pick a school (only shown if the email matches more than one) -->
+        <div id="schoolStep" style="display:none;">
+          <h1>Which school?</h1>
+          <p class="sub" id="schoolStepSub">This email is used at more than one school — pick yours to continue.</p>
 
-        <div class="school-pick-list" id="schoolPickList"></div>
+          <div class="school-pick-list" id="schoolPickList"></div>
 
-        <button type="button" class="btn-elimu btn-elimu-primary btn-elimu-block" id="schoolContinue" disabled>Continue</button>
-        <button type="button" class="btn-elimu btn-elimu-ghost btn-elimu-block" id="schoolBack" style="margin-top:10px;">Back</button>
+          <button type="button" class="btn-elimu btn-elimu-primary btn-elimu-block" id="schoolContinue" disabled>Continue</button>
+          <button type="button" class="btn-elimu btn-elimu-ghost btn-elimu-block" id="schoolBack" style="margin-top:10px;">Back</button>
+        </div>
       </div>
 
       <p class="auth-switch">New school? <a href="register.html">Register here</a></p>

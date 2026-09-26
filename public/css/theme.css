@@ -157,8 +157,17 @@ a{ text-decoration: none; color: inherit; }
 }
 .auth-side-quote .who{ margin-top: 14px; font-size: 0.82rem; color: rgba(255,255,255,0.55); font-weight: 600; }
 
-.auth-form-side{ flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
-.auth-form-wrap{ width: 100%; max-width: 400px; }
+.auth-form-side{
+  flex: 1; position: relative; overflow: hidden;
+  background: var(--cloud);
+  display: flex; align-items: center; justify-content: center; padding: 40px 24px;
+}
+.auth-form-side::before, .auth-form-side::after{
+  content: ''; position: absolute; border-radius: 50%; filter: blur(90px); z-index: 0;
+}
+.auth-form-side::before{ width: 340px; height: 340px; background: var(--blue); opacity: 0.16; top: -110px; right: -90px; }
+.auth-form-side::after{ width: 300px; height: 300px; background: var(--plum); opacity: 0.14; bottom: -110px; left: -70px; }
+.auth-form-wrap{ position: relative; z-index: 1; width: 100%; max-width: 400px; }
 .auth-form-wrap .brand{ margin-bottom: 36px; }
 .auth-form-wrap h1{ font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; }
 .auth-form-wrap .sub{ color: var(--ink-soft); font-size: 0.94rem; margin-bottom: 30px; }
@@ -167,14 +176,25 @@ a{ text-decoration: none; color: inherit; }
 .auth-switch a:hover{ text-decoration: underline; }
 
 /* The actual bounded panel the form sits inside — without this, the
-   title/fields/button were just floating loose on the white page with
-   nothing marking where the form starts or ends. */
+   title/fields/button were just floating loose on the page with
+   nothing marking where the form starts or ends. Glassmorphism: a
+   translucent, blurred panel over the soft colour blobs in
+   .auth-form-side, with a light inner + outer border so the edge stays
+   readable even where it crosses a blob. */
 .auth-card{
-  background: var(--white);
-  border: 1.5px solid #D7DAEE;
+  position: relative;
+  background: rgba(255,255,255,0.62);
+  border: 1.5px solid rgba(255,255,255,0.7);
   border-radius: var(--radius-lg);
-  box-shadow: 0 30px 60px -30px rgba(18,23,43,0.16);
+  box-shadow: 0 30px 60px -30px rgba(18,23,43,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
   padding: 40px 36px;
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+/* Fallback for browsers without backdrop-filter support (older Firefox,
+   some WebViews) — an opaque card beats an unreadably transparent one. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+  .auth-card{ background: rgba(255,255,255,0.96); }
 }
 @media (max-width: 480px){
   .auth-card{ padding: 30px 22px; }

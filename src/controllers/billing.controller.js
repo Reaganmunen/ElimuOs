@@ -56,6 +56,22 @@ const getMySubscription = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, subscription);
 });
 
+/**
+ * GET /billing/subscriptions/mine/status — the one billing endpoint every
+ * authenticated role can call, not just school_admin/accountant. Other
+ * roles (teacher, parent, student, accountant) need to know "is my
+ * school's plan live" to get past auth.js's bootstrap({
+ * requireLiveSubscription: true }) gate on their own dashboards, but
+ * shouldn't see full subscription/billing detail — that's why this
+ * returns just { status, isLive } instead of reusing getMySubscription.
+ * Never 404s — no subscription yet is simply { status: 'none', isLive: false },
+ * since this is a status check, not a "fetch the record" endpoint.
+ */
+const getMySubscriptionStatus = asyncHandler(async (req, res) => {
+  const live = await subscriptionModel.getLiveForSchool(req.user.school_id);
+  return sendSuccess(res, 200, { status: live ? live.status : 'none', isLive: !!live });
+});
+
 const cancelMySubscription = asyncHandler(async (req, res) => {
   const live = await subscriptionModel.getLiveForSchool(req.user.school_id);
   if (!live) throw new ApiError(404, 'No live subscription to cancel');
@@ -127,6 +143,6 @@ const expireTrials = asyncHandler(async (req, res) => {
 
 module.exports = {
   createPlan, listPlans, updatePlan, setPlanActive,
-  startTrial, getMySubscription, cancelMySubscription, changeMyPlan,
+  startTrial, getMySubscription, getMySubscriptionStatus, cancelMySubscription, changeMyPlan,
   listAllSubscriptions, activateSubscription, expireTrials,
 };

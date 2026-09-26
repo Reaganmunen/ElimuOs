@@ -1,7 +1,7 @@
 const express = require('express');
 const {
   createPlan, listPlans, updatePlan, setPlanActive,
-  startTrial, getMySubscription, cancelMySubscription, changeMyPlan,
+  startTrial, getMySubscription, getMySubscriptionStatus, cancelMySubscription, changeMyPlan,
   listAllSubscriptions, activateSubscription, expireTrials,
 } = require('../controllers/billing.controller');
 const { authenticate, restrictTo } = require('../middleware/auth.middleware');
@@ -18,6 +18,12 @@ router.patch('/plans/:id/active', restrictTo('super_admin'), setPlanActive);
 
 // A school's own subscription
 router.post('/subscriptions/start-trial', restrictTo('school_admin'), startTrial);
+// Every authenticated role (teacher, parent, student included) — this is
+// what non-admin dashboards call to get past the requireLiveSubscription
+// gate in auth.js's bootstrap(). It exposes only { status, isLive }, not
+// billing detail, so it's deliberately NOT restricted the way the full
+// subscription record below is.
+router.get('/subscriptions/mine/status', getMySubscriptionStatus);
 router.get('/subscriptions/mine', restrictTo('school_admin', 'accountant'), getMySubscription);
 router.post('/subscriptions/mine/cancel', restrictTo('school_admin'), cancelMySubscription);
 router.patch('/subscriptions/mine/plan', restrictTo('school_admin'), changeMyPlan);

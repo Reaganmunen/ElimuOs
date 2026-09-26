@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teacher Dashboard — ElimuOs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  /* Page-specific layout only — the shell (sidebar/topbar/cards) is the
+     same admin-shell.css every /admin/*.html page uses, so this page
+     matches that design system rather than inventing its own. */
+
+  .topbar-search{
+    flex: 1; max-width: 420px; display: flex; align-items: center; gap: 10px;
+    background: var(--cloud); border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 16px; color: var(--ink-soft); font-size: 0.88rem;
+  }
+  .topbar-search i{ font-size: 0.95rem; }
+  .topbar-search kbd{ margin-left: auto; font-size: 0.72rem; background: white; border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; color: var(--ink-soft); }
+  .icon-btn{
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    color: var(--ink-soft); font-size: 1.05rem; position: relative; flex-shrink: 0; cursor: pointer;
+  }
+  .icon-btn:hover{ background: var(--cloud); }
+  .icon-btn.disabled{ opacity: 0.4; cursor: not-allowed; }
+
+  .hero-card{
+    background: linear-gradient(135deg, var(--ink) 0%, #232a4d 100%); color: white;
+    border-radius: var(--radius-lg); padding: 28px 30px; display: flex; align-items: center;
+    justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .hero-card h2{ color: white; font-size: 1.4rem; margin-bottom: 6px; }
+  .hero-card p{ color: rgba(255,255,255,0.72); font-size: 0.9rem; max-width: 42ch; line-height: 1.5; }
+  .hero-card p a{ color: white; font-weight: 700; text-decoration: underline; }
+  .hero-actions{ display: flex; gap: 10px; flex-wrap: wrap; }
+  .hero-card .btn-elimu-ghost{ border-color: rgba(255,255,255,0.35); color: white; }
+  .hero-card .btn-elimu-ghost:hover{ border-color: white; color: white; background: rgba(255,255,255,0.08); }
+
+  .stat-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .stat-card{ background: white; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 18px 20px; }
+  .stat-card .stat-icon{ width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 10px; }
+  .stat-card .stat-value{ font-size: 1.5rem; font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .stat-card .stat-label{ font-size: 0.8rem; color: var(--ink-soft); font-weight: 600; }
+
+  .quicklink-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; margin-top: 16px; }
+  .quicklink{
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px 8px; border: 1px solid var(--line); border-radius: var(--radius-md);
+    font-size: 0.78rem; font-weight: 600; color: var(--ink); text-align: center;
+  }
+  .quicklink:hover{ border-color: var(--blue); background: var(--cloud); }
+  .quicklink i{ font-size: 1.2rem; color: var(--blue); }
+
+  .dash-columns{ display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1080px){ .dash-columns{ grid-template-columns: 1fr; } }
+
+  /* Today's schedule row */
+  .sched-row{ display: flex; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .sched-row:last-child{ border-bottom: none; padding-bottom: 0; }
+  .sched-time{
+    width: 78px; flex-shrink: 0; font-size: 0.78rem; font-weight: 700; color: var(--blue-deep);
+    background: rgba(74,90,240,0.08); border-radius: var(--radius-sm); padding: 6px 8px; text-align: center; line-height: 1.3;
+  }
+  .sched-subject{ font-size: 0.9rem; font-weight: 700; }
+  .sched-class{ font-size: 0.78rem; color: var(--ink-soft); }
+  .sched-row.now .sched-time{ background: var(--blue); color: white; }
+
+  /* My classes row */
+  .class-row{ display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+  .class-row:last-child{ border-bottom: none; padding-bottom: 0; }
+  .class-row .cls-name{ font-weight: 700; }
+  .class-row .cls-subject{ color: var(--ink-soft); font-size: 0.8rem; }
+  .class-row .cls-periods{ font-size: 0.76rem; color: var(--ink-soft); white-space: nowrap; }
+
+  .mini-cal-head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; font-weight: 700; font-size: 0.92rem; }
+  .mini-cal-grid{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 0.76rem; }
+  .mini-cal-grid .dow{ color: var(--ink-soft); font-weight: 700; padding-bottom: 4px; }
+  .mini-cal-grid .day{ padding: 6px 0; border-radius: 8px; color: var(--ink); }
+  .mini-cal-grid .day.today{ background: var(--blue); color: white; font-weight: 700; }
+  .mini-cal-grid .day.muted{ color: var(--line); }
+
+  .term-row{ display: flex; justify-content: space-between; font-size: 0.86rem; padding: 7px 0; }
+  .term-row .lbl{ color: var(--ink-soft); }
+
+  .empty-note{ color: var(--ink-soft); font-size: 0.86rem; }
+
+  [hidden]{ display: none !important; }
+  .page-head{ display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .page-head h1{ font-size: 1.3rem; }
+  .page-head p{ color: var(--ink-soft); font-size: 0.88rem; margin-top: 3px; }
+  .filter-row{ display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 18px; }
+  .filter-row .field{ margin-bottom: 0; min-width: 170px; flex: 1; }
+  .pick-grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .pick-card{ text-align: left; background: white; border: 1.5px solid var(--line); border-radius: var(--radius-md); padding: 14px 16px; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
+  .pick-card:hover{ border-color: var(--blue); }
+  .pick-card.active{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,90,240,0.12); background: var(--cloud); }
+  .pick-card strong{ font-size: 0.92rem; } .pick-card span{ font-size: 0.82rem; color: var(--ink-soft); } .pick-card em{ font-style: normal; font-size: 0.76rem; color: var(--blue-deep); font-weight: 700; }
+  .data-table{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .data-table th{ text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); font-weight: 700; padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
+  .data-table td{ padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .data-table tr:last-child td{ border-bottom: none; }
+  .tbl-wrap{ overflow-x: auto; }
+  .s-name{ font-weight: 700; } .s-adm, .muted{ color: var(--ink-soft); font-size: 0.8rem; }
+  .lvl{ display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 800; font-size: 0.76rem; color: white; }
+  .lvl-EE{ background: var(--rubric-ee); } .lvl-ME{ background: var(--rubric-me); } .lvl-AE{ background: var(--rubric-ae); } .lvl-BE{ background: var(--rubric-be); }
+  .lvl-btn{ border: 1.5px solid #D7DAEE; background: white; color: var(--ink-soft); font: inherit; font-weight: 800; font-size: 0.76rem; padding: 5px 12px; border-radius: 999px; cursor: pointer; margin-right: 5px; }
+  .lvl-btn:hover{ border-color: var(--blue); }
+  .lvl-btn.on.lvl-EE{ background: var(--rubric-ee); border-color: var(--rubric-ee); color: white; } .lvl-btn.on.lvl-ME{ background: var(--rubric-me); border-color: var(--rubric-me); color: white; }
+  .lvl-btn.on.lvl-AE{ background: var(--rubric-ae); border-color: var(--rubric-ae); color: white; } .lvl-btn.on.lvl-BE{ background: var(--rubric-be); border-color: var(--rubric-be); color: white; }
+  .remark-input{ width: 100%; min-width: 150px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 6px 9px; font: inherit; font-size: 0.82rem; background: var(--cloud); }
+  .remark-input:focus{ outline: none; border-color: var(--blue); background: white; }
+  .dist-row{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+  .dist-row .stat-card{ min-width: 120px; padding: 12px 16px; }
+  .mini{ display: inline-block; font-size: 0.72rem; background: var(--cloud); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; margin: 2px 4px 2px 0; white-space: nowrap; }
+  .att-ok{ color: var(--leaf); font-weight: 700; } .att-low{ color: #B23350; font-weight: 700; }
+  .save-bar{ display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .g-head{ display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .g-row{ display: flex; gap: 14px; align-items: center; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--line); flex-wrap: wrap; font-size: 0.86rem; }
+  .g-row a{ color: var(--blue-deep); font-weight: 600; } .g-row a:hover{ text-decoration: underline; }
+  .badge-primary{ font-size: 0.68rem; font-weight: 700; background: rgba(23,166,115,0.12); color: var(--leaf); padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .toast{ position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: white; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 0.86rem; z-index: 60; }
+  .alert-ok{ background: rgba(23,166,115,0.1); color: #0F7A55; }
+
+  .status-seg{ display: inline-flex; gap: 5px; flex-wrap: wrap; }
+  .status-chip-btn{ border: 1.5px solid #D7DAEE; background: var(--white); color: var(--ink-soft); font: inherit; font-weight: 700; font-size: 0.74rem; padding: 5px 11px; border-radius: 999px; cursor: pointer; text-transform: capitalize; }
+  .status-chip-btn:hover{ border-color: var(--blue); }
+  .status-chip-btn.active[data-status="present"]{ background: rgba(23,166,115,0.12); border-color: var(--leaf); color: var(--leaf); }
+  .status-chip-btn.active[data-status="absent"]{ background: rgba(240,99,122,0.12); border-color: var(--coral); color: #B23350; }
+  .status-chip-btn.active[data-status="late"]{ background: rgba(232,162,61,0.14); border-color: var(--gold); color: #8A5B14; }
+  .status-chip-btn.active[data-status="excused"]{ background: rgba(124,92,252,0.12); border-color: var(--plum); color: var(--plum); }
+  .tt-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .tt-day{ background: white; border: 1.5px solid var(--line); border-radius: var(--radius-md); padding: 14px; }
+  .tt-day.today{ border-color: var(--blue); box-shadow: 0 0 0 3px rgba(74,90,240,0.12); }
+  .tt-day h4{ font-size: 0.86rem; margin-bottom: 10px; }
+  .tt-slot{ padding: 8px 0; border-top: 1px solid var(--line); font-size: 0.82rem; }
+  .tt-slot b{ display: block; } .tt-slot span{ color: var(--ink-soft); font-size: 0.76rem; }
+  textarea.input{ min-height: 110px; resize: vertical; }
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="dashboard.html" class="brand">
+      <span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>
+      ElimuOs
+    </a>
+    <nav class="admin-nav">
+      <a href="#overview" class="admin-nav-link active" data-view="overview"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+      <a href="#subjects" class="admin-nav-link" data-view="subjects"><i class="bi bi-diagram-3-fill"></i> My Classes</a>
+      <a href="#timetable" class="admin-nav-link" data-view="timetable"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="#attendance" class="admin-nav-link" data-view="attendance"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+      <a href="#students" class="admin-nav-link" data-view="students"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="#communication" class="admin-nav-link" data-view="communication"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+      <div class="admin-nav-section">Grading</div>
+      <a href="#grades" class="admin-nav-link" data-view="grades"><i class="bi bi-pencil-square"></i> Grade Book</a>
+      <div class="admin-nav-section homeroom-only" hidden>My Class</div>
+      <a href="#myclass" class="admin-nav-link homeroom-only" data-view="myclass" hidden><i class="bi bi-bar-chart-fill"></i> Performance</a>
+      <a href="#guardians" class="admin-nav-link homeroom-only" data-view="guardians" hidden><i class="bi bi-person-hearts"></i> Guardians</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="schoolNameFoot">Loading school…</div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div class="topbar-search">
+        <i class="bi bi-search"></i>
+        <span>Search classes, students…</span>
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="admin-topbar-right">
+        <div class="icon-btn disabled" title="Coming soon"><i class="bi bi-bell-fill"></i></div>
+        <div class="icon-btn disabled" title="Coming soon"><i class="bi bi-chat-dots-fill"></i></div>
+        <div class="user-chip" id="userChip">
+          <div class="user-avatar" id="userAvatar">…</div>
+          <div>
+            <div class="user-chip-name" id="userName">Loading…</div>
+            <div class="user-chip-role" id="userRole">Teacher</div>
+          </div>
+          <i class="bi bi-chevron-down" style="font-size:0.75rem; color:var(--ink-soft);"></i>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+<section id="view-overview">
+
+      <div class="hero-card">
+        <div>
+          <h2 id="heroGreeting">Good morning 👋</h2>
+          <p id="heroLine">Here's what's on today.</p>
+        </div>
+        <div class="hero-actions">
+          <a href="#attendance" class="btn-elimu btn-elimu-ghost"><i class="bi bi-calendar2-check-fill"></i> Take attendance</a>
+          <a href="#grades" class="btn-elimu btn-elimu-ghost"><i class="bi bi-pencil-square"></i> Enter grades</a>
+          <a href="#timetable" class="btn-elimu btn-elimu-primary"><i class="bi bi-calendar3"></i> View timetable</a>
+        </div>
+      </div>
+
+      <div class="stat-grid" id="statGrid" style="margin-top:20px;">
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(74,90,240,0.12); color:var(--blue);"><i class="bi bi-calendar-event-fill"></i></div>
+          <div class="stat-value skeleton" style="width:32px; height:24px;"></div><div class="stat-label">Classes today</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(124,92,252,0.12); color:var(--plum);"><i class="bi bi-diagram-3-fill"></i></div>
+          <div class="stat-value skeleton" style="width:32px; height:24px;"></div><div class="stat-label">Classes taught</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(23,166,115,0.12); color:var(--leaf);"><i class="bi bi-journal-bookmark-fill"></i></div>
+          <div class="stat-value skeleton" style="width:32px; height:24px;"></div><div class="stat-label">Subjects</div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(232,162,61,0.14); color:var(--gold);"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-value skeleton" style="width:48px; height:24px;"></div><div class="stat-label">Students taught</div></div>
+      </div>
+
+      <div class="card-elimu" style="margin-top:20px;">
+        <h3 style="font-size:0.98rem;">Quick links</h3>
+        <div class="quicklink-grid">
+          <a href="#subjects" class="quicklink"><i class="bi bi-diagram-3-fill"></i> My Classes</a>
+          <a href="#timetable" class="quicklink"><i class="bi bi-calendar3"></i> Timetable</a>
+          <a href="#attendance" class="quicklink"><i class="bi bi-calendar2-check-fill"></i> Attendance</a>
+          <a href="#students" class="quicklink"><i class="bi bi-people-fill"></i> Students</a>
+          <a href="#communication" class="quicklink"><i class="bi bi-chat-dots-fill"></i> Communication</a>
+          <a href="#grades" class="quicklink"><i class="bi bi-pencil-square"></i> Grade Book</a>
+          <a href="#myclass" class="quicklink homeroom-only" hidden><i class="bi bi-bar-chart-fill"></i> Performance</a>
+          <a href="#guardians" class="quicklink homeroom-only" hidden><i class="bi bi-person-hearts"></i> Guardians</a>
+        </div>
+      </div>
+
+      <div class="dash-columns" style="margin-top:20px;">
+
+        <div>
+          <div class="card-elimu">
+            <h3 style="font-size:0.98rem; margin-bottom:2px;">Today's schedule</h3>
+            <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;" id="scheduleSub">Your periods for today.</p>
+            <div id="scheduleList">
+              <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+              <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+              <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+            </div>
+          </div>
+
+          <div class="card-elimu">
+            <h3 style="font-size:0.98rem; margin-bottom:2px;">My classes</h3>
+            <p style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:6px;">Every class and subject assigned to you.</p>
+            <div id="classesList">
+              <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+              <div class="skeleton" style="height:14px; margin:10px 0;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card-elimu">
+            <div class="mini-cal-head">
+              <span id="calMonthLabel">—</span>
+            </div>
+            <div class="mini-cal-grid" id="miniCalGrid"></div>
+          </div>
+
+          <div class="card-elimu">
+            <h3 style="font-size:0.98rem; margin-bottom:8px;">Current term</h3>
+            <div id="termBlock">
+              <div class="skeleton" style="height:14px; margin:8px 0;"></div>
+              <div class="skeleton" style="height:14px; margin:8px 0;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      </section>
+
+      <div id="portalError" class="alert-elimu alert-error" hidden></div>
+
+      <section id="view-subjects" hidden>
+        <div class="page-head"><div><h1>My Classes</h1><p>Pick a class and subject to see its students and how they're doing in it this term.</p></div></div>
+        <div class="filter-row"><div class="field"><label>Term</label><select class="input term-sel"></select></div></div>
+        <div id="subjectPicker" class="pick-grid"></div>
+        <div id="subjectDetail"></div>
+      </section>
+
+      <section id="view-grades" hidden>
+        <div class="page-head"><div><h1>Grade Book</h1><p>Record CBC rubric levels for the subjects you teach. Saving on a new date keeps earlier grades as history.</p></div></div>
+        <div class="card-elimu">
+          <div class="filter-row">
+            <div class="field"><label>Class &amp; subject</label><select class="input" id="gAssign"></select></div>
+            <div class="field"><label>Term</label><select class="input term-sel"></select></div>
+            <div class="field"><label>Sub-strand</label><select class="input" id="gSub"></select></div>
+            <div class="field" style="max-width:170px;"><label>Assessment date</label><input type="date" class="input" id="gDate"></div>
+          </div>
+          <div id="gSheet"><p class="empty-note">Choose a class, subject and sub-strand to start grading.</p></div>
+        </div>
+      </section>
+
+      <section id="view-myclass" hidden>
+        <div class="page-head"><div><h1>My Class</h1><p id="mcSub">Your students and their overall performance this term.</p></div></div>
+        <div class="filter-row">
+          <div class="field" id="mcClassWrap" hidden><label>Class</label><select class="input" id="mcClass"></select></div>
+          <div class="field"><label>Term</label><select class="input term-sel"></select></div>
+        </div>
+        <div id="mcBody"></div>
+      </section>
+
+      <section id="view-guardians" hidden>
+        <div class="page-head"><div><h1>Guardians</h1><p>Contact details for the guardians of the students in your class.</p></div></div>
+        <div class="filter-row">
+          <div class="field" id="gdClassWrap" hidden><label>Class</label><select class="input" id="gdClass"></select></div>
+          <div class="field"><label>Search student</label><input class="input" id="gdSearch" placeholder="Name or admission no."></div>
+        </div>
+        <div id="gdBody"></div>
+      </section>
+
+      <section id="view-timetable" hidden>
+        <div class="page-head"><div><h1>Timetable</h1><p>Your weekly teaching schedule.</p></div></div>
+        <div id="ttBody"></div>
+      </section>
+
+      <section id="view-attendance" hidden>
+        <div class="page-head"><div><h1>Attendance</h1><p>Mark daily attendance for a class. Anyone you don't change is recorded as present.</p></div></div>
+        <div class="card-elimu">
+          <div class="filter-row"><div class="field"><label>Class</label><select class="input" id="atClass"></select></div>
+            <div class="field" style="max-width:190px;"><label>Date</label><input type="date" class="input" id="atDate"></div>
+            <button class="btn-elimu btn-elimu-ghost" id="atAllPresent" type="button">Mark all present</button></div>
+          <div id="atBody"><p class="empty-note">Choose a class.</p></div>
+        </div>
+      </section>
+
+      <section id="view-students" hidden>
+        <div class="page-head"><div><h1>Students</h1><p>Students in the classes you teach.</p></div></div>
+        <div class="filter-row"><div class="field"><label>Class</label><select class="input" id="stClass"></select></div><div class="field"><label>Search</label><input class="input" id="stSearch" placeholder="Name or admission no."></div></div>
+        <div class="card-elimu" id="stBody"></div>
+      </section>
+
+      <section id="view-communication" hidden>
+        <div class="page-head"><div><h1>Communication</h1><p>Send an SMS or email to the guardians of one of your classes.</p></div></div>
+        <div class="card-elimu" style="max-width:720px;">
+          <div class="filter-row"><div class="field"><label>Class</label><select class="input" id="cmClass"></select></div>
+            <div class="field"><label>Channel</label><select class="input" id="cmChannel"><option value="sms">SMS</option><option value="email">Email</option></select></div></div>
+          <div class="field" id="cmSubjectWrap" hidden><label>Subject</label><input class="input" id="cmSubject" maxlength="150"></div>
+          <div class="field"><label>Message</label><textarea class="input" id="cmBody" maxlength="800" placeholder="Write your message…"></textarea><div class="hint" id="cmCount">0 / 800</div></div>
+          <div id="cmMsg"></div>
+          <button class="btn-elimu btn-elimu-primary" id="cmSend" type="button"><i class="bi bi-send-fill"></i> Send to guardians</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  const api = window.ElimuOs.api;
+
+  const DOW_LABEL = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // timetable_slots stores times as "HH:MM:SS" — this renders them the
+  // way a teacher actually reads a schedule, not as raw 24h strings.
+  function formatTime(t) {
+    if (!t) return '';
+    const [hStr, mStr] = t.split(':');
+    const h = Number(hStr);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const h12 = ((h + 11) % 12) + 1;
+    return `${h12}:${mStr} ${period}`;
+  }
+
+  function renderMiniCalendar() {
+    const now = new Date();
+    document.getElementById('calMonthLabel').textContent = now.toLocaleDateString('en-KE', { month: 'long', year: 'numeric' });
+    const grid = document.getElementById('miniCalGrid');
+    const dows = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    let html = dows.map(d => `<div class="dow">${d}</div>`).join('');
+
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOffset = firstOfMonth.getDay();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysInPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+
+    for (let i = 0; i < startOffset; i++) {
+      html += `<div class="day muted">${daysInPrevMonth - startOffset + i + 1}</div>`;
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const isToday = d === now.getDate();
+      html += `<div class="day ${isToday ? 'today' : ''}">${d}</div>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  async function loadCurrentTerm() {
+    const block = document.getElementById('termBlock');
+    try {
+      const yearsRes = await api.apiFetch('/academic-years');
+      const currentYear = yearsRes.data.find(y => y.is_current);
+      if (!currentYear) {
+        block.innerHTML = `<p class="empty-note">No academic year set as current yet.</p>`;
+        return;
+      }
+      const termsRes = await api.apiFetch(`/academic-years/${currentYear.id}/terms`);
+      const today = new Date();
+      const activeTerm = termsRes.data.find(t => new Date(t.start_date) <= today && today <= new Date(t.end_date));
+
+      block.innerHTML = `
+        <div class="term-row"><span class="lbl">Academic year</span><span>${currentYear.year_label}</span></div>
+        ${activeTerm
+          ? `<div class="term-row"><span class="lbl">Current term</span><span>Term ${activeTerm.term_number}</span></div>
+             <div class="term-row"><span class="lbl">Ends</span><span>${new Date(activeTerm.end_date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' })}</span></div>`
+          : `<div class="term-row"><span class="lbl">Term</span><span>Between terms</span></div>`}
+      `;
+    } catch (err) {
+      block.innerHTML = `<p class="empty-note">Couldn't load term info.</p>`;
+    }
+  }
+
+  async function loadDashboardData(user) {
+    const statCards = document.querySelectorAll('#statGrid .stat-card');
+    const scheduleList = document.getElementById('scheduleList');
+    const classesList = document.getElementById('classesList');
+
+    try {
+      const [timetableRes, assignmentsRes] = await Promise.all([
+        api.apiFetch('/teaching/timetable/my'),
+        api.apiFetch('/teaching/assignments/my'),
+      ]);
+      const slots = timetableRes.data;
+      const assignments = assignmentsRes.data;
+
+      // ISO day: 1=Mon..7=Sun, matching timetable_slots.day_of_week.
+      const isoToday = ((new Date().getDay() + 6) % 7) + 1;
+      const todaySlots = slots
+        .filter(s => s.day_of_week === isoToday)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+      const distinctClasses = new Map();
+      assignments.forEach(a => {
+        if (!distinctClasses.has(a.class_id)) distinctClasses.set(a.class_id, a);
+      });
+      const distinctSubjects = new Set(assignments.map(a => a.learning_area_id));
+
+      statCards[0].querySelector('.stat-value').outerHTML = `<div class="stat-value">${todaySlots.length}</div>`;
+      statCards[1].querySelector('.stat-value').outerHTML = `<div class="stat-value">${distinctClasses.size}</div>`;
+      statCards[2].querySelector('.stat-value').outerHTML = `<div class="stat-value">${distinctSubjects.size}</div>`;
+
+      const dayName = new Date().toLocaleDateString('en-KE', { weekday: 'long' });
+      document.getElementById('scheduleSub').textContent = `Your periods for ${dayName}.`;
+      document.getElementById('heroLine').textContent = todaySlots.length > 0
+        ? `You have ${todaySlots.length} class${todaySlots.length === 1 ? '' : 'es'} today across ${distinctSubjects.size} subject${distinctSubjects.size === 1 ? '' : 's'}.`
+        : `No classes on your timetable today — check what's ahead on the `
+          + `<a href="timetable.html">full timetable</a>.`;
+
+      if (todaySlots.length === 0) {
+        scheduleList.innerHTML = `<p class="empty-note">Nothing scheduled today — enjoy the break.</p>`;
+      } else {
+        const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+        scheduleList.innerHTML = todaySlots.map(s => {
+          const [sh, sm] = s.start_time.split(':').map(Number);
+          const [eh, em] = s.end_time.split(':').map(Number);
+          const isNow = nowMinutes >= sh * 60 + sm && nowMinutes < eh * 60 + em;
+          return `<div class="sched-row ${isNow ? 'now' : ''}">
+            <div class="sched-time">${formatTime(s.start_time)}</div>
+            <div>
+              <div class="sched-subject">${s.learning_area_name}</div>
+              <div class="sched-class">${s.grade_name} ${s.stream_name || ''}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      if (assignments.length === 0) {
+        classesList.innerHTML = `<p class="empty-note">No classes assigned to you yet.</p>`;
+      } else {
+        classesList.innerHTML = assignments.map(a => `
+          <div class="class-row">
+            <div>
+              <div class="cls-name">${a.grade_name} ${a.stream_name || ''}</div>
+              <div class="cls-subject">${a.learning_area_name}</div>
+            </div>
+            <div class="cls-periods">${a.periods_per_week} periods/wk</div>
+          </div>
+        `).join('');
+      }
+
+      // Student count needs a roster fetch per distinct class — fine at
+      // dashboard scale (a teacher's own classes, not the whole school).
+      try {
+        const rosters = await Promise.all(
+          [...distinctClasses.keys()].map(id => api.apiFetch(`/classes/${id}/students`))
+        );
+        const studentTotal = rosters.reduce((sum, r) => sum + r.data.length, 0);
+        statCards[3].querySelector('.stat-value').outerHTML = `<div class="stat-value">${studentTotal}</div>`;
+      } catch (err) {
+        statCards[3].querySelector('.stat-value').outerHTML = `<div class="stat-value">—</div>`;
+      }
+    } catch (err) {
+      statCards.forEach(c => { c.querySelector('.stat-value')?.remove(); });
+      scheduleList.innerHTML = `<p class="empty-note">Couldn't load your schedule.</p>`;
+      classesList.innerHTML = `<p class="empty-note">Couldn't load your classes.</p>`;
+    }
+  }
+
+
+  // ================= Teacher portal: subjects, grade book, my class, guardians =================
+  const $ = (id) => document.getElementById(id);
+  const S = { overview: { subjects: [], homeroom: [] }, levels: [], terms: [], termId: null, trees: {}, sheet: {}, pickedSubject: null };
+  const VIEWS = ['overview', 'subjects', 'timetable', 'attendance', 'students', 'communication', 'grades', 'myclass', 'guardians'];
+  let currentView = 'overview';
+  // Local calendar date (toISOString() is UTC, which is the wrong day in East Africa before 3 AM).
+  const localISODate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clsName = (c) => `${c.grade_name}${c.stream_name ? ' ' + c.stream_name : ''}`;
+  const errBox = (e) => `<div class="alert-elimu alert-error"><i class="bi bi-exclamation-circle-fill"></i> ${esc(e.message || e)}</div>`;
+  const skeleton = '<div class="skeleton" style="height:14px;margin:12px 0;"></div>'.repeat(4);
+  const areaLabel = (l) => (l ? `<span class="lvl lvl-${esc(l.code)}" title="${esc(l.label)}">${esc(l.code)}</span>` : '<span class="muted">Not assessed</span>');
+
+  function levelFor(avg) {
+    if (avg == null || !S.levels.length) return null;
+    return S.levels.reduce((b, l) => (Math.abs(l.score_value - avg) < Math.abs(b.score_value - avg) ? l : b));
+  }
+  function toast(msg) {
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2600);
+  }
+
+  async function loadTerms() {
+    const years = await api.apiFetch('/academic-years');
+    const cur = years.data.find((y) => y.is_current);
+    if (!cur) return;
+    S.terms = (await api.apiFetch(`/academic-years/${cur.id}/terms`)).data;
+    const today = new Date();
+    const active = S.terms.find((t) => new Date(t.start_date) <= today && today <= new Date(t.end_date));
+    S.termId = String((active || S.terms[S.terms.length - 1] || {}).id || '') || null;
+  }
+  function fillTermSelects() {
+    document.querySelectorAll('.term-sel').forEach((sel) => {
+      sel.innerHTML = S.terms.map((t) => `<option value="${t.id}" ${String(t.id) === S.termId ? 'selected' : ''}>Term ${t.term_number}</option>`).join('') || '<option value="">No terms set up</option>';
+      sel.onchange = () => { S.termId = sel.value; fillTermSelects(); loaders[currentView]?.(); };
+    });
+  }
+
+  // ---------- My Subjects ----------
+  function renderSubjectPicker() {
+    const box = $('subjectPicker');
+    if (!S.overview.subjects.length) {
+      box.innerHTML = '<p class="empty-note">No subjects are assigned to you for the current academic year. Ask your school admin to assign you to classes.</p>';
+      return;
+    }
+    box.innerHTML = S.overview.subjects.map((a) => `
+      <button class="pick-card ${String(a.id) === S.pickedSubject ? 'active' : ''}" data-id="${a.id}">
+        <strong>${esc(a.learning_area_name)}</strong><span>${esc(clsName(a))}</span><em>${a.student_count} student${a.student_count === 1 ? '' : 's'}</em>
+      </button>`).join('');
+    box.querySelectorAll('.pick-card').forEach((b) => { b.onclick = () => { S.pickedSubject = b.dataset.id; renderSubjectPicker(); loadSubjectDetail(); }; });
+  }
+  async function loadSubjectDetail() {
+    const el = $('subjectDetail');
+    const a = S.overview.subjects.find((x) => String(x.id) === S.pickedSubject);
+    if (!a) { el.innerHTML = ''; return; }
+    if (!S.termId) { el.innerHTML = '<p class="empty-note">No term has been set up yet.</p>'; return; }
+    el.innerHTML = skeleton;
+    try {
+      const r = await api.apiFetch(`/teacher-portal/classes/${a.class_id}/performance?termId=${S.termId}&learningAreaId=${a.learning_area_id}`);
+      const rows = r.data.students;
+      const dist = {}; S.levels.forEach((l) => { dist[l.code] = 0; }); let none = 0;
+      rows.forEach((s) => { const l = levelFor(s.avg_score); if (l) dist[l.code] += 1; else none += 1; });
+      el.innerHTML = `
+        <div class="dist-row">
+          ${S.levels.map((l) => `<div class="stat-card"><div class="stat-value">${dist[l.code]}</div><div class="stat-label"><span class="lvl lvl-${esc(l.code)}">${esc(l.code)}</span> ${esc(l.label)}</div></div>`).join('')}
+          <div class="stat-card"><div class="stat-value">${none}</div><div class="stat-label">Not yet assessed</div></div>
+        </div>
+        <div class="card-elimu"><h3 style="font-size:0.98rem;margin-bottom:12px;">${esc(a.learning_area_name)} — ${esc(clsName(a))}</h3>
+        ${rows.length ? `<div class="tbl-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Sub-strands assessed</th><th>Average level</th><th>Avg score</th></tr></thead><tbody>
+          ${rows.map((s) => `<tr><td><div class="s-name">${esc(s.full_name)}</div><div class="s-adm">${esc(s.admission_number)}</div></td>
+            <td>${s.assessed_count}</td><td>${areaLabel(levelFor(s.avg_score))}</td><td>${s.avg_score ?? '—'}</td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="empty-note">No students are enrolled in this class yet.</p>'}</div>`;
+    } catch (e) { el.innerHTML = errBox(e); }
+  }
+
+  // ---------- Grade Book ----------
+  const gAssignment = () => S.overview.subjects.find((x) => String(x.id) === $('gAssign').value);
+  function fillGradeAssignments() {
+    const sel = $('gAssign');
+    if (!S.overview.subjects.length) { sel.innerHTML = '<option value="">No subjects assigned</option>'; return; }
+    sel.innerHTML = S.overview.subjects.map((a) => `<option value="${a.id}">${esc(clsName(a))} — ${esc(a.learning_area_name)}</option>`).join('');
+    onGradeAssignmentChange();
+  }
+  async function onGradeAssignmentChange() {
+    const a = gAssignment(); if (!a) return;
+    $('gSub').innerHTML = '<option value="">Loading…</option>';
+    try {
+      if (!S.trees[a.grade_id]) S.trees[a.grade_id] = (await api.apiFetch(`/curriculum/grades/${a.grade_id}/tree`)).data;
+      const rows = S.trees[a.grade_id].filter((r) => String(r.learning_area_id) === String(a.learning_area_id));
+      const byStrand = new Map();
+      rows.forEach((r) => { if (!byStrand.has(r.strand_name)) byStrand.set(r.strand_name, []); byStrand.get(r.strand_name).push(r); });
+      $('gSub').innerHTML = '<option value="">Select a sub-strand…</option>' + [...byStrand].map(([strand, subs]) =>
+        `<optgroup label="${esc(strand)}">${subs.map((r) => `<option value="${r.sub_strand_id}">${esc(r.sub_strand_name)}</option>`).join('')}</optgroup>`).join('');
+    } catch (e) { $('gSub').innerHTML = '<option value="">Couldn\'t load curriculum</option>'; }
+    loadSheet();
+  }
+  async function loadSheet() {
+    const a = gAssignment(); const sub = $('gSub').value; const box = $('gSheet');
+    if (!a || !sub || !S.termId) { box.innerHTML = '<p class="empty-note">Choose a class, subject and sub-strand to start grading.</p>'; return; }
+    box.innerHTML = skeleton;
+    try {
+      const r = await api.apiFetch(`/teacher-portal/classes/${a.class_id}/grade-sheet?subStrandId=${sub}&termId=${S.termId}`);
+      S.sheet = {};
+      r.data.students.forEach((s) => { S.sheet[s.student_id] = { levelId: s.rubric_level_id ? String(s.rubric_level_id) : null, remark: s.teacher_remark || '', dirty: false }; });
+      renderSheet(r.data.students);
+    } catch (e) { box.innerHTML = errBox(e); }
+  }
+  function renderSheet(students) {
+    const box = $('gSheet');
+    if (!students.length) { box.innerHTML = '<p class="empty-note">No students are enrolled in this class yet.</p>'; return; }
+    box.innerHTML = `<div class="tbl-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Level</th><th>Remark (optional)</th></tr></thead><tbody>
+      ${students.map((s) => { const st = S.sheet[s.student_id]; return `<tr>
+        <td><div class="s-name">${esc(s.full_name)}</div><div class="s-adm">${esc(s.admission_number)}</div></td>
+        <td style="white-space:nowrap;">${S.levels.map((l) => `<button type="button" class="lvl-btn lvl-${esc(l.code)} ${st.levelId === String(l.id) ? 'on' : ''}" data-s="${s.student_id}" data-l="${l.id}" title="${esc(l.label)}">${esc(l.code)}</button>`).join('')}</td>
+        <td><input class="remark-input" data-s="${s.student_id}" maxlength="300" value="${esc(st.remark)}" placeholder="Add a remark…"></td></tr>`; }).join('')}
+      </tbody></table></div>
+      <div class="save-bar"><span class="muted" id="gCount"></span><button class="btn-elimu btn-elimu-primary" id="gSave"><i class="bi bi-check2-circle"></i> Save grades</button></div>
+      <div id="gMsg" style="margin-top:12px;"></div>`;
+    updateGradeCount();
+  }
+  function updateGradeCount() {
+    const vals = Object.values(S.sheet); const el = $('gCount'); if (!el) return;
+    el.textContent = `${vals.filter((v) => v.levelId).length} of ${vals.length} graded · ${vals.filter((v) => v.dirty).length} unsaved change(s)`;
+  }
+  async function saveSheet() {
+    const a = gAssignment(); const btn = $('gSave'); const msg = $('gMsg');
+    const results = Object.entries(S.sheet).filter(([, v]) => v.dirty && v.levelId)
+      .map(([studentId, v]) => ({ studentId, rubricLevelId: v.levelId, teacherRemark: v.remark.trim() || undefined }));
+    if (!results.length) { msg.innerHTML = '<div class="alert-elimu alert-warn"><i class="bi bi-info-circle-fill"></i> Nothing to save — pick a level for at least one student first.</div>'; return; }
+    btn.disabled = true;
+    try {
+      await api.apiFetch(`/teacher-portal/classes/${a.class_id}/grades`, {
+        method: 'POST',
+        body: JSON.stringify({ subStrandId: $('gSub').value, termId: S.termId, assessmentDate: $('gDate').value || undefined, results }),
+      });
+      toast(`Saved ${results.length} grade${results.length === 1 ? '' : 's'}`);
+      loadSheet();
+    } catch (e) { msg.innerHTML = errBox(e); btn.disabled = false; }
+  }
+
+  // ---------- My Class ----------
+  const pickedHome = (selId) => { const v = $(selId).value; return S.overview.homeroom.find((h) => String(h.class_id) === v) || S.overview.homeroom[0]; };
+  function fillHomeSelect(wrapId, selId, onchange) {
+    const list = S.overview.homeroom; $(wrapId).hidden = list.length < 2;
+    $(selId).innerHTML = list.map((h) => `<option value="${h.class_id}">${esc(clsName(h))}</option>`).join('');
+    $(selId).onchange = onchange;
+  }
+  async function loadMyClass() {
+    const h = pickedHome('mcClass'); const box = $('mcBody');
+    if (!h) return;
+    if (!S.termId) { box.innerHTML = '<p class="empty-note">No term has been set up yet.</p>'; return; }
+    $('mcSub').textContent = `${clsName(h)} · ${h.year_label} — your students and their overall performance this term.`;
+    box.innerHTML = skeleton;
+    try {
+      const rows = (await api.apiFetch(`/teacher-portal/classes/${h.class_id}/performance?termId=${S.termId}`)).data.students;
+      const scored = rows.filter((s) => s.avg_score != null);
+      const classAvg = scored.length ? scored.reduce((x, s) => x + s.avg_score, 0) / scored.length : null;
+      const rates = rows.map((s) => s.attendance.rate_percent).filter((n) => n != null);
+      const attAvg = rates.length ? Math.round(rates.reduce((x, n) => x + n, 0) / rates.length) : null;
+      const stat = (v, l) => `<div class="stat-card"><div class="stat-value">${v}</div><div class="stat-label">${l}</div></div>`;
+      box.innerHTML = `
+        <div class="dist-row">${stat(rows.length, 'Students')}${stat(classAvg != null ? areaLabel(levelFor(classAvg)) : '—', 'Class average level')}
+          ${stat(attAvg != null ? attAvg + '%' : '—', 'Average attendance')}${stat(rows.length - scored.length, 'Not yet assessed')}</div>
+        <div class="card-elimu">${rows.length ? `<div class="tbl-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Overall</th><th>By subject</th><th>Assessed</th><th>Attendance</th></tr></thead><tbody>
+          ${rows.map((s) => { const r = s.attendance.rate_percent; return `<tr>
+            <td><div class="s-name">${esc(s.full_name)}</div><div class="s-adm">${esc(s.admission_number)}</div></td>
+            <td>${areaLabel(levelFor(s.avg_score))} <span class="muted">${s.avg_score ?? ''}</span></td>
+            <td>${s.by_area.map((a) => { const l = levelFor(a.avg_score); return `<span class="mini">${esc(a.name)} · <b>${l ? esc(l.code) : '—'}</b></span>`; }).join('') || '<span class="muted">—</span>'}</td>
+            <td>${s.assessed_count}</td>
+            <td>${r == null ? '<span class="muted">No records</span>' : `<span class="${r >= 80 ? 'att-ok' : 'att-low'}">${r}%</span> <span class="muted">(${s.attendance.absent} absent)</span>`}</td></tr>`; }).join('')}
+        </tbody></table></div>` : '<p class="empty-note">No students are enrolled in this class yet.</p>'}</div>`;
+    } catch (e) { box.innerHTML = errBox(e); }
+  }
+
+  // ---------- Guardians ----------
+  let gdData = [];
+  async function loadGuardians() {
+    const h = pickedHome('gdClass'); const box = $('gdBody');
+    if (!h) return;
+    box.innerHTML = skeleton;
+    try { gdData = (await api.apiFetch(`/teacher-portal/classes/${h.class_id}/guardians`)).data.students; renderGuardians(); }
+    catch (e) { box.innerHTML = errBox(e); }
+  }
+  function renderGuardians() {
+    const q = $('gdSearch').value.trim().toLowerCase();
+    const rows = gdData.filter((s) => !q || s.full_name.toLowerCase().includes(q) || String(s.admission_number).toLowerCase().includes(q));
+    const missing = gdData.filter((s) => !s.guardians.length).length;
+    $('gdBody').innerHTML = (missing ? `<div class="alert-elimu alert-warn"><i class="bi bi-exclamation-triangle-fill"></i> ${missing} student${missing === 1 ? ' has' : 's have'} no guardian on file — ask the school office to link one.</div>` : '')
+      + (rows.map((s) => `<div class="card-elimu" style="padding:16px 20px;margin-bottom:14px;">
+        <div class="g-head"><div><span class="s-name">${esc(s.full_name)}</span> <span class="s-adm">· ${esc(s.admission_number)}</span></div></div>
+        ${s.guardians.length ? s.guardians.map((g) => `<div class="g-row">
+          <div><b>${esc(g.full_name)}</b>${g.is_primary_contact ? '<span class="badge-primary">Primary</span>' : ''}<div class="muted">${esc(g.relationship || 'Guardian')}</div></div>
+          <div>${g.phone ? `<a href="tel:${esc(g.phone)}"><i class="bi bi-telephone-fill"></i> ${esc(g.phone)}</a>` : ''}
+               ${g.email ? `<div><a href="mailto:${esc(g.email)}"><i class="bi bi-envelope-fill"></i> ${esc(g.email)}</a></div>` : ''}</div></div>`).join('')
+          : '<div class="g-row"><span class="muted">No guardian on file</span></div>'}</div>`).join('') || '<p class="empty-note">No students match your search.</p>');
+  }
+
+
+  // ================= Attendance, Timetable, Students, Communication (existing teacher endpoints) =================
+  function myClasses() {
+    const m = new Map();
+    S.overview.homeroom.forEach((h) => m.set(String(h.class_id), { class_id: h.class_id, label: clsName(h) + ' (class teacher)' }));
+    S.overview.subjects.forEach((a) => { if (!m.has(String(a.class_id))) m.set(String(a.class_id), { class_id: a.class_id, label: clsName(a) }); });
+    return [...m.values()];
+  }
+  function fillClassSelect(id, onchange) {
+    const sel = $(id); const list = myClasses();
+    sel.innerHTML = list.length ? list.map((c) => `<option value="${c.class_id}">${esc(c.label)}</option>`).join('') : '<option value="">No classes assigned</option>';
+    sel.onchange = onchange;
+  }
+  const noClasses = () => !myClasses().length;
+
+  // ---------- Timetable ----------
+  async function loadTimetable() {
+    const box = $('ttBody'); box.innerHTML = skeleton;
+    try {
+      const slots = (await api.apiFetch('/teaching/timetable/my')).data;
+      if (!slots.length) { box.innerHTML = '<div class="card-elimu"><p class="empty-note">Nothing on your timetable yet — your school admin sets this up.</p></div>'; return; }
+      const isoToday = ((new Date().getDay() + 6) % 7) + 1;
+      const days = [1, 2, 3, 4, 5, 6, 7].filter((d) => d <= 5 || slots.some((s) => s.day_of_week === d));
+      box.innerHTML = `<div class="tt-grid">${days.map((d) => `<div class="tt-day ${d === isoToday ? 'today' : ''}"><h4>${DOW_LABEL[d]}${d === isoToday ? ' · today' : ''}</h4>
+        ${slots.filter((s) => s.day_of_week === d).sort((a, b) => a.start_time.localeCompare(b.start_time)).map((s) =>
+          `<div class="tt-slot"><b>${esc(s.learning_area_name)}</b><span>${formatTime(s.start_time)} – ${formatTime(s.end_time)} · ${esc(s.grade_name)} ${esc(s.stream_name || '')}</span></div>`).join('')
+          || '<div class="tt-slot"><span>Free</span></div>'}</div>`).join('')}</div>`;
+    } catch (e) { box.innerHTML = errBox(e); }
+  }
+
+  // ---------- Attendance ----------
+  let atRoster = []; let atState = {};
+  async function loadAttendance() {
+    const box = $('atBody'); const classId = $('atClass').value; const date = $('atDate').value;
+    if (!classId || !date) { box.innerHTML = '<p class="empty-note">Choose a class and date.</p>'; return; }
+    box.innerHTML = skeleton;
+    try {
+      const [r, a] = await Promise.all([api.apiFetch(`/classes/${classId}/students`), api.apiFetch(`/attendance/class/${classId}?date=${date}`)]);
+      atRoster = r.data; atState = {};
+      a.data.forEach((x) => { atState[x.student_id] = { status: x.status, remark: x.remark || '' }; });
+      renderAttendance(a.data.length > 0);
+    } catch (e) { box.innerHTML = errBox(e); }
+  }
+  function renderAttendance(alreadyMarked) {
+    const box = $('atBody');
+    if (!atRoster.length) { box.innerHTML = '<p class="empty-note">No students are placed in this class yet.</p>'; return; }
+    box.innerHTML = (alreadyMarked ? '<div class="alert-elimu alert-warn"><i class="bi bi-info-circle-fill"></i> Attendance was already recorded for this date — saving will update it.</div>' : '')
+      + `<div class="tbl-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Status</th><th>Remark</th></tr></thead><tbody>
+      ${atRoster.map((s) => { const st = atState[s.id] || { status: 'present', remark: '' }; return `<tr>
+        <td><div class="s-name">${esc(s.full_name)}</div><div class="s-adm">${esc(s.admission_number)}</div></td>
+        <td><div class="status-seg">${['present', 'absent', 'late', 'excused'].map((v) => `<button type="button" class="status-chip-btn ${st.status === v ? 'active' : ''}" data-status="${v}" data-s="${s.id}">${v}</button>`).join('')}</div></td>
+        <td><input class="remark-input at-remark" data-s="${s.id}" maxlength="200" value="${esc(st.remark)}" placeholder="Optional"></td></tr>`; }).join('')}
+      </tbody></table></div>
+      <div class="save-bar"><span class="muted" id="atCount"></span><button class="btn-elimu btn-elimu-primary" id="atSave" type="button"><i class="bi bi-check2-circle"></i> Save attendance</button></div><div id="atMsg" style="margin-top:12px;"></div>`;
+    updateAttendanceCount();
+  }
+  function updateAttendanceCount() {
+    const el = $('atCount'); if (!el) return;
+    const c = { present: 0, absent: 0, late: 0, excused: 0 };
+    atRoster.forEach((s) => { c[(atState[s.id] || { status: 'present' }).status] += 1; });
+    el.textContent = `${c.present} present · ${c.absent} absent · ${c.late} late · ${c.excused} excused`;
+  }
+  async function saveAttendance() {
+    const btn = $('atSave'); const msg = $('atMsg');
+    const records = atRoster.map((s) => { const st = atState[s.id] || { status: 'present', remark: '' }; return { studentId: s.id, status: st.status, remark: st.remark.trim() || undefined }; });
+    btn.disabled = true;
+    try {
+      await api.apiFetch('/attendance', { method: 'POST', body: JSON.stringify({ classId: $('atClass').value, date: $('atDate').value, records }) });
+      toast(`Attendance saved for ${records.length} student${records.length === 1 ? '' : 's'}`);
+      msg.innerHTML = '<div class="alert-elimu alert-ok"><i class="bi bi-check-circle-fill"></i> Saved.</div>';
+    } catch (e) { msg.innerHTML = errBox(e); }
+    btn.disabled = false;
+  }
+
+  // ---------- Students ----------
+  let stData = [];
+  async function loadStudents() {
+    const box = $('stBody'); const classId = $('stClass').value;
+    if (!classId) { box.innerHTML = '<p class="empty-note">No classes assigned to you yet.</p>'; return; }
+    box.innerHTML = skeleton;
+    try { stData = (await api.apiFetch(`/classes/${classId}/students`)).data; renderStudents(); } catch (e) { box.innerHTML = errBox(e); }
+  }
+  function renderStudents() {
+    const q = $('stSearch').value.trim().toLowerCase();
+    const rows = stData.filter((s) => !q || s.full_name.toLowerCase().includes(q) || String(s.admission_number).toLowerCase().includes(q));
+    $('stBody').innerHTML = rows.length ? `<div class="tbl-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Admission no.</th><th>Gender</th></tr></thead><tbody>
+      ${rows.map((s) => `<tr><td class="s-name">${esc(s.full_name)}</td><td>${esc(s.admission_number)}</td><td>${esc(s.gender || '—')}</td></tr>`).join('')}</tbody></table></div>
+      <p class="muted" style="margin-top:12px;">${rows.length} student${rows.length === 1 ? '' : 's'}</p>` : '<p class="empty-note">No students found.</p>';
+  }
+
+  // ---------- Communication ----------
+  async function sendMessage() {
+    const channel = $('cmChannel').value; const body = $('cmBody').value.trim(); const msg = $('cmMsg');
+    const classId = $('cmClass').value;
+    if (!classId) { msg.innerHTML = errBox('Choose a class first.'); return; }
+    if (!body) { msg.innerHTML = errBox('Write a message first.'); return; }
+    if (channel === 'email' && !$('cmSubject').value.trim()) { msg.innerHTML = errBox('Add a subject for the email.'); return; }
+    if (!confirm(`Send this ${channel.toUpperCase()} to all guardians of the selected class?`)) return;
+    const btn = $('cmSend'); btn.disabled = true; msg.innerHTML = '';
+    try {
+      const r = (await api.apiFetch('/communications/send', { method: 'POST', body: JSON.stringify({ channel, subject: $('cmSubject').value.trim() || undefined, body, classId }) })).data;
+      const rec = r.recipients || []; const failed = rec.filter((x) => x.delivery_status === 'failed').length;
+      msg.innerHTML = `<div class="alert-elimu ${failed === rec.length && rec.length ? 'alert-error' : 'alert-ok'}"><i class="bi bi-send-check-fill"></i> Sent to ${rec.length - failed} of ${rec.length} guardian${rec.length === 1 ? '' : 's'}${failed ? ` — ${failed} failed (missing or invalid ${channel === 'email' ? 'email' : 'phone'})` : ''}.</div>`;
+      $('cmBody').value = ''; $('cmCount').textContent = '0 / 800';
+    } catch (e) { msg.innerHTML = errBox(e); }
+    btn.disabled = false;
+  }
+
+  // ---------- Routing ----------
+  const loaders = {
+    subjects: () => { renderSubjectPicker(); loadSubjectDetail(); },
+    grades: () => { if (!$('gAssign').options.length) fillGradeAssignments(); else loadSheet(); },
+    timetable: loadTimetable,
+    attendance: loadAttendance,
+    students: loadStudents,
+    communication: () => {},
+    myclass: loadMyClass,
+    guardians: loadGuardians,
+  };
+  function showView(view) {
+    if (!VIEWS.includes(view) || (['myclass', 'guardians'].includes(view) && !S.overview.homeroom.length)) view = 'overview';
+    currentView = view;
+    VIEWS.forEach((v) => { $('view-' + v).hidden = v !== view; });
+    document.querySelectorAll('.admin-nav-link').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
+    loaders[view]?.();
+  }
+
+  async function initPortal() {
+    try {
+      const [ov, lv] = await Promise.all([api.apiFetch('/teacher-portal/overview'), api.apiFetch('/curriculum/rubric-levels'), loadTerms()]);
+      S.overview = ov.data;
+      S.levels = lv.data.map((l) => ({ ...l, score_value: Number(l.score_value) })).sort((a, b) => b.score_value - a.score_value);
+    } catch (e) { $('portalError').hidden = false; $('portalError').textContent = `Couldn't load your teaching data: ${e.message}`; return; }
+
+    const isHome = S.overview.homeroom.length > 0;
+    document.querySelectorAll('.homeroom-only').forEach((el) => { el.hidden = !isHome; });
+    if (isHome) $('userRole').textContent = 'Teacher · Class teacher';
+    fillTermSelects();
+    fillClassSelect('atClass', loadAttendance); fillClassSelect('stClass', loadStudents); fillClassSelect('cmClass', () => {});
+    $('atDate').value = localISODate(); $('atDate').onchange = loadAttendance;
+    $('atAllPresent').onclick = () => { atRoster.forEach((s) => { atState[s.id] = { ...(atState[s.id] || { remark: '' }), status: 'present' }; }); renderAttendance(false); };
+    $('atBody').addEventListener('click', (e) => {
+      const b = e.target.closest('.status-chip-btn');
+      if (b) { atState[b.dataset.s] = { ...(atState[b.dataset.s] || { remark: '' }), status: b.dataset.status }; b.parentElement.querySelectorAll('.status-chip-btn').forEach((x) => x.classList.toggle('active', x === b)); updateAttendanceCount(); }
+      if (e.target.closest('#atSave')) saveAttendance();
+    });
+    $('atBody').addEventListener('input', (e) => { if (e.target.classList.contains('at-remark')) atState[e.target.dataset.s] = { ...(atState[e.target.dataset.s] || { status: 'present' }), remark: e.target.value }; });
+    $('stSearch').oninput = renderStudents;
+    $('cmChannel').onchange = () => { $('cmSubjectWrap').hidden = $('cmChannel').value !== 'email'; };
+    $('cmBody').oninput = () => { $('cmCount').textContent = `${$('cmBody').value.length} / 800`; };
+    $('cmSend').onclick = sendMessage;
+    $('gDate').value = localISODate();
+    $('gAssign').onchange = onGradeAssignmentChange;
+    $('gSub').onchange = loadSheet;
+    $('gSheet').addEventListener('click', (e) => {
+      const b = e.target.closest('.lvl-btn');
+      if (b) {
+        const st = S.sheet[b.dataset.s]; st.levelId = st.levelId === b.dataset.l ? null : b.dataset.l; st.dirty = true;
+        b.parentElement.querySelectorAll('.lvl-btn').forEach((x) => x.classList.toggle('on', x.dataset.l === st.levelId));
+        updateGradeCount();
+      }
+      if (e.target.closest('#gSave')) saveSheet();
+    });
+    $('gSheet').addEventListener('input', (e) => {
+      if (e.target.classList.contains('remark-input')) { const st = S.sheet[e.target.dataset.s]; st.remark = e.target.value; st.dirty = true; updateGradeCount(); }
+    });
+    if (isHome) {
+      fillHomeSelect('mcClassWrap', 'mcClass', loadMyClass);
+      fillHomeSelect('gdClassWrap', 'gdClass', loadGuardians);
+      $('gdSearch').oninput = renderGuardians;
+    }
+    window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+    showView(location.hash.slice(1));
+  }
+
+  (async () => {
+    const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['teacher'], requireLiveSubscription: true });
+    if (!user) return;
+
+    document.getElementById('userName').textContent = user.full_name;
+    document.getElementById('userAvatar').textContent = user.full_name
+      .split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('heroGreeting').textContent = `${greeting}, ${user.full_name.split(' ')[0]} 👋`;
+
+    document.getElementById('userChip').addEventListener('click', () => {
+      if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout();
+    });
+
+    api.apiFetch('/schools/me')
+      .then(res => { document.getElementById('schoolNameFoot').textContent = res.data.name; })
+      .catch(() => { document.getElementById('schoolNameFoot').textContent = ''; });
+
+    renderMiniCalendar();
+    loadCurrentTerm();
+    loadDashboardData(user);
+    initPortal();
+  })();
+</script>
+
+</body>
+</html>
