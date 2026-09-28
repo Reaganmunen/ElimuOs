@@ -18,7 +18,7 @@ const createFeeStructure = asyncHandler(async (req, res) => {
 
 const listFeeStructures = asyncHandler(async (req, res) => {
   const { gradeId, termId } = req.query;
-  if (!gradeId || !termId) throw new ApiError(400, 'gradeId and termId query params are required');
+  if (!termId) throw new ApiError(400, 'termId query param is required (gradeId is optional)');
   const fees = await feeStructureModel.listByGradeAndTerm(req.user.school_id, gradeId, termId);
   return sendSuccess(res, 200, fees);
 });
@@ -110,14 +110,39 @@ const listStudentPayments = asyncHandler(async (req, res) => {
 });
 
 const voidPayment = asyncHandler(async (req, res) => {
-  const { invoiceId } = req.body;
-  if (!invoiceId) throw new ApiError(400, 'invoiceId is required to recalculate the invoice after voiding');
-  const result = await paymentModel.voidPayment(req.user.school_id, req.params.id, invoiceId, req.user.id);
+  const reason = typeof req.body.reason === 'string' ? req.body.reason.trim().slice(0, 300) : '';
+  const result = await paymentModel.voidPayment(req.user.school_id, req.params.id, req.user.id, reason);
   if (!result) throw new ApiError(404, 'Payment not found');
   return sendSuccess(res, 200, result, 'Payment voided');
 });
 
+const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+const listAllInvoices = asyncHandler(async (req, res) => {
+  const { termId, status, classId, q, limit, offset } = req.query;
+  if (status && !['unpaid', 'partial', 'overdue', 'paid'].includes(status)) throw new ApiError(400, 'Invalid status filter');
+  const data = await invoiceModel.listAll(req.user.school_id, {
+    termId, status, classId, q, limit: Math.min(Number(limit) || 100, 500), offset: Number(offset) || 0,
+  });
+  return sendSuccess(res, 200, data);
+});
+
+const getFeeSummary = asyncHandler(async (req, res) => {
+  const data = await invoiceModel.summary(req.user.school_id, { termId: req.query.termId, classId: req.query.classId });
+  return sendSuccess(res, 200, data);
+});
+
+const listLedger = asyncHandler(async (req, res) => {
+  const { from, to, method, limit, offset } = req.query;
+  if ((from && !isDate(from)) || (to && !isDate(to))) throw new ApiError(400, 'from and to must be YYYY-MM-DD dates');
+  const data = await paymentModel.listLedger(req.user.school_id, {
+    from, to, method, limit: Math.min(Number(limit) || 100, 500), offset: Number(offset) || 0,
+  });
+  return sendSuccess(res, 200, data);
+});
+
 module.exports = {
+  listAllInvoices, getFeeSummary, listLedger,
   createFeeStructure, listFeeStructures, updateFeeStructure, deleteFeeStructure,
   generateInvoice, getInvoice, listStudentInvoices, listOutstandingInvoices,
   recordPayment, listInvoicePayments, listStudentPayments, voidPayment,

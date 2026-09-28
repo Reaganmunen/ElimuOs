@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  initiatePayment, handleCallback, listInvoiceTransactions, getPaymentConfig, updatePaymentConfig,
+  initiatePayment, handleCallback, listTransactions, listInvoiceTransactions, getPaymentConfig, updatePaymentConfig,
 } = require('../controllers/mpesa.controller');
 const { authenticate, restrictTo } = require('../middleware/auth.middleware');
 
@@ -13,6 +13,7 @@ router.post('/callback', handleCallback);
 router.use(authenticate);
 
 router.post('/stk-push', restrictTo('school_admin', 'accountant', 'parent'), initiatePayment);
+router.get('/transactions', restrictTo('school_admin', 'accountant'), listTransactions);
 router.get('/invoices/:invoiceId/transactions', restrictTo('school_admin', 'accountant'), listInvoiceTransactions);
 router.get('/config', restrictTo('school_admin'), getPaymentConfig);
 router.patch('/config', restrictTo('school_admin'), updatePaymentConfig);

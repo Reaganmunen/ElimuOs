@@ -39,6 +39,7 @@
   .pick-row{ padding:9px 12px; cursor:pointer; font-size:.86rem; border-bottom:1px solid var(--line); }
   .pick-row:last-child{ border-bottom:none; } .pick-row:hover{ background:var(--cloud); }
   .counter{ font-size:.78rem; color:var(--ink-soft); text-align:right; margin-top:6px; }
+  .tab-badge{ display:inline-block; min-width:18px; padding:1px 6px; margin-left:6px; border-radius:999px; background:var(--coral); color:#fff; font-size:.7rem; font-weight:700; text-align:center; } .tab-badge:empty{ display:none; }
   .stat-row{ display:flex; gap:22px; flex-wrap:wrap; margin:12px 0 4px; font-size:.9rem; }
   .stat-row b{ font:800 1.3rem 'Plus Jakarta Sans',sans-serif; display:block; }
 
@@ -82,6 +83,7 @@
       <div id="pageAlertSlot"></div>
       <div class="tabs">
         <button class="tab-btn active" data-tab="compose">Send message</button>
+        <button class="tab-btn" data-tab="enquiries">Guardian enquiries<span class="tab-badge" id="enqBadge"></span></button>
         <button class="tab-btn" data-tab="templates">Templates</button>
         <button class="tab-btn" data-tab="settings">Sender settings</button>
       </div>
@@ -110,6 +112,11 @@
           <div style="text-align:right;"><button type="button" class="btn-elimu btn-elimu-primary" id="sendBtn"><i class="bi bi-send-fill"></i> Send message</button></div>
         </div>
         <div class="card-elimu" id="resultCard" style="display:none;"></div>
+      </div>
+
+      <div data-pane="enquiries" style="display:none;">
+        <p class="muted-cell" style="margin:0 0 14px;">Messages guardians send from the parent portal. Reply yourself, or forward one to the class teacher or the teacher who should answer it.</p>
+        <div id="enquiriesMount"></div>
       </div>
 
       <div data-pane="templates" style="display:none;">
@@ -198,6 +205,7 @@
 <script src="../js/api.js"></script>
 <script src="../js/billing.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/guardianInbox.js"></script>
 <script>
   const api = window.ElimuOs.api;
   const $ = (id) => document.getElementById(id);
@@ -450,10 +458,21 @@
   S('testSmsBtn').addEventListener('click', () => runTest('sms', 'testPhone', 'testSmsBtn', 'smsTestResult'));
   S('testEmailBtn').addEventListener('click', () => runTest('email', 'testEmail', 'testEmailBtn', 'emailTestResult'));
 
-  initTabs();
+  let enquiriesView = null;
+  async function refreshEnqBadge() {
+    try { const s = await window.ElimuOs.guardianInbox.summary(); $('enqBadge').textContent = s.openEnquiries || ''; } catch (e) { /* non-fatal */ }
+  }
+  initTabs((tab) => {
+    if (tab === 'enquiries') {
+      if (!enquiriesView) enquiriesView = window.ElimuOs.guardianInbox.mountEnquiries($('enquiriesMount'), { isAdmin: true, onChange: refreshEnqBadge });
+      else enquiriesView.reload();
+    }
+  });
   (async () => {
     const user = await bootShell();
     if (!user) return;
+    refreshEnqBadge();
+    if (location.hash === '#enquiries') document.querySelector('[data-tab="enquiries"]').click();
     loadSettings();
     try { await loadBase(); } catch (err) { showAlert('error', esc(err.message || 'Could not load classes and templates.')); }
   })();

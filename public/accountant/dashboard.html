@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Accounts — ElimuOs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; margin-bottom:20px; }
+  .stat{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px 20px; }
+  .stat b{ display:block; font:800 1.45rem 'Plus Jakarta Sans',sans-serif; }
+  .stat span{ font-size:.8rem; color:var(--ink-soft); font-weight:600; }
+  .hero{ background:linear-gradient(135deg,var(--ink),#232a4d); color:#fff; border-radius:var(--radius-lg); padding:26px 30px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:20px; position:relative; overflow:hidden; }
+  .hero::after{ content:''; position:absolute; width:260px; height:260px; border-radius:50%; background:var(--blue); opacity:.28; filter:blur(70px); right:-60px; top:-90px; }
+  .hero>*{ position:relative; z-index:1; }
+  .hero h2{ color:#fff; font-size:1.4rem; margin-bottom:6px; } .hero p{ color:rgba(255,255,255,.72); font-size:.9rem; max-width:44ch; line-height:1.5; margin:0 0 16px; }
+  .hero .btn-elimu-ghost{ border-color:rgba(255,255,255,.35); color:#fff; } .hero .btn-elimu-ghost:hover{ background:rgba(255,255,255,.08); color:#fff; border-color:#fff; }
+  .hero-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .ring{ --p:0; width:128px; height:128px; border-radius:50%; background:conic-gradient(var(--leaf) calc(var(--p)*1%), rgba(255,255,255,.14) 0); display:grid; place-items:center; flex-shrink:0; }
+  .ring div{ width:100px; height:100px; border-radius:50%; background:#1b2140; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring b{ font:800 1.5rem 'Plus Jakarta Sans',sans-serif; } .ring small{ font-size:.68rem; color:rgba(255,255,255,.65); }
+  .kpi{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px 20px; }
+  .kpi .ico{ width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-size:1.05rem; margin-bottom:12px; }
+  .ico.blue{ background:rgba(74,90,240,.1); color:var(--blue); } .ico.green{ background:rgba(23,166,115,.12); color:var(--leaf); }
+  .ico.gold{ background:rgba(232,162,61,.16); color:#B7791F; } .ico.red{ background:rgba(240,99,122,.12); color:var(--coral); }
+  .kpi b{ display:block; font:800 1.4rem 'Plus Jakarta Sans',sans-serif; } .kpi span{ font-size:.8rem; font-weight:600; color:var(--ink-soft); }
+  .kpi em{ display:block; font-style:normal; font-size:.75rem; color:var(--ink-soft); margin-top:3px; }
+  .chart-grid{ display:grid; grid-template-columns:minmax(260px,1fr) minmax(300px,1.4fr); gap:20px; margin-bottom:20px; }
+  .chart-grid .card-elimu{ margin:0; }
+  .donut-wrap{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+  .donut{ width:150px; height:150px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; background:var(--line); }
+  .donut div{ width:100px; height:100px; border-radius:50%; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .donut b{ font:800 .95rem 'Plus Jakarta Sans',sans-serif; } .donut small{ font-size:.68rem; color:var(--ink-soft); }
+  .legend{ flex:1; min-width:130px; display:flex; flex-direction:column; gap:10px; font-size:.84rem; }
+  .legend div{ display:flex; align-items:center; gap:8px; } .legend i{ width:10px; height:10px; border-radius:50%; flex-shrink:0; } .legend b{ margin-left:auto; }
+  .aging{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:end; height:190px; }
+  .ag{ display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:6px; text-align:center; }
+  .ag .agbar{ flex:1; width:100%; display:flex; align-items:flex-end; } .ag .agbar i{ display:block; width:100%; border-radius:8px 8px 3px 3px; min-height:3px; transition:height .6s ease; }
+  .ag b{ font-size:.76rem; } .ag span{ font-size:.72rem; color:var(--ink-soft); }
+  .t0{ background:var(--leaf) } .t1{ background:var(--gold) } .t2{ background:#E8823D } .t3{ background:var(--coral) } .t4{ background:#B23350 }
+  .top-row{ display:flex; align-items:center; gap:14px; padding:11px 8px; border-radius:12px; cursor:pointer; }
+  .top-row:hover{ background:var(--cloud); }
+  .av2{ width:38px; height:38px; border-radius:50%; background:linear-gradient(160deg,var(--blue),var(--plum)); color:#fff; display:grid; place-items:center; font:700 .78rem 'Plus Jakarta Sans',sans-serif; flex-shrink:0; }
+  .top-row .grow{ flex:1; min-width:0; } .top-row .bar{ height:6px; border-radius:99px; background:var(--cloud); margin-top:7px; overflow:hidden; }
+  .top-row .bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--blue),var(--plum)); }
+  @media(max-width:860px){ .chart-grid{ grid-template-columns:1fr; } }
+  .tbl{ width:100%; border-collapse:collapse; font-size:.88rem; }
+  .tbl th{ text-align:left; font-size:.76rem; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); }
+  .tbl td{ padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .tbl tr.row{ cursor:pointer } .tbl tr.row:hover{ background:var(--cloud); }
+  .num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sub{ font-size:.76rem; color:var(--ink-soft); }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .toolbar .input{ max-width:280px; }
+  .pill{ border:1.5px solid #D7DAEE; background:#fff; border-radius:999px; padding:7px 14px; font-size:.82rem; font-weight:600; cursor:pointer; color:var(--ink-soft); }
+  .pill.on{ border-color:var(--blue); color:var(--blue-deep); background:rgba(74,90,240,.08); }
+  .btn-sm{ padding:8px 16px; font-size:.84rem; }
+  .view{ display:none } .view.on{ display:block }
+  .modal-box.wide{ max-width:680px; max-height:90vh; overflow-y:auto; }
+  .kv{ display:flex; justify-content:space-between; padding:6px 0; font-size:.88rem; }
+  .sec{ font:700 .84rem 'Plus Jakarta Sans',sans-serif; margin:20px 0 8px; }
+  .err{ color:#B23350; font-size:.84rem; margin-top:10px; min-height:1em; }
+  .link{ background:none; border:0; color:var(--blue); font-weight:600; cursor:pointer; padding:0; font-size:.82rem; }
+  .link.d{ color:var(--coral); }
+  #toast{ position:fixed; bottom:20px; right:20px; z-index:60; max-width:360px; }
+  #toast .alert-elimu{ box-shadow:0 12px 30px -12px rgba(18,23,43,.4); background:#fff; margin:0 0 8px; }
+  .alert-ok{ background:#E9F7F1; color:#0F7A55; }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a href="#overview" class="brand"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>ElimuOs</a>
+    <nav class="admin-nav">
+      <a href="#overview" data-v="overview" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Overview</a>
+      <div class="admin-nav-section">Fees</div>
+      <a href="#invoices" data-v="invoices" class="admin-nav-link"><i class="bi bi-receipt"></i> Invoices</a>
+      <a href="#students" data-v="students" class="admin-nav-link"><i class="bi bi-people-fill"></i> Students</a>
+      <a href="#families" data-v="families" class="admin-nav-link"><i class="bi bi-house-heart-fill"></i> Families</a>
+      <a href="#classes" data-v="classes" class="admin-nav-link"><i class="bi bi-diagram-3-fill"></i> Classes</a>
+      <a href="#fees" data-v="fees" class="admin-nav-link"><i class="bi bi-tags-fill"></i> Fee structures</a>
+      <div class="admin-nav-section">Money</div>
+      <a href="#payments" data-v="payments" class="admin-nav-link"><i class="bi bi-cash-stack"></i> Payments</a>
+      <a href="#mpesa" data-v="mpesa" class="admin-nav-link"><i class="bi bi-phone-fill"></i> M-Pesa</a>
+      <div class="admin-nav-section">Me</div>
+      <a href="#activity" data-v="activity" class="admin-nav-link"><i class="bi bi-clock-history"></i> My activity</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="school">Loading…</div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1 id="title">Overview</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="chip"><div class="user-avatar" id="av">…</div>
+          <div><div class="user-chip-name" id="uname">Loading…</div><div class="user-chip-role">Accountant</div></div>
+        </div>
+      </div>
+    </header>
+    <main class="admin-content">
+
+      <section class="view" id="v-overview">
+        <div class="hero">
+          <div>
+            <h2 id="greet">Welcome</h2>
+            <p id="heroSum">Loading collections…</p>
+            <div class="hero-actions">
+              <button class="btn-elimu btn-elimu-primary btn-sm" onclick="promptOverdue()"><i class="bi bi-phone-vibrate"></i> Prompt overdue parents</button>
+              <a class="btn-elimu btn-elimu-ghost btn-sm" href="#invoices"><i class="bi bi-receipt"></i> All invoices</a>
+            </div>
+          </div>
+          <div class="ring" id="ring"><div><b id="ringv">0%</b><small id="ringl">collected</small></div></div>
+        </div>
+        <div class="stat-grid" id="stats"></div>
+        <div class="chart-grid">
+          <div class="card-elimu"><div class="sec" style="margin-top:0">Balance by status</div>
+            <div class="donut-wrap"><div class="donut" id="donut"><div><b id="donutv">—</b><small>outstanding</small></div></div><div class="legend" id="legend"></div></div></div>
+          <div class="card-elimu"><div class="sec" style="margin-top:0">Outstanding by age past due date</div><div class="aging" id="aging"></div></div>
+        </div>
+        <div class="card-elimu"><div class="sec" style="margin-top:0">Largest outstanding balances</div>
+          <div id="top"><span class="skeleton" style="height:120px"></span></div></div>
+      </section>
+
+      <section class="view" id="v-invoices">
+        <div class="toolbar">
+          <input class="input" id="iq" placeholder="Search student or admission no." />
+          <select class="input" id="iterm" style="max-width:150px"></select>
+          <button class="pill on" data-f="all">All</button>
+          <button class="pill" data-f="overdue">Overdue</button>
+          <button class="pill" data-f="partial">Partial</button>
+          <button class="pill" data-f="unpaid">Unpaid</button>
+          <button class="pill" data-f="paid">Paid</button>
+          <span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-ghost btn-sm" id="exp"><i class="bi bi-download"></i> CSV</button>
+          <button class="btn-elimu btn-elimu-ghost btn-sm" id="remind" disabled><i class="bi bi-chat-dots"></i> SMS reminder</button>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="bulk" disabled><i class="bi bi-phone-vibrate"></i> Prompt selected</button>
+        </div>
+        <div class="card-elimu" style="padding:8px 14px">
+          <table class="tbl"><thead><tr>
+            <th><input type="checkbox" id="all" aria-label="Select all"></th><th>Student</th><th>Due</th><th class="num">Total</th><th class="num">Balance</th><th>Status</th>
+          </tr></thead><tbody id="ibody"></tbody></table>
+        </div>
+        <div style="text-align:center"><button class="link" id="more" style="display:none">Load more</button></div><p class="sub" id="icount"></p>
+      </section>
+
+      <section class="view" id="v-students">
+        <div class="toolbar"><input class="input" id="sq" placeholder="Search name or admission no." /></div>
+        <div class="card-elimu" style="padding:8px 14px">
+          <table class="tbl"><thead><tr><th>Student</th><th>Admission no.</th><th>Gender</th><th>Status</th></tr></thead><tbody id="sbody"></tbody></table>
+        </div>
+      </section>
+
+    <section class="view" id="v-classes">
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Class</th><th class="num">Students</th></tr></thead><tbody id="cbody"></tbody></table></div>
+        <p class="sub">Open a class to generate invoices for every student for a term.</p>
+        <div class="card-elimu" style="margin-top:16px"><div class="sec" style="margin-top:0">Carry arrears forward</div>
+          <p class="sub" style="margin-bottom:12px">Moves unpaid balances from an earlier term onto the same student's invoice in a later term, which must already be generated. The earlier invoice is closed with a “carried forward” line, so nothing is counted twice.</p>
+          <div class="toolbar"><select class="input" id="af" style="max-width:170px"></select><i class="bi bi-arrow-right"></i><select class="input" id="at" style="max-width:170px"></select>
+            <select class="input" id="ac" style="max-width:190px"><option value="">All classes</option></select>
+            <button class="btn-elimu btn-elimu-primary btn-sm" id="ago"><i class="bi bi-arrow-right-circle"></i> Carry forward</button></div>
+          <div class="sub" id="ares"></div></div>
+      </section>
+
+      <section class="view" id="v-payments">
+        <div class="toolbar"><input class="input" type="date" id="pf" style="max-width:160px"><input class="input" type="date" id="pt" style="max-width:160px">
+          <select class="input" id="pm" style="max-width:140px"><option value="">All methods</option><option value="cash">Cash</option><option value="bank">Bank</option><option value="cheque">Cheque</option><option value="mpesa">M-Pesa</option></select>
+          <span style="flex:1"></span><button class="btn-elimu btn-elimu-ghost btn-sm" id="pexp"><i class="bi bi-download"></i> CSV</button>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="pprint"><i class="bi bi-printer"></i> Print cash-up</button></div>
+        <div class="stat-grid" id="psum"></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Date</th><th>Student</th><th>Method</th><th>Received by</th><th class="num">Amount</th><th></th></tr></thead><tbody id="pbody"></tbody></table></div>
+      </section>
+
+      <section class="view" id="v-families">
+        <div class="toolbar"><input class="input" id="fq" placeholder="Search parent, phone or child" />
+          <button class="pill on" data-ff="owing">Owing</button><button class="pill" data-ff="all">All</button><button class="pill" data-ff="sib">2+ children</button></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Parent / guardian</th><th>Children</th><th class="num">Owed</th></tr></thead><tbody id="fambody"></tbody></table></div>
+        <p class="sub" id="famcount"></p>
+      </section>
+
+      <section class="view" id="v-fees">
+        <div class="toolbar"><select class="input" id="fterm" style="max-width:200px"></select><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="copyFees()"><i class="bi bi-files"></i> Copy from another term</button></div>
+        <div id="fbody"></div>
+        <p class="sub">Invoices bill every item listed here, optional or not. Edits only affect invoices generated afterwards; existing invoices keep the amounts they were created with.</p>
+      </section>
+
+      <section class="view" id="v-mpesa">
+        <div class="toolbar"><input class="input" id="mq" placeholder="Student, admission no. or phone" style="max-width:240px">
+          <input class="input" type="date" id="mf" style="max-width:160px"><input class="input" type="date" id="mt" style="max-width:160px">
+          <button class="pill on" data-mf="">All</button><button class="pill" data-mf="pending">Pending</button><button class="pill" data-mf="failed">Failed</button><button class="pill" data-mf="cancelled">Cancelled</button><button class="pill" data-mf="timeout">Timed out</button><button class="pill" data-mf="success">Successful</button></div>
+        <div class="stat-grid" id="msum"></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>When</th><th>Student</th><th>Phone</th><th class="num">Amount</th><th>Status</th><th>Detail</th><th></th></tr></thead><tbody id="mbody"></tbody></table></div>
+        <p class="sub">A prompt still “pending” after a few minutes usually means the parent never answered it. Re-sending while the old one is live risks a double payment.</p>
+      </section>
+
+      <section class="view" id="v-activity">
+        <div class="toolbar"><select class="input" id="atbl" style="max-width:200px"><option value="">Everything</option><option value="payments">Payments &amp; refunds</option><option value="invoices">Invoices &amp; adjustments</option><option value="fee_structures">Fee structures</option></select></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>When</th><th>What</th><th>Details</th></tr></thead><tbody id="abody"></tbody></table></div>
+        <div style="text-align:center"><button class="link" id="amore" style="display:none">Load more</button></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" style="display:none"><div class="modal-box wide" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+const api = window.ElimuOs.api.apiFetch;
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+const day = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' }) : '—';
+const bal = (i) => Number(i.total_amount) - Number(i.amount_paid || 0);
+const TONE = { paid:'ok', partial:'info', unpaid:'warn', overdue:'error' };
+const chip = (s) => `<span class="status-chip ${TONE[s] || ''}">${esc(s)}</span>`;
+// 07xx / 01xx / +254… → 2547xxxxxxxx (what Daraja expects)
+const msisdn = (p) => { const d = String(p || '').replace(/\D/g, ''); return d.startsWith('254') ? d : '254' + d.replace(/^0/, ''); };
+
+let invoices = [], filter = 'all', selected = new Set(), openId = null, terms = [];
+let listInv = [], listTotal = 0, ledger = [], classes = [], curTerm = '', schoolName = '', curInv = null, curPays = [], curStu = null;
+
+let allTerms = [], fees = [], families = [], ffilter = 'owing', mtx = [], mfilter = '', actRows = [];
+const tl = (t) => `${t.year_label ? t.year_label + ' · ' : ''}Term ${t.term_number}`;
+
+function toast(msg, ok) {
+  const el = document.createElement('div');
+  el.className = 'alert-elimu ' + (ok ? 'alert-ok' : 'alert-error');
+  el.innerHTML = `<i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}"></i><div>${esc(msg)}</div>`;
+  $('toast').appendChild(el); setTimeout(() => el.remove(), 5000);
+}
+const openModal = (html) => { $('mbox').innerHTML = html; $('modal').style.display = 'flex'; };
+const closeModal = () => { $('modal').style.display = 'none'; openId = null; };
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+
+// ---------- Views ----------
+const TITLES = { overview:'Overview', invoices:'Invoices', students:'Students', classes:'Classes', payments:'Payments', families:'Families', fees:'Fee structures', mpesa:'M-Pesa', activity:'My activity' };
+function route() {
+  const v = TITLES[location.hash.slice(1)] ? location.hash.slice(1) : 'overview';
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === v));
+  $('title').textContent = TITLES[v];
+  if (v === 'students' && !$('sbody').children.length) loadStudents('');
+  if (v === 'invoices') loadList();
+  if (v === 'payments') loadLedger();
+  if (v === 'classes') loadClasses();
+  if (v === 'families') loadFamilies();
+  if (v === 'fees') loadFees();
+  if (v === 'mpesa') loadMpesa();
+  if (v === 'activity') loadActivity();
+}
+window.addEventListener('hashchange', route);
+
+// ---------- Invoices ----------
+async function loadInvoices() {
+  try { invoices = (await api('/fees/invoices/outstanding?limit=200&offset=0')).data; }
+  catch (e) { toast(e.message || 'Could not load invoices'); invoices = []; }
+  renderStats(); loadSummary();
+  if ($('v-invoices').classList.contains('on')) loadList();
+}
+const compact = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(Math.round(n));
+function renderStats() {
+  const billed = invoices.reduce((s, i) => s + Number(i.total_amount), 0);
+  const paid = invoices.reduce((s, i) => s + Number(i.amount_paid || 0), 0);
+  const out = billed - paid, rate = billed ? Math.round(paid / billed * 100) : 0;
+  const overdue = invoices.filter(i => i.status === 'overdue'), overdueAmt = overdue.reduce((s, i) => s + bal(i), 0);
+  const partial = invoices.filter(i => i.status === 'partial').length;
+  const kpi = (ic, tone, v, l, sub) => `<div class="kpi"><div class="ico ${tone}"><i class="bi ${ic}"></i></div><b>${v}</b><span>${l}</span><em>${sub}</em></div>`;
+  $('stats').innerHTML = kpi('bi-wallet2', 'blue', kes(out), 'Outstanding balance', `across ${invoices.length} open invoices`)
+    + kpi('bi-check2-circle', 'green', kes(paid), 'Paid on open invoices', `${partial} part-paid`)
+    + kpi('bi-exclamation-triangle', 'red', kes(overdueAmt), 'Overdue amount', `${overdue.length} invoice${overdue.length === 1 ? '' : 's'} past due`)
+    + kpi('bi-hourglass-split', 'gold', invoices.filter(i => i.status === 'unpaid').length, 'Unpaid invoices', 'no payment yet');
+  $('ring').style.setProperty('--p', rate); $('ringv').textContent = rate + '%';
+  $('heroSum').textContent = invoices.length ? `${kes(out)} is still to collect, ${kes(overdueAmt)} of it overdue.` : 'No open invoices — everything is collected.';
+
+  const by = { unpaid: 0, partial: 0, overdue: 0 }, col = { unpaid: 'var(--gold)', partial: 'var(--blue)', overdue: 'var(--coral)' };
+  invoices.forEach(i => { if (i.status in by) by[i.status] += bal(i); });
+  let acc = 0; const stops = Object.keys(by).map(k => { const a0 = acc / (out || 1) * 100; acc += by[k]; return `${col[k]} ${a0}% ${acc / (out || 1) * 100}%`; });
+  $('donut').style.background = out > 0 ? `conic-gradient(${stops.join(',')})` : 'var(--line)';
+  $('donutv').textContent = 'KES ' + compact(out);
+  $('legend').innerHTML = Object.keys(by).map(k => `<div><i style="background:${col[k]}"></i>${k[0].toUpperCase() + k.slice(1)}<b>${kes(by[k])}</b></div>`).join('');
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const A = [['Not due', 0], ['1–30 d', 0], ['31–60 d', 0], ['61–90 d', 0], ['90+ d', 0]];
+  invoices.forEach(i => {
+    if (!i.due_date) { A[0][1] += bal(i); return; }
+    const d = Math.floor((today - new Date(i.due_date)) / 864e5);
+    A[d <= 0 ? 0 : d <= 30 ? 1 : d <= 60 ? 2 : d <= 90 ? 3 : 4][1] += bal(i);
+  });
+  const mx = Math.max(...A.map(x => x[1]), 1);
+  $('aging').innerHTML = A.map(([l, v], n) => `<div class="ag"><b>${v ? compact(v) : '0'}</b><div class="agbar"><i class="t${n}" style="height:${v ? Math.max(v / mx * 100, 4) : 0}%"></i></div><span>${l}</span></div>`).join('');
+
+  const top = [...invoices].sort((a, b) => bal(b) - bal(a)).slice(0, 6), tm = top[0] ? bal(top[0]) : 1;
+  $('top').innerHTML = top.length ? top.map(i => `<div class="top-row" onclick="openInvoice('${i.id}')">
+    <div class="av2">${esc(i.student_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase())}</div>
+    <div class="grow"><div style="display:flex;justify-content:space-between;gap:10px"><span>${esc(i.student_name)} <span class="sub">${esc(i.admission_number)}</span></span><b>${kes(bal(i))}</b></div><div class="bar"><i style="width:${bal(i) / tm * 100}%"></i></div></div>
+    ${chip(i.status)}</div>`).join('') : '<p class="sub">No open invoices. Everything is collected.</p>';
+}
+function promptOverdue() {
+  const od = invoices.filter(i => i.status === 'overdue');
+  if (!od.length) return toast('No overdue invoices right now.', true);
+  selected = new Set(od.map(i => i.id)); filter = 'overdue';
+  document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x.dataset.f === 'overdue'));
+  location.hash = '#invoices';
+  toast(`${od.length} overdue invoices selected — review, then press “Prompt selected”.`, true);
+}
+function csv(name, head, rows) {
+  const q = (v) => { let t = String(v ?? ''); if (/^[=+\-@]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([[head, ...rows].map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function printDoc(title, body) {
+  const w = window.open('', '_blank'); if (!w) return toast('Allow pop-ups to print.');
+  w.document.write(`<!doctype html><title>${esc(title)}</title><style>body{font:14px Inter,Arial,sans-serif;max-width:720px;margin:32px auto;color:#12172B}h1{font-size:20px;margin:0}table{width:100%;border-collapse:collapse;margin:14px 0}td,th{padding:7px 8px;border-bottom:1px solid #ddd;text-align:left}.r{text-align:right}.tot{font-weight:700}small{color:#5B6178}</style>${body}`);
+  w.document.close(); w.focus(); w.print();
+}
+function listParams(limit, offset) {
+  const p = new URLSearchParams({ limit, offset });
+  if (filter !== 'all') p.set('status', filter);
+  if ($('iterm').value) p.set('termId', $('iterm').value);
+  const q = $('iq').value.trim(); if (q) p.set('q', q);
+  return p;
+}
+async function loadList(append) {
+  try {
+    const r = (await api('/fees/invoices?' + listParams(100, append ? listInv.length : 0))).data;
+    listInv = append ? listInv.concat(r.items) : r.items; listTotal = r.total;
+  } catch (e) { toast(e.message || 'Could not load invoices'); }
+  renderInvoices();
+}
+function renderInvoices() {
+  $('ibody').innerHTML = listInv.length ? listInv.map(i => `<tr class="row" onclick="openInvoice('${i.id}')">
+    <td onclick="event.stopPropagation()"><input type="checkbox" data-id="${i.id}" ${selected.has(i.id) ? 'checked' : ''}></td>
+    <td>${esc(i.student_name)}<div class="sub">${esc(i.admission_number)}</div></td><td>${day(i.due_date)}</td>
+    <td class="num">${kes(i.total_amount)}</td><td class="num">${kes(bal(i))}</td><td>${chip(i.status)}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="sub" style="padding:24px">No invoices match.</td></tr>';
+  $('more').style.display = listInv.length < listTotal ? 'inline' : 'none';
+  $('icount').textContent = `Showing ${listInv.length} of ${listTotal} invoices.`;
+  const n = selected.size ? ` (${selected.size})` : '';
+  $('bulk').disabled = $('remind').disabled = selected.size === 0;
+  $('bulk').innerHTML = `<i class="bi bi-phone-vibrate"></i> Prompt selected${n}`;
+  $('remind').innerHTML = `<i class="bi bi-chat-dots"></i> SMS reminder${n}`;
+}
+let iTimer;
+$('iq').addEventListener('input', () => { clearTimeout(iTimer); iTimer = setTimeout(() => loadList(), 300); });
+$('iterm').addEventListener('change', () => loadList());
+$('more').addEventListener('click', () => loadList(true));
+document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => {
+  filter = b.dataset.f; document.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b)); loadList();
+}));
+$('ibody').addEventListener('change', (e) => {
+  const id = e.target.dataset.id; if (!id) return;
+  e.target.checked ? selected.add(id) : selected.delete(id); renderInvoices();
+});
+$('all').addEventListener('change', (e) => { listInv.forEach(i => e.target.checked ? selected.add(i.id) : selected.delete(i.id)); renderInvoices(); });
+$('exp').addEventListener('click', async () => {
+  try {
+    const r = (await api('/fees/invoices?' + listParams(500, 0))).data;
+    csv('invoices.csv', ['Student', 'Admission no.', 'Due date', 'Total', 'Paid', 'Balance', 'Status'],
+      r.items.map(i => [i.student_name, i.admission_number, i.due_date ? String(i.due_date).slice(0, 10) : '', i.total_amount, i.amount_paid || 0, bal(i), i.status]));
+    if (r.total > 500) toast(`Exported the first 500 of ${r.total} — narrow the filters for the rest.`);
+  } catch (e) { toast(e.message); }
+});
+$('remind').addEventListener('click', async () => {
+  const ids = [...selected];
+  if (!ids.length || !confirm(`Send an SMS fee reminder to the primary guardian for ${ids.length} invoice(s)?`)) return;
+  try {
+    const r = (await api('/fees/reminders', { method:'POST', body: JSON.stringify({ invoiceIds: ids }) })).data;
+    toast(`${r.sent} reminder(s) sent` + (r.failed ? `, ${r.failed} failed` : '') + (r.skipped.length ? `, ${r.skipped.length} skipped (paid or no phone)` : '') + '.', !r.failed);
+    selected.clear(); renderInvoices();
+  } catch (e) { toast(e.message); }
+});
+
+// Bulk M-Pesa prompt: one STK push per invoice, to the student's primary guardian, for the full balance.
+$('bulk').addEventListener('click', async () => {
+  const pool = new Map([...invoices, ...listInv].map(i => [i.id, i]));
+  const list = [...selected].map(id => pool.get(id)).filter(i => i && bal(i) > 0);
+  if (!list.length || !confirm(`Send an M-Pesa prompt for the balance on ${list.length} invoice(s), to each student's primary guardian?`)) return;
+  $('bulk').disabled = true; let ok = 0; const failed = [];
+  for (const i of list) {
+    try {
+      const g = (await api(`/students/${i.student_id}/guardians`)).data.find(x => x.phone);
+      if (!g) throw new Error('no guardian phone on file');
+      await api('/mpesa/stk-push', { method:'POST', body: JSON.stringify({ invoiceId: i.id, phoneNumber: msisdn(g.phone), amount: bal(i) }) });
+      ok++;
+    } catch (e) { failed.push(`${i.student_name}: ${e.message}`); }
+  }
+  selected.clear(); renderInvoices();
+  toast(`${ok} prompt(s) sent.` + (failed.length ? ` ${failed.length} failed — ${failed.slice(0, 3).join('; ')}` : ''), !failed.length);
+});
+
+// ---------- Invoice detail ----------
+async function openInvoice(id) {
+  openId = id; openModal('<div class="skeleton" style="height:200px"></div>');
+  try {
+    const inv = (await api(`/fees/invoices/${id}`)).data;
+    const [pay, txn, gd] = await Promise.all([
+      api(`/fees/invoices/${id}/payments`), api(`/mpesa/invoices/${id}/transactions`), api(`/students/${inv.student_id}/guardians`),
+    ]);
+    const b = bal(inv), guardians = gd.data; curInv = inv; curPays = pay.data;
+    openModal(`
+      <div style="display:flex;justify-content:space-between;gap:12px"><div><h3>${esc(inv.student_name)}</h3><div class="sub">${esc(inv.admission_number)} · due ${day(inv.due_date)}</div></div>${chip(inv.status)}</div>
+      <div class="sec">Items</div>${inv.items.map(t => { const a = (inv.adjustments || []).find(x => String(x.invoice_item_id) === String(t.id)); return `<div class="kv"><span>${esc(t.description)}</span><span>${kes(t.amount)}${a && (a.kind === 'discount' || a.kind === 'bursary') ? ` <button class="link d" onclick="reverseAdj('${a.id}')">Reverse</button>` : ''}</span></div>`; }).join('')}
+      <div class="kv"><b>Total</b><b>${kes(inv.total_amount)}</b></div><div class="kv"><span>Paid</span><span>${kes(inv.amount_paid)}</span></div><div class="kv"><b>${b < 0 ? 'Credit (overpaid)' : 'Balance'}</b><b>${kes(Math.abs(b))}</b></div>
+      <div class="sec">Payments</div>${pay.data.length ? pay.data.map(p => `<div class="kv"><span>${esc(p.method)}${p.is_refund ? ' refund' : ''} · ${day(p.paid_at)} <span class="sub">${esc(p.reference_note || '')}</span></span>
+        <span>${kes(p.amount)} <button class="link" onclick="receiptFromInv('${p.id}')">Receipt</button> <button class="link d" onclick="voidPay('${p.id}')">Void</button></span></div>`).join('') : '<p class="sub">No payments yet.</p>'}
+      ${txn.data.length ? `<div class="sec">M-Pesa prompts</div>${txn.data.map(t => `<div class="kv"><span>${esc(t.phone_number)} · ${day(t.initiated_at)}</span><span>${kes(t.amount)} · ${esc(t.status)}</span></div>`).join('')}` : ''}
+      ${b > 0 ? `
+      <div class="sec">Prompt parent on M-Pesa</div>
+      <div class="field-row"><div class="field"><select class="input" id="pg" onchange="$('pp').value=this.value">${guardians.map(g => `<option value="${esc(g.phone)}">${esc(g.full_name)} (${esc(g.relationship)})</option>`).join('') || '<option value="">No guardian linked</option>'}</select></div>
+        <div class="field"><input class="input" id="pp" placeholder="07XX XXX XXX" value="${esc(guardians[0]?.phone || '')}"></div>
+        <div class="field"><input class="input" id="pa" type="number" value="${b}"></div></div>
+      <button class="btn-elimu btn-elimu-primary btn-sm" onclick="sendStk('${id}')"><i class="bi bi-phone-vibrate"></i> Send prompt</button>
+      <div class="sec">Record cash / bank / cheque payment</div>
+      <div class="field-row"><div class="field"><input class="input" id="ra" type="number" value="${b}"></div>
+        <div class="field"><select class="input" id="rm"><option value="cash">Cash</option><option value="bank">Bank</option><option value="cheque">Cheque</option></select></div>
+        <div class="field"><input class="input" id="rr" placeholder="Reference"></div></div>
+      <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="recordPay('${id}','${inv.student_id}')"><i class="bi bi-cash"></i> Record payment</button>` : ''}
+      <div class="sec">Discount / bursary</div>
+      <div class="field-row"><div class="field"><select class="input" id="dk"><option value="bursary">Bursary</option><option value="discount">Discount</option></select></div>
+        <div class="field"><input class="input" id="da" type="number" min="1" placeholder="Amount"></div>
+        <div class="field"><input class="input" id="dr" placeholder="Reason (required)"></div></div>
+      <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="applyAdj('${id}')"><i class="bi bi-percent"></i> Apply</button>
+      ${b < 0 ? `
+      <div class="sec">Refund the credit</div>
+      <div class="field-row"><div class="field"><input class="input" id="fa" type="number" value="${-b}"></div>
+        <div class="field"><select class="input" id="fm"><option value="cash">Cash</option><option value="bank">Bank</option><option value="cheque">Cheque</option><option value="mpesa">M-Pesa</option></select></div>
+        <div class="field"><input class="input" id="fr" placeholder="Reason (required)"></div><div class="field"><input class="input" id="ff" placeholder="Reference"></div></div>
+      <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="refundInv('${id}')"><i class="bi bi-arrow-return-left"></i> Record refund</button>
+      <div class="sub">This records the refund only — pay the money out separately.</div>` : ''}
+      <div class="err" id="merr"></div>
+      <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal();loadInvoices()">Close</button></div>`);
+  } catch (e) { openModal(`<p class="err">${esc(e.message)}</p><div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`); }
+}
+async function act(btnFn, okMsg) {
+  $('merr').textContent = '';
+  try { await btnFn(); toast(okMsg, true); } catch (e) { $('merr').textContent = e.message || 'Something went wrong'; }
+}
+const sendStk = (id) => act(() => api('/mpesa/stk-push', { method:'POST', body: JSON.stringify({
+  invoiceId: id, phoneNumber: msisdn($('pp').value), amount: Number($('pa').value) }) }), 'M-Pesa prompt sent — waiting for the parent to enter their PIN.');
+const recordPay = (id, sid) => act(async () => {
+  await api('/fees/payments', { method:'POST', body: JSON.stringify({ invoiceId:id, studentId:sid, amount:Number($('ra').value), method:$('rm').value, referenceNote:$('rr').value.trim() || undefined }) });
+  await openInvoice(id); loadInvoices();
+}, 'Payment recorded.');
+async function voidPay(pid) {
+  const reason = (prompt('Reason for voiding this payment (required):') || '').trim();
+  if (reason.length < 3) return toast('A reason is required to void a payment.');
+  try { await api(`/fees/payments/${pid}/void`, { method:'POST', body: JSON.stringify({ invoiceId: openId, reason }) }); toast('Payment voided.', true); await openInvoice(openId); loadInvoices(); }
+  catch (e) { toast(e.message); }
+}
+
+// ---------- Students ----------
+let sTimer;
+async function loadStudents(q) {
+  try {
+    const list = (await api(`/students?limit=100&offset=0&q=${encodeURIComponent(q)}`)).data;
+    $('sbody').innerHTML = list.length ? list.map(s => `<tr class="row" onclick="openStudent('${s.id}')"><td>${esc(s.full_name)}</td><td>${esc(s.admission_number)}</td>
+      <td>${esc(s.gender || '—')}</td><td>${esc(s.status)}</td></tr>`).join('') : '<tr><td colspan="4" class="sub" style="padding:24px">No students found.</td></tr>';
+  } catch (e) { toast(e.message); }
+}
+$('sq').addEventListener('input', (e) => { clearTimeout(sTimer); sTimer = setTimeout(() => loadStudents(e.target.value.trim()), 300); });
+
+async function openStudent(id) {
+  openModal('<div class="skeleton" style="height:200px"></div>');
+  try {
+    const [s, g, inv, pay] = await Promise.all([api(`/students/${id}`), api(`/students/${id}/guardians`), api(`/fees/invoices/student/${id}`), api(`/fees/payments/student/${id}`)]);
+    const st = s.data, owed = inv.data.reduce((t, i) => t + bal(i), 0); curStu = { st, inv: inv.data, pay: pay.data, owed };
+    openModal(`
+      <h3>${esc(st.full_name)}</h3><div class="sub">${esc(st.admission_number)} · ${esc(st.grade_name || 'No class')} ${esc(st.stream_name || '')}</div>
+      <div class="kv" style="margin-top:10px"><b>Total balance</b><b>${kes(owed)}</b></div>
+      <div class="sec">Parents / guardians</div>${g.data.length ? g.data.map(x => `<div class="kv"><span>${esc(x.full_name)} <span class="sub">${esc(x.relationship)}${x.is_primary_contact ? ' · primary' : ''}</span></span><span>${esc(x.phone)}</span></div>`).join('') : '<p class="sub">No guardian linked.</p>'}
+      <div class="sec">Invoices</div>${inv.data.length ? inv.data.map(i => `<div class="kv"><span><button class="link" onclick="openInvoice('${i.id}')">${day(i.created_at)}</button> ${chip(i.status)}</span><span>${kes(bal(i))} of ${kes(i.total_amount)}</span></div>`).join('') : '<p class="sub">No invoices yet.</p>'}
+      <div class="field-row" style="margin-top:8px"><div class="field"><select class="input" id="gt">${terms.map(t => `<option value="${t.id}">Term ${t.term_number}</option>`).join('') || '<option value="">No terms set</option>'}</select></div>
+        <div class="field"><input class="input" id="gd" type="date"></div></div>
+      <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="genInvoice('${id}')"><i class="bi bi-plus-lg"></i> Generate invoice</button> <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="printStatement()"><i class="bi bi-printer"></i> Print statement</button>
+      <div class="sec">Payment history</div>${pay.data.length ? pay.data.map(p => `<div class="kv"><span>${esc(p.method)} · ${day(p.paid_at)}</span><span>${kes(p.amount)}</span></div>`).join('') : '<p class="sub">No payments yet.</p>'}
+      <div class="err" id="merr"></div>
+      <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+  } catch (e) { openModal(`<p class="err">${esc(e.message)}</p>`); }
+}
+const genInvoice = (sid) => act(async () => {
+  const termId = $('gt').value; if (!termId) throw new Error('Choose a term first.');
+  await api('/fees/invoices', { method:'POST', body: JSON.stringify({ studentId: sid, termId, dueDate: $('gd').value || undefined }) });
+  await openStudent(sid); loadInvoices();
+}, 'Invoice generated.');
+
+// ---------- Receipts & statements ----------
+function printReceipt(r) {
+  printDoc('Receipt', `<h1>${esc(schoolName)}</h1><h3>${Number(r.amount) < 0 ? 'Refund voucher' : 'Fee receipt'}</h3><small>Ref ${esc(String(r.id).slice(0, 8).toUpperCase())} · ${day(r.paid_at)}</small>
+    <table><tr><td>Student</td><td>${esc(r.student_name)} (${esc(r.admission_number)})</td></tr>
+    <tr><td>Method</td><td>${esc(r.method)}${r.reference_note ? ' · ' + esc(r.reference_note) : ''}</td></tr>
+    <tr class="tot"><td>${Number(r.amount) < 0 ? 'Amount refunded' : 'Amount received'}</td><td>${kes(Math.abs(r.amount))}</td></tr></table><small>Received by ${esc(r.received_by_name || 'the accounts office')}</small>`);
+}
+const receiptFromInv = (pid) => { const p = curPays.find(x => x.id === pid); if (p) printReceipt({ ...p, student_name: curInv.student_name, admission_number: curInv.admission_number }); };
+function printStatement() {
+  const { st, inv, pay, owed } = curStu;
+  printDoc('Fee statement', `<h1>${esc(schoolName)}</h1><h3>Fee statement — ${esc(st.full_name)}</h3><small>${esc(st.admission_number)} · ${esc(st.grade_name || '')} · printed ${day(new Date())}</small>
+    <table><tr><th>Invoice date</th><th>Status</th><th class="r">Billed</th><th class="r">Paid</th><th class="r">Balance</th></tr>
+    ${inv.map(i => `<tr><td>${day(i.created_at)}</td><td>${esc(i.status)}</td><td class="r">${kes(i.total_amount)}</td><td class="r">${kes(i.amount_paid)}</td><td class="r">${kes(bal(i))}</td></tr>`).join('')}</table>
+    <table><tr><th>Payment date</th><th>Method</th><th class="r">Amount</th></tr>${pay.map(p => `<tr><td>${day(p.paid_at)}</td><td>${esc(p.method)}</td><td class="r">${kes(p.amount)}</td></tr>`).join('')}</table>
+    <p class="tot">Balance due: ${kes(owed)}</p>`);
+}
+
+// ---------- Payments ledger ----------
+async function loadLedger() {
+  const p = new URLSearchParams({ limit: 300 });
+  if ($('pf').value) p.set('from', $('pf').value); if ($('pt').value) p.set('to', $('pt').value); if ($('pm').value) p.set('method', $('pm').value);
+  try {
+    const r = (await api('/fees/payments?' + p)).data; ledger = r.items;
+    const k = (v, l, s) => `<div class="kpi"><b>${kes(v)}</b><span>${esc(l)}</span><em>${s} payment${s === 1 ? '' : 's'}</em></div>`;
+    $('psum').innerHTML = k(r.summary.total, 'Net collected', r.summary.count) + r.summary.byMethod.map(m => k(m.total, m.method, m.count)).join('');
+    $('pbody').innerHTML = ledger.length ? ledger.map((x, n) => `<tr><td>${day(x.paid_at)}</td><td>${esc(x.student_name)}<div class="sub">${esc(x.admission_number)}</div></td>
+      <td>${esc(x.method)}${x.is_refund ? ' · refund' : ''}<div class="sub">${esc(x.reference_note || '')}</div></td><td>${esc(x.received_by_name || '—')}</td><td class="num">${kes(x.amount)}</td>
+      <td><button class="link" onclick="printReceipt(ledger[${n}])">Receipt</button></td></tr>`).join('')
+      : '<tr><td colspan="6" class="sub" style="padding:24px">No payments in this period.</td></tr>';
+  } catch (e) { toast(e.message); }
+}
+['pf', 'pt', 'pm'].forEach(id => $(id).addEventListener('change', loadLedger));
+$('pexp').addEventListener('click', () => csv('payments.csv', ['Date', 'Student', 'Admission no.', 'Method', 'Reference', 'Received by', 'Amount'],
+  ledger.map(x => [String(x.paid_at).slice(0, 10), x.student_name, x.admission_number, x.method, x.reference_note, x.received_by_name, x.amount])));
+$('pprint').addEventListener('click', () => {
+  const tot = ledger.reduce((t, x) => t + Number(x.amount), 0);
+  printDoc('Cash-up', `<h1>${esc(schoolName)}</h1><h3>Collections ${esc($('pf').value || 'start')} to ${esc($('pt').value || 'today')}</h3>
+    <table><tr><th>Date</th><th>Student</th><th>Method</th><th class="r">Amount</th></tr>${ledger.map(x => `<tr><td>${day(x.paid_at)}</td><td>${esc(x.student_name)}</td><td>${esc(x.method)}</td><td class="r">${kes(x.amount)}</td></tr>`).join('')}</table><p class="tot">Total: ${kes(tot)}</p>`);
+});
+
+// ---------- Classes + bulk invoicing ----------
+async function loadClasses() {
+  try {
+    classes = (await api('/classes')).data;
+    $('ac').innerHTML = '<option value="">All classes</option>' + classes.map(c => `<option value="${c.id}">${esc(c.grade_name)} ${esc(c.stream_name || '')}</option>`).join('');
+    $('cbody').innerHTML = classes.map(c => `<tr class="row" onclick="openClass('${c.id}')"><td>${esc(c.grade_name)} ${esc(c.stream_name || '')}</td><td class="num">${c.student_count}</td></tr>`).join('')
+      || '<tr><td colspan="2" class="sub" style="padding:24px">No classes set up yet.</td></tr>';
+  } catch (e) { toast(e.message); }
+}
+function openClass(id) {
+  const c = classes.find(x => x.id === id);
+  openModal(`<h3>${esc(c.grade_name)} ${esc(c.stream_name || '')}</h3><div class="sub">${c.student_count} students</div>
+    <div class="sec">Generate invoices for the whole class</div>
+    <div class="field-row"><div class="field"><select class="input" id="ct">${terms.map(t => `<option value="${t.id}"${t.id === curTerm ? ' selected' : ''}>Term ${t.term_number}</option>`).join('') || '<option value="">No terms set</option>'}</select></div>
+      <div class="field"><input class="input" id="cd" type="date"></div></div>
+    <button class="btn-elimu btn-elimu-primary btn-sm" id="cgo" onclick="genClass('${id}')">Generate for every student</button>
+    <div class="err" id="merr"></div><div class="sub" id="cres" style="margin-top:8px"></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+}
+async function genClass(id) {
+  const termId = $('ct').value; $('merr').textContent = '';
+  if (!termId) { $('merr').textContent = 'Choose a term first.'; return; }
+  if (!confirm('Generate an invoice for every student in this class for the chosen term? Students who already have one are skipped.')) return;
+  $('cgo').disabled = true; let made = 0, skipped = 0; const errs = [];
+  try {
+    const students = (await api(`/classes/${id}/students`)).data;
+    for (const [n, s] of students.entries()) {
+      $('cres').textContent = `Working… ${n + 1} of ${students.length}`;
+      try { await api('/fees/invoices', { method:'POST', body: JSON.stringify({ studentId: s.id, termId, dueDate: $('cd').value || undefined }) }); made++; }
+      catch (e) { /duplicate|already/i.test(e.message) ? skipped++ : errs.push(`${s.full_name}: ${e.message}`); }
+    }
+    $('cres').textContent = `${made} invoice(s) created, ${skipped} already existed.` + (errs.length ? ` ${errs.length} failed — ${errs.slice(0, 3).join('; ')}` : '');
+  } catch (e) { $('merr').textContent = e.message; }
+  $('cgo').disabled = false; loadInvoices();
+}
+
+// ---------- Term-wide collection rate ----------
+async function loadSummary() {
+  try {
+    const s = (await api('/fees/summary' + (curTerm ? `?termId=${curTerm}` : ''))).data;
+    const rate = Number(s.billed) ? Math.round(Number(s.collected) / Number(s.billed) * 100) : 0;
+    $('ring').style.setProperty('--p', rate); $('ringv').textContent = rate + '%'; $('ringl').textContent = curTerm ? 'this term' : 'collected';
+  } catch (e) { /* keep the open-invoice figure */ }
+}
+function fillTerms() {
+  const t = new Date().toISOString().slice(0, 10);
+  const now = terms.find(x => String(x.start_date).slice(0, 10) <= t && t <= String(x.end_date).slice(0, 10));
+  curTerm = now ? now.id : '';
+  $('iterm').innerHTML = '<option value="">All terms</option>' + terms.map(x => `<option value="${x.id}">Term ${x.term_number}</option>`).join('');
+  const opts = allTerms.map(x => `<option value="${x.id}">${esc(tl(x))}</option>`).join('');
+  const sel = allTerms.some(x => String(x.id) === String(curTerm)) ? curTerm : (allTerms[allTerms.length - 1] || {}).id;
+  $('fterm').innerHTML = opts; if (sel) $('fterm').value = sel;
+  $('af').innerHTML = $('at').innerHTML = opts;
+  const i = allTerms.findIndex(x => String(x.id) === String(sel));
+  if (i > 0) $('af').value = allTerms[i - 1].id; if (i >= 0) $('at').value = sel;
+  loadSummary();
+  if ($('v-fees').classList.contains('on')) loadFees();
+}
+
+// ---------- Adjustments, refunds, arrears ----------
+const applyAdj = (id) => act(async () => {
+  await api(`/fees/invoices/${id}/adjustments`, { method:'POST', body: JSON.stringify({ kind: $('dk').value, amount: Number($('da').value), reason: $('dr').value.trim() }) });
+  await openInvoice(id); loadInvoices();
+}, 'Adjustment applied.');
+async function reverseAdj(aid) {
+  const reason = (prompt('Reason for reversing this adjustment (required):') || '').trim();
+  if (reason.length < 3) return toast('A reason is required.');
+  try { await api(`/fees/adjustments/${aid}/reverse`, { method:'POST', body: JSON.stringify({ reason }) }); toast('Adjustment reversed.', true); await openInvoice(openId); loadInvoices(); }
+  catch (e) { toast(e.message); }
+}
+const refundInv = (id) => act(async () => {
+  await api(`/fees/invoices/${id}/refund`, { method:'POST', body: JSON.stringify({ amount: Number($('fa').value), method: $('fm').value, reason: $('fr').value.trim(), referenceNote: $('ff').value.trim() || undefined }) });
+  await openInvoice(id); loadInvoices();
+}, 'Refund recorded — remember to pay the money out.');
+$('ago').addEventListener('click', async () => {
+  const f = $('af').value, t = $('at').value;
+  if (!f || !t || f === t) return toast('Choose two different terms.');
+  if (!confirm('Carry unpaid balances from the first term onto the second? This changes both invoices for each student.')) return;
+  try {
+    const r = (await api('/fees/arrears/carry', { method:'POST', body: JSON.stringify({ fromTermId: f, toTermId: t, classId: $('ac').value || undefined }) })).data;
+    $('ares').textContent = `${r.carried} student(s), ${kes(r.amount)} carried forward.` + (r.skippedNoInvoice ? ` ${r.skippedNoInvoice} skipped — no invoice in the later term yet (generate it, then run this again).` : '');
+    toast('Arrears carried forward.', true); loadInvoices();
+  } catch (e) { toast(e.message); }
+});
+
+// ---------- Fee structures ----------
+async function loadFees() {
+  const termId = $('fterm').value;
+  if (!termId) { $('fbody').innerHTML = '<p class="sub">No terms set up yet — add an academic year and its terms first.</p>'; return; }
+  try {
+    if (!classes.length) classes = (await api('/classes')).data;
+    fees = (await api('/fees/structures?termId=' + termId)).data;
+  } catch (e) { return toast(e.message); }
+  const grades = new Map();
+  classes.forEach(c => grades.set(String(c.grade_id), c.grade_name));
+  fees.forEach(f => grades.set(String(f.grade_id), f.grade_name));
+  $('fbody').innerHTML = [...grades].map(([gid, gname]) => {
+    const items = fees.filter(f => String(f.grade_id) === gid), total = items.reduce((t, f) => t + Number(f.amount), 0);
+    return `<div class="card-elimu" style="margin-bottom:14px;padding:14px 18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="sec" style="margin:0">${esc(gname)}</div>
+      <div><b>${kes(total)}</b> <span class="sub">per student</span> <button class="link" onclick="feeForm('${gid}')">+ Add item</button></div></div>
+      ${items.length ? items.map(f => `<div class="kv"><span>${esc(f.item_name)}${f.is_mandatory ? '' : ' <span class="sub">(optional)</span>'}</span><span>${kes(f.amount)} <button class="link" onclick="feeForm('${gid}','${f.id}')">Edit</button> <button class="link d" onclick="delFee('${f.id}')">Remove</button></span></div>`).join('') : '<p class="sub" style="margin:8px 0 0">No fee items yet for this grade and term.</p>'}</div>`;
+  }).join('') || '<p class="sub">No classes or grades set up yet.</p>';
+}
+$('fterm').addEventListener('change', loadFees);
+function feeForm(gid, id) {
+  const f = id ? fees.find(x => String(x.id) === String(id)) : null;
+  openModal(`<h3>${f ? 'Edit fee item' : 'Add fee item'}</h3>
+    <div class="field"><input class="input" id="fn" placeholder="Item name (e.g. Tuition)" value="${esc(f ? f.item_name : '')}"></div>
+    <div class="field"><input class="input" id="fa2" type="number" min="0" placeholder="Amount (KES)" value="${f ? esc(f.amount) : ''}"></div>
+    <label class="sub"><input type="checkbox" id="fm2" ${!f || f.is_mandatory ? 'checked' : ''}> Mandatory</label>
+    <div class="err" id="merr"></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Cancel</button> <button class="btn-elimu btn-elimu-primary btn-sm" onclick="saveFee('${gid}','${id || ''}')">Save</button></div>`);
+}
+const saveFee = (gid, id) => act(async () => {
+  const body = { itemName: $('fn').value.trim(), amount: Number($('fa2').value), isMandatory: $('fm2').checked };
+  if (!body.itemName || $('fa2').value === '' || !Number.isFinite(body.amount) || body.amount < 0) throw new Error('Enter an item name and an amount of 0 or more.');
+  if (id) await api(`/fees/structures/${id}`, { method:'PATCH', body: JSON.stringify(body) });
+  else await api('/fees/structures', { method:'POST', body: JSON.stringify({ ...body, gradeId: gid, termId: $('fterm').value }) });
+  closeModal(); loadFees();
+}, 'Saved.');
+async function delFee(id) {
+  if (!confirm('Remove this fee item? Invoices already generated are not changed.')) return;
+  try { await api(`/fees/structures/${id}`, { method:'DELETE' }); toast('Removed.', true); loadFees(); } catch (e) { toast(e.message); }
+}
+function copyFees() {
+  const to = $('fterm').value, target = allTerms.find(t => String(t.id) === String(to));
+  if (!target) return toast('Choose a term first.');
+  openModal(`<h3>Copy fee items into ${esc(tl(target))}</h3>
+    <p class="sub">Copies every grade's items from another term. Items already in this term (same grade and name) are left alone.</p>
+    <div class="field"><select class="input" id="cf">${allTerms.filter(t => String(t.id) !== String(to)).map(t => `<option value="${t.id}">${esc(tl(t))}</option>`).join('')}</select></div>
+    <div class="err" id="merr"></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Cancel</button> <button class="btn-elimu btn-elimu-primary btn-sm" onclick="doCopy('${to}')">Copy</button></div>`);
+}
+async function doCopy(to) {
+  $('merr').textContent = '';
+  try {
+    const r = (await api('/fees/structures/copy', { method:'POST', body: JSON.stringify({ fromTermId: $('cf').value, toTermId: to }) })).data;
+    closeModal(); toast(`${r.copied} fee item(s) copied.`, true); loadFees();
+  } catch (e) { $('merr').textContent = e.message; }
+}
+
+// ---------- Families ----------
+async function loadFamilies() {
+  const p = new URLSearchParams(), q = $('fq').value.trim();
+  if (q) p.set('q', q); if (ffilter === 'owing') p.set('owing', '1'); if (ffilter === 'sib') p.set('siblings', '1');
+  try {
+    const r = (await api('/fees/families?' + p)).data; families = r.items;
+    $('fambody').innerHTML = families.length ? families.map((f, n) => `<tr class="row" onclick="openFamily(${n})"><td>${esc(f.name)}<div class="sub">${esc(f.phone || '')}</div></td>
+      <td>${f.students.map(s => esc(s.name)).join(', ')}</td><td class="num">${f.owed > 0 ? kes(f.owed) : '—'}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="sub" style="padding:24px">No families match.</td></tr>';
+    $('famcount').textContent = r.total > families.length ? `Showing ${families.length} of ${r.total} — search to narrow.` : `${r.total} ${r.total === 1 ? 'family' : 'families'}. A child with two guardians appears under each.`;
+  } catch (e) { toast(e.message); }
+}
+let fqTimer;
+$('fq').addEventListener('input', () => { clearTimeout(fqTimer); fqTimer = setTimeout(loadFamilies, 300); });
+document.querySelectorAll('[data-ff]').forEach(b => b.addEventListener('click', () => {
+  ffilter = b.dataset.ff; document.querySelectorAll('[data-ff]').forEach(x => x.classList.toggle('on', x === b)); loadFamilies();
+}));
+function openFamily(n) {
+  const f = families[n], ids = f.students.flatMap(s => s.invoices.map(i => i.id));
+  openModal(`<h3>${esc(f.name)}</h3><div class="sub">${esc(f.phone || 'No phone on file')} · ${f.students.length} ${f.students.length === 1 ? 'child' : 'children'}</div>
+    <div class="kv" style="margin-top:10px"><b>Total owed</b><b>${kes(f.owed)}</b></div>
+    ${f.students.map(s => `<div class="sec"><button class="link" onclick="openStudent('${s.id}')">${esc(s.name)}</button> <span class="sub">${esc(s.admission_number)} · ${esc(s.relationship)}</span></div>
+      ${s.invoices.length ? s.invoices.map(i => `<div class="kv"><span>Term ${i.term_number} <span class="sub">due ${day(i.due_date)}</span></span><span>${kes(i.balance)} <button class="link" onclick="familyStk('${i.id}',${i.balance},${n})">Prompt</button> <button class="link" onclick="openInvoice('${i.id}')">Open</button></span></div>`).join('') : '<p class="sub" style="margin:0">Nothing owed.</p>'}`).join('')}
+    <div class="err" id="merr"></div>
+    <div class="modal-actions">${ids.length ? `<button class="btn-elimu btn-elimu-ghost btn-sm" onclick="familySms(${n})"><i class="bi bi-chat-dots"></i> SMS reminder for all</button>` : ''}<button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+}
+async function familyStk(invoiceId, balance, n) {
+  const f = families[n];
+  if (!f.phone) return toast('No phone number on file for this guardian.');
+  if (!confirm(`Send an M-Pesa prompt of ${kes(balance)} to ${f.phone}?`)) return;
+  try { await api('/mpesa/stk-push', { method:'POST', body: JSON.stringify({ invoiceId, phoneNumber: msisdn(f.phone), amount: balance }) }); toast('M-Pesa prompt sent.', true); }
+  catch (e) { toast(e.message); }
+}
+async function familySms(n) {
+  const ids = families[n].students.flatMap(s => s.invoices.map(i => i.id));
+  if (!confirm(`Send an SMS fee reminder covering ${ids.length} invoice(s)?`)) return;
+  try {
+    const r = (await api('/fees/reminders', { method:'POST', body: JSON.stringify({ invoiceIds: ids }) })).data;
+    toast(`${r.sent} reminder(s) sent` + (r.failed ? `, ${r.failed} failed` : '') + '.', !r.failed);
+  } catch (e) { toast(e.message); }
+}
+
+// ---------- M-Pesa prompts ----------
+const MTONE = { success:'ok', pending:'info', failed:'error', cancelled:'warn', timeout:'warn' };
+async function loadMpesa() {
+  const p = new URLSearchParams({ limit: 200 }), q = $('mq').value.trim();
+  if (mfilter) p.set('status', mfilter); if (q) p.set('q', q); if ($('mf').value) p.set('from', $('mf').value); if ($('mt').value) p.set('to', $('mt').value);
+  try {
+    const r = (await api('/mpesa/transactions?' + p)).data; mtx = r.items;
+    const c = Object.fromEntries(r.counts.map(x => [x.status, x]));
+    const k = (l, key, ic) => `<div class="kpi"><div class="ico ${ic}"><i class="bi bi-phone"></i></div><b>${(c[key] || {}).n || 0}</b><span>${l}</span><em>${kes((c[key] || {}).total || 0)}</em></div>`;
+    $('msum').innerHTML = k('Successful', 'success', 'green') + k('Pending', 'pending', 'blue') + k('Failed', 'failed', 'red') + k('Cancelled', 'cancelled', 'gold') + k('Timed out', 'timeout', 'gold');
+    const now = Date.now();
+    $('mbody').innerHTML = mtx.length ? mtx.map((t, n) => {
+      const stale = t.status === 'pending' && now - new Date(t.initiated_at) > 5 * 60000;
+      return `<tr><td>${new Date(t.initiated_at).toLocaleString('en-KE', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</td>
+        <td>${t.student_name ? `<button class="link" onclick="openInvoice('${t.invoice_id}')">${esc(t.student_name)}</button><div class="sub">${esc(t.admission_number)}</div>` : '—'}</td>
+        <td>${esc(t.phone_number)}</td><td class="num">${kes(t.amount)}</td>
+        <td><span class="status-chip ${MTONE[t.status] || ''}">${esc(t.status)}</span>${stale ? '<div class="sub">no reply yet</div>' : ''}</td>
+        <td class="sub">${esc(t.result_desc || '')}</td>
+        <td>${t.status !== 'success' && t.invoice_id && Number(t.invoice_balance) > 0 ? `<button class="link" onclick="resendStk(${n})">Re-send</button>` : ''}</td></tr>`;
+    }).join('') : '<tr><td colspan="7" class="sub" style="padding:24px">No M-Pesa prompts match.</td></tr>';
+  } catch (e) { toast(e.message); }
+}
+async function resendStk(n) {
+  const t = mtx[n], amt = Math.min(Number(t.amount), Number(t.invoice_balance));
+  const warn = t.status === 'pending' ? '\n\nThe earlier prompt is still marked pending — if the parent completes both, they will pay twice.' : '';
+  if (!confirm(`Send a new M-Pesa prompt of ${kes(amt)} to ${t.phone_number}?${warn}`)) return;
+  try { await api('/mpesa/stk-push', { method:'POST', body: JSON.stringify({ invoiceId: t.invoice_id, phoneNumber: msisdn(t.phone_number), amount: amt }) }); toast('Prompt sent.', true); loadMpesa(); }
+  catch (e) { toast(e.message); }
+}
+let mqTimer;
+$('mq').addEventListener('input', () => { clearTimeout(mqTimer); mqTimer = setTimeout(loadMpesa, 300); });
+['mf', 'mt'].forEach(id => $(id).addEventListener('change', loadMpesa));
+document.querySelectorAll('[data-mf]').forEach(b => b.addEventListener('click', () => {
+  mfilter = b.dataset.mf; document.querySelectorAll('[data-mf]').forEach(x => x.classList.toggle('on', x === b)); loadMpesa();
+}));
+
+// ---------- My activity (own audit trail) ----------
+const ACT = { create:'Created', update:'Updated', delete:'Deleted', void:'Voided', adjust:'Adjusted', reverse_adjustment:'Reversed adjustment on', refund:'Refunded', carry_forward:'Carried arrears from' };
+const TBL = { payments:'payment', invoices:'invoice', fee_structures:'fee item' };
+const actDetail = (l) => {
+  const d = l.details || {}, p = [], amt = d.amount ?? d.voidedAmount ?? d.totalAmount;
+  if (amt != null) p.push(kes(amt)); if (d.method) p.push(d.method); if (d.kind) p.push(d.kind); if (d.itemName) p.push(d.itemName);
+  if (d.from && d.to) p.push(`${d.from.itemName} ${kes(d.from.amount)} → ${kes(d.to.amount)}`);
+  if (d.reason) p.push('“' + d.reason + '”');
+  return p.join(' · ');
+};
+async function loadActivity(append) {
+  const p = new URLSearchParams({ limit: 50, offset: append ? actRows.length : 0 });
+  if ($('atbl').value) p.set('tableName', $('atbl').value);
+  try {
+    const r = (await api('/audit-logs/mine?' + p)).data; actRows = append ? actRows.concat(r) : r;
+    $('abody').innerHTML = actRows.length ? actRows.map(l => `<tr><td>${new Date(l.created_at).toLocaleString('en-KE', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</td>
+      <td>${esc(ACT[l.action] || l.action)} ${esc(TBL[l.table_name] || l.table_name)}${l.record_id ? ` <span class="sub">#${esc(l.record_id)}</span>` : ''}</td><td class="sub">${esc(actDetail(l))}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="sub" style="padding:24px">Nothing recorded yet.</td></tr>';
+    $('amore').style.display = r.length === 50 ? 'inline' : 'none';
+  } catch (e) { toast(e.message); }
+}
+$('atbl').addEventListener('change', () => loadActivity());
+$('amore').addEventListener('click', () => loadActivity(true));
+
+// ---------- Boot ----------
+(async () => {
+  const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['accountant'], requireLiveSubscription: true });
+  if (!user) return;
+  $('uname').textContent = user.full_name;
+  const h = new Date().getHours();
+  $('greet').textContent = `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${user.full_name.split(' ')[0]} 👋`;
+  $('av').textContent = user.full_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  $('chip').addEventListener('click', () => { if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout(); });
+  api('/schools/me').then(r => { schoolName = r.data.name; $('school').textContent = r.data.name; }).catch(() => { $('school').textContent = ''; });
+  api('/academic-years').then(async r => {
+    const cur = r.data.find(y => y.is_current) || r.data[0];
+    if (cur) terms = (await api(`/academic-years/${cur.id}/terms`)).data;
+    try {
+      allTerms = (await Promise.all(r.data.map(async y => (await api(`/academic-years/${y.id}/terms`)).data.map(t => ({ ...t, year_label: y.year_label })))))
+        .flat().sort((a, b) => String(a.start_date).localeCompare(String(b.start_date)));
+    } catch (e) { allTerms = terms; }
+    fillTerms();
+  }).catch(() => {});
+  $('pf').value = $('pt').value = new Date().toLocaleDateString('en-CA');
+  route(); loadInvoices();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+[
+  {
+    "grade": "Grade 4",
+    "learningArea": "Mathematics",
+    "strands": [
+      {
+        "strand": "Numbers",
+        "subStrands": [
+          "Whole Numbers",
+          "Addition",
+          "Subtraction",
+          "Multiplication",
+          "Division",
+          "Fractions",
+          "Decimals",
+          "Use of Letters"
+        ]
+      },
+      {
+        "strand": "Measurement",
+        "subStrands": [
+          "Length",
+          "Area",
+          "Volume",
+          "Capacity",
+          "Mass",
+          "Time",
+          "Money"
+        ]
+      },
+      {
+        "strand": "Geometry",
+        "subStrands": [
+          "Position and Direction",
+          "Angles",
+          "Plane Figures"
+        ]
+      },
+      {
+        "strand": "Data Handling",
+        "subStrands": [
+          "Data"
+        ]
+      }
+    ]
+  },
+  {
+    "grade": "Grade 4",
+    "learningArea": "English",
+    "strands": [
+      {
+        "strand": "Listening and Speaking",
+        "subStrands": [
+          "Pronunciation and Vocabulary",
+          "Conversation Skills",
+          "Presentation Skills"
+        ]
+      },
+      {
+        "strand": "Reading",
+        "subStrands": [
+          "Comprehension Skills",
+          "Grammar in Context"
+        ]
+      },
+      {
+        "strand": "Writing",
+        "subStrands": [
+          "Guided Composition",
+          "Spelling and Punctuation"
+        ]
+      }
+    ]
+  }
+]

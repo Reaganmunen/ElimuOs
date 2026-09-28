@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My School — ElimuOs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:20px; }
+  .kpi{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px 20px; }
+  .kpi .ico{ width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-size:1.05rem; margin-bottom:12px; }
+  .ico.blue{ background:rgba(74,90,240,.1); color:var(--blue); } .ico.green{ background:rgba(23,166,115,.12); color:var(--leaf); }
+  .ico.gold{ background:rgba(232,162,61,.16); color:#B7791F; } .ico.red{ background:rgba(240,99,122,.12); color:var(--coral); }
+  .kpi b{ display:block; font:800 1.4rem 'Plus Jakarta Sans',sans-serif; } .kpi span{ font-size:.8rem; font-weight:600; color:var(--ink-soft); }
+  .kpi em{ display:block; font-style:normal; font-size:.75rem; color:var(--ink-soft); margin-top:3px; }
+  .hero{ background:linear-gradient(135deg,var(--ink),#232a4d); color:#fff; border-radius:var(--radius-lg); padding:26px 30px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:20px; position:relative; overflow:hidden; }
+  .hero::after{ content:''; position:absolute; width:260px; height:260px; border-radius:50%; background:var(--blue); opacity:.28; filter:blur(70px); right:-60px; top:-90px; }
+  .hero>*{ position:relative; z-index:1; }
+  .hero h2{ color:#fff; font-size:1.4rem; margin-bottom:6px; } .hero p{ color:rgba(255,255,255,.72); font-size:.9rem; max-width:46ch; line-height:1.5; margin:0; }
+  .ring{ --p:0; width:128px; height:128px; border-radius:50%; background:conic-gradient(var(--leaf) calc(var(--p)*1%), rgba(255,255,255,.14) 0); display:grid; place-items:center; flex-shrink:0; }
+  .ring div{ width:100px; height:100px; border-radius:50%; background:#1b2140; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring b{ font:800 1.5rem 'Plus Jakarta Sans',sans-serif; } .ring small{ font-size:.68rem; color:rgba(255,255,255,.65); }
+  .tbl{ width:100%; border-collapse:collapse; font-size:.88rem; }
+  .tbl th{ text-align:left; font-size:.76rem; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); }
+  .tbl td{ padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .tbl tr.row{ cursor:pointer } .tbl tr.row:hover{ background:var(--cloud); }
+  .num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sub{ font-size:.76rem; color:var(--ink-soft); }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .toolbar .input{ max-width:220px; }
+  .btn-sm{ padding:8px 16px; font-size:.84rem; }
+  .view{ display:none } .view.on{ display:block }
+  .modal-box.wide{ max-width:640px; max-height:90vh; overflow-y:auto; }
+  .kv{ display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:.88rem; }
+  .sec{ font:700 .84rem 'Plus Jakarta Sans',sans-serif; margin:20px 0 8px; }
+  .link{ background:none; border:0; color:var(--blue); font-weight:600; cursor:pointer; padding:0; font-size:.82rem; }
+  #toast{ position:fixed; bottom:20px; right:20px; z-index:60; max-width:360px; }
+  #toast .alert-elimu{ box-shadow:0 12px 30px -12px rgba(18,23,43,.4); background:#fff; margin:0 0 8px; }
+  .alert-ok{ background:#E9F7F1; color:#0F7A55; }
+  .lesson{ display:flex; align-items:center; gap:14px; padding:11px 8px; border-radius:12px; }
+  .lesson+.lesson{ border-top:1px solid var(--line); border-radius:0; }
+  .lesson .tm{ min-width:92px; font:700 .82rem 'Plus Jakarta Sans',sans-serif; color:var(--blue-deep); }
+  .lesson.now{ background:rgba(74,90,240,.08); border-radius:12px; }
+  .week{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
+  .dcol{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:14px; }
+  .dcol.today{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(74,90,240,.1); }
+  .dcol h4{ font:700 .88rem 'Plus Jakarta Sans',sans-serif; margin:0 0 10px; display:flex; justify-content:space-between; }
+  .slot{ padding:8px 10px; border-radius:10px; background:var(--cloud); margin-bottom:8px; font-size:.82rem; }
+  .slot b{ display:block; } .slot span{ color:var(--ink-soft); font-size:.74rem; }
+  .area{ margin-bottom:16px; }
+  .area h4{ font:700 .95rem 'Plus Jakarta Sans',sans-serif; margin:0 0 6px; }
+  .res{ display:flex; align-items:flex-start; gap:12px; padding:9px 0; border-top:1px solid var(--line); }
+  .res .grow{ flex:1; min-width:0; }
+  .rub{ min-width:42px; text-align:center; font:800 .8rem 'Plus Jakarta Sans',sans-serif; padding:6px 8px; border-radius:9px; flex-shrink:0; }
+  .r4{ background:rgba(23,166,115,.14); color:#0F7A55; } .r3{ background:rgba(74,90,240,.12); color:var(--blue-deep); }
+  .r2{ background:rgba(232,162,61,.2); color:#8A5A12; } .r1{ background:rgba(240,99,122,.14); color:#B23350; }
+  .remark{ background:var(--cloud); border-radius:12px; padding:12px 14px; font-size:.86rem; margin-bottom:10px; line-height:1.5; }
+  .remark small{ display:block; font-weight:700; color:var(--ink-soft); margin-bottom:3px; }
+  .cal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; }
+  .dot{ border-radius:10px; padding:8px 4px; text-align:center; font-size:.72rem; background:var(--cloud); }
+  .dot b{ display:block; font-size:.95rem; }
+  .dot.present{ background:rgba(23,166,115,.14); } .dot.late{ background:rgba(232,162,61,.2); }
+  .dot.absent{ background:rgba(240,99,122,.16); } .dot.excused{ background:rgba(74,90,240,.12); }
+  @media(max-width:700px){ .hero{ padding:20px; } }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a href="#overview" class="brand"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>ElimuOs</a>
+    <nav class="admin-nav">
+      <a href="#overview" data-v="overview" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Overview</a>
+      <div class="admin-nav-section">School</div>
+      <a href="#timetable" data-v="timetable" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="#results" data-v="results" class="admin-nav-link"><i class="bi bi-award-fill"></i> Results</a>
+      <a href="#attendance" data-v="attendance" class="admin-nav-link"><i class="bi bi-calendar-check-fill"></i> Attendance</a>
+      <div class="admin-nav-section">Money</div>
+      <a href="#fees" data-v="fees" class="admin-nav-link"><i class="bi bi-receipt"></i> Fees</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="school">Loading…</div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1 id="title">Overview</h1>
+      <div class="admin-topbar-right">
+        <div class="user-chip" id="chip"><div class="user-avatar" id="av">…</div>
+          <div><div class="user-chip-name" id="uname">Loading…</div><div class="user-chip-role" id="urole">Student</div></div>
+        </div>
+      </div>
+    </header>
+    <main class="admin-content">
+
+      <section class="view" id="v-overview">
+        <div class="hero">
+          <div><h2 id="greet">Welcome</h2><p id="heroSum">Loading your term…</p></div>
+          <div class="ring" id="ring"><div><b id="ringv">—</b><small>attendance</small></div></div>
+        </div>
+        <div class="stat-grid" id="stats"></div>
+        <div class="card-elimu"><div class="sec" style="margin-top:0" id="todayTitle">Today's lessons</div><div id="today"><span class="skeleton" style="height:90px"></span></div></div>
+      </section>
+
+      <section class="view" id="v-timetable">
+        <div class="week" id="week"></div>
+        <p class="sub" style="margin-top:14px">Your class timetable. Ask your class teacher if something looks wrong.</p>
+      </section>
+
+      <section class="view" id="v-results">
+        <div class="toolbar"><select class="input" id="rterm"></select><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="rpdf"><i class="bi bi-file-earmark-pdf"></i> Download report card</button></div>
+        <div id="rbody"></div>
+      </section>
+
+      <section class="view" id="v-attendance">
+        <div class="toolbar"><select class="input" id="aterm"></select></div>
+        <div class="stat-grid" id="asum"></div>
+        <div class="card-elimu"><div class="sec" style="margin-top:0">Day by day</div><div class="cal" id="acal"></div>
+          <p class="sub" id="anote" style="margin-top:12px"></p></div>
+      </section>
+
+      <section class="view" id="v-fees">
+        <div class="stat-grid" id="fsum"></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Term</th><th>Due</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th></tr></thead><tbody id="fbody"></tbody></table></div>
+        <p class="sub" style="margin-top:12px">To pay, please ask your parent or guardian to pay by M-Pesa, or visit the school accounts office. Payments show here once the school has recorded them.</p>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" style="display:none"><div class="modal-box wide" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+const api = window.ElimuOs.api.apiFetch;
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+const day = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' }) : '—';
+const ymd = (d) => String(d).slice(0, 10);
+const hm = (t) => String(t || '').slice(0, 5);
+const bal = (i) => Number(i.total_amount) - Number(i.amount_paid || 0);
+const DAYS = { 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday' };
+const TONE = { paid:'ok', partial:'info', unpaid:'warn', overdue:'error' };
+const chip = (s) => `<span class="status-chip ${TONE[s] || ''}">${esc(s)}</span>`;
+// The invoice list endpoint returns the stored status; treat an unpaid invoice past its due date as overdue.
+const effStatus = (i) => (i.status === 'unpaid' && i.due_date && ymd(i.due_date) < todayStr ? 'overdue' : i.status);
+const tl = (t) => `${t.year_label ? t.year_label + ' · ' : ''}Term ${t.term_number}`;
+const todayStr = new Date().toLocaleDateString('en-CA');
+const todayDow = ((new Date().getDay() + 6) % 7) + 1; // Mon=1 … Sun=7, matching timetable_slots
+
+let me = null, terms = [], curTerm = null, slots = [], invoices = [], loaded = {};
+
+function toast(msg, ok) {
+  const el = document.createElement('div');
+  el.className = 'alert-elimu ' + (ok ? 'alert-ok' : 'alert-error');
+  el.innerHTML = `<i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}"></i><div>${esc(msg)}</div>`;
+  $('toast').appendChild(el); setTimeout(() => el.remove(), 5000);
+}
+const openModal = (html) => { $('mbox').innerHTML = html; $('modal').style.display = 'flex'; };
+const closeModal = () => { $('modal').style.display = 'none'; };
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+
+// ---------- Routing ----------
+const TITLES = { overview:'Overview', timetable:'Timetable', results:'Results', attendance:'Attendance', fees:'Fees' };
+function route() {
+  const v = TITLES[location.hash.slice(1)] ? location.hash.slice(1) : 'overview';
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === v));
+  $('title').textContent = TITLES[v];
+  if (v === 'results') loadResults();
+  if (v === 'attendance') loadAttendance();
+}
+window.addEventListener('hashchange', route);
+
+// ---------- Terms ----------
+async function loadTerms() {
+  const years = (await api('/academic-years')).data;
+  const all = await Promise.all(years.map(async y => (await api(`/academic-years/${y.id}/terms`)).data.map(t => ({ ...t, year_label: y.year_label }))));
+  terms = all.flat().sort((a, b) => ymd(a.start_date).localeCompare(ymd(b.start_date)));
+  curTerm = terms.find(t => ymd(t.start_date) <= todayStr && todayStr <= ymd(t.end_date))
+    || [...terms].reverse().find(t => ymd(t.start_date) <= todayStr) || terms[terms.length - 1] || null;
+  // Newest first in the pickers, but never offer terms that haven't started.
+  const opts = terms.filter(t => ymd(t.start_date) <= todayStr).reverse().map(t => `<option value="${t.id}">${esc(tl(t))}</option>`).join('')
+    || '<option value="">No terms yet</option>';
+  $('rterm').innerHTML = $('aterm').innerHTML = opts;
+  if (curTerm) $('rterm').value = $('aterm').value = curTerm.id;
+}
+
+// ---------- Timetable ----------
+function renderTimetable() {
+  const days = [1, 2, 3, 4, 5, ...[6, 7].filter(d => slots.some(s => s.day_of_week === d))];
+  $('week').innerHTML = slots.length ? days.map(d => {
+    const list = slots.filter(s => s.day_of_week === d);
+    return `<div class="dcol${d === todayDow ? ' today' : ''}"><h4>${DAYS[d]}${d === todayDow ? '<span class="sub">Today</span>' : ''}</h4>
+      ${list.length ? list.map(s => `<div class="slot"><b>${esc(s.learning_area_name)}</b><span>${hm(s.start_time)}–${hm(s.end_time)} · ${esc(s.teacher_name)}</span></div>`).join('') : '<p class="sub">No lessons</p>'}</div>`;
+  }).join('') : '<div class="card-elimu"><p class="sub" style="margin:0">Your timetable hasn\'t been set up yet.</p></div>';
+
+  const nowT = new Date().toTimeString().slice(0, 5);
+  const list = slots.filter(s => s.day_of_week === todayDow);
+  $('today').innerHTML = list.length ? list.map(s => `<div class="lesson${hm(s.start_time) <= nowT && nowT < hm(s.end_time) ? ' now' : ''}">
+    <div class="tm">${hm(s.start_time)}–${hm(s.end_time)}</div><div><b>${esc(s.learning_area_name)}</b><div class="sub">${esc(s.teacher_name)}</div></div></div>`).join('')
+    : `<p class="sub" style="margin:0">${slots.length ? 'No lessons today. Enjoy the break!' : 'Your timetable hasn\'t been set up yet.'}</p>`;
+}
+
+// ---------- Attendance ----------
+function termRange(t) {
+  const end = ymd(t.end_date) < todayStr ? ymd(t.end_date) : todayStr;
+  return { startDate: ymd(t.start_date), endDate: end };
+}
+async function fetchAttendance(t) {
+  const q = new URLSearchParams(termRange(t));
+  const [sum, rec] = await Promise.all([api('/student-portal/me/attendance?' + q), api('/student-portal/me/attendance/records?' + q)]);
+  return { sum: sum.data, rec: rec.data };
+}
+async function loadAttendance() {
+  const t = terms.find(x => String(x.id) === String($('aterm').value));
+  if (!t) { $('asum').innerHTML = ''; $('acal').innerHTML = '<p class="sub">No term selected.</p>'; return; }
+  try {
+    const { sum, rec } = await fetchAttendance(t);
+    const k = (ic, tone, v, l, s) => `<div class="kpi"><div class="ico ${tone}"><i class="bi ${ic}"></i></div><b>${v}</b><span>${l}</span><em>${s}</em></div>`;
+    $('asum').innerHTML = k('bi-percent', 'green', sum.presentRatePercent == null ? '—' : sum.presentRatePercent + '%', 'Attendance rate', `${sum.total} school day${sum.total === 1 ? '' : 's'} recorded`)
+      + k('bi-check2-circle', 'green', sum.present, 'Present', 'days') + k('bi-clock', 'gold', sum.late, 'Late', 'days')
+      + k('bi-x-circle', 'red', sum.absent, 'Absent', 'days') + k('bi-envelope-paper', 'blue', sum.excused, 'Excused', 'days');
+    $('acal').innerHTML = rec.length ? rec.map(r => `<div class="dot ${esc(r.status)}" title="${esc(r.remark || r.status)}"><b>${new Date(r.date).getDate()}</b>${new Date(r.date).toLocaleDateString('en-KE', { month:'short' })}<br>${esc(r.status)}</div>`).join('')
+      : '<p class="sub" style="margin:0">No attendance recorded for this term yet.</p>';
+    const notes = rec.filter(r => r.remark && r.status !== 'present');
+    $('anote').textContent = notes.length ? 'Notes from your teacher: ' + notes.slice(0, 5).map(r => `${day(r.date)} — ${r.remark}`).join(' · ') : '';
+  } catch (e) { toast(e.message); }
+}
+$('aterm').addEventListener('change', loadAttendance);
+
+// ---------- Results ----------
+let lastReport = null;
+async function loadResults() {
+  const id = $('rterm').value;
+  if (!id) { $('rbody').innerHTML = '<div class="card-elimu"><p class="sub" style="margin:0">No terms yet.</p></div>'; return; }
+  $('rbody').innerHTML = '<div class="skeleton" style="height:160px"></div>';
+  try {
+    const { reportCard, results } = (await api(`/student-portal/me/terms/${id}/report-card`)).data; lastReport = reportCard;
+    const byArea = new Map();
+    results.forEach(r => byArea.set(r.learning_area_name, [...(byArea.get(r.learning_area_name) || []), r]));
+    const rub = (r) => `<div class="rub r${Math.min(Math.max(Number(r.score_value) || 1, 1), 4)}" title="${esc(r.rubric_label)}">${esc(r.rubric_code)}</div>`;
+    const remarks = reportCard ? [['Class teacher', reportCard.class_teacher_remark], ['Head teacher', reportCard.head_teacher_remark]]
+      .filter(x => x[1]).map(x => `<div class="remark"><small>${x[0]}</small>${esc(x[1])}</div>`).join('') : '';
+    $('rbody').innerHTML = (remarks ? `<div class="card-elimu" style="margin-bottom:16px"><div class="sec" style="margin-top:0">Teacher remarks</div>${remarks}</div>` : '')
+      + (byArea.size ? [...byArea].map(([name, rows]) => `<div class="card-elimu area"><h4>${esc(name)}</h4>${rows.map(r => `<div class="res">${rub(r)}
+        <div class="grow"><div><b>${esc(r.sub_strand_name)}</b> <span class="sub">${esc(r.strand_name)}</span></div>
+        <div class="sub">${esc(r.rubric_label)} · ${day(r.assessment_date)}</div>${r.teacher_remark ? `<div class="sub" style="margin-top:3px">“${esc(r.teacher_remark)}”</div>` : ''}</div></div>`).join('')}</div>`).join('')
+        + '<p class="sub">EE = Exceeds, ME = Meets, AE = Approaches, BE = Below expectation. Showing your latest result for each topic.</p>'
+        : '<div class="card-elimu"><p class="sub" style="margin:0">No results have been recorded for this term yet.</p></div>');
+  } catch (e) { $('rbody').innerHTML = ''; toast(e.message); }
+}
+$('rterm').addEventListener('change', loadResults);
+$('rpdf').addEventListener('click', async () => {
+  const id = $('rterm').value; if (!id) return toast('Choose a term first.');
+  const get = () => fetch(`${window.ElimuOs.api.API_BASE}/student-portal/me/terms/${id}/report-card/pdf`, { headers: { Authorization: 'Bearer ' + window.ElimuOs.api.getAccessToken() } });
+  try {
+    let res = await get();
+    if (res.status === 401 && (await window.ElimuOs.auth.silentRefresh()) === true) res = await get();
+    if (!res.ok) { let m = 'Report card is not available for this term yet.'; try { m = (await res.json()).message || m; } catch (e) { /* not json */ } throw new Error(m); }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(await res.blob());
+    a.download = `report-card-${(terms.find(t => String(t.id) === String(id)) || {}).term_number || ''}.pdf`; a.click(); URL.revokeObjectURL(a.href);
+  } catch (e) { toast(e.message); }
+});
+
+// ---------- Fees ----------
+function renderFees() {
+  const total = invoices.reduce((t, i) => t + bal(i), 0), billed = invoices.reduce((t, i) => t + Number(i.total_amount), 0);
+  const paid = invoices.reduce((t, i) => t + Number(i.amount_paid || 0), 0);
+  const overdue = invoices.filter(i => effStatus(i) === 'overdue').reduce((t, i) => t + bal(i), 0);
+  const k = (ic, tone, v, l, s) => `<div class="kpi"><div class="ico ${tone}"><i class="bi ${ic}"></i></div><b>${v}</b><span>${l}</span><em>${s}</em></div>`;
+  $('fsum').innerHTML = k('bi-wallet2', total > 0 ? 'blue' : 'green', kes(Math.max(total, 0)), total < 0 ? 'Credit on account' : 'Balance to pay', total <= 0 ? 'you are all paid up' : 'across all terms')
+    + k('bi-check2-circle', 'green', kes(paid), 'Paid so far', `of ${kes(billed)} billed`)
+    + k('bi-exclamation-triangle', overdue > 0 ? 'red' : 'gold', kes(overdue), 'Overdue', overdue > 0 ? 'past the due date' : 'nothing overdue');
+  const termName = (id) => { const t = terms.find(x => String(x.id) === String(id)); return t ? tl(t) : 'Term'; };
+  $('fbody').innerHTML = invoices.length ? invoices.map(i => `<tr class="row" onclick="openInvoice('${i.id}')"><td>${esc(termName(i.term_id))}</td><td>${day(i.due_date)}</td>
+    <td class="num">${kes(i.total_amount)}</td><td class="num">${kes(i.amount_paid)}</td><td class="num">${kes(bal(i))}</td><td>${chip(effStatus(i))}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="sub" style="padding:24px">No fee invoices yet.</td></tr>';
+}
+async function openInvoice(id) {
+  openModal('<div class="skeleton" style="height:160px"></div>');
+  try {
+    const inv = (await api(`/student-portal/me/invoices/${id}`)).data;
+    openModal(`<div style="display:flex;justify-content:space-between;gap:12px"><div><h3>Fee invoice</h3><div class="sub">Due ${day(inv.due_date)}</div></div>${chip(effStatus(inv))}</div>
+      <div class="sec">Items</div>${inv.items.map(t => `<div class="kv"><span>${esc(t.description)}</span><span>${kes(t.amount)}</span></div>`).join('')}
+      <div class="kv"><b>Total</b><b>${kes(inv.total_amount)}</b></div><div class="kv"><span>Paid</span><span>${kes(inv.amount_paid)}</span></div>
+      <div class="kv"><b>${bal(inv) < 0 ? 'Credit' : 'Balance'}</b><b>${kes(Math.abs(bal(inv)))}</b></div>
+      <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+  } catch (e) { closeModal(); toast(e.message); }
+}
+
+// ---------- Overview ----------
+async function renderOverview() {
+  const k = (ic, tone, v, l, s) => `<div class="kpi"><div class="ico ${tone}"><i class="bi ${ic}"></i></div><b>${v}</b><span>${l}</span><em>${s}</em></div>`;
+  let att = null;
+  if (curTerm) { try { att = (await fetchAttendance(curTerm)).sum; } catch (e) { /* leave blank */ } }
+  const rate = att && att.presentRatePercent != null ? att.presentRatePercent : null;
+  $('ring').style.setProperty('--p', rate || 0); $('ringv').textContent = rate == null ? '—' : rate + '%';
+  const owed = invoices.reduce((t, i) => t + bal(i), 0), todayN = slots.filter(s => s.day_of_week === todayDow).length;
+  $('heroSum').textContent = curTerm
+    ? `${tl(curTerm)} · ${todayN ? `You have ${todayN} lesson${todayN === 1 ? '' : 's'} today.` : 'No lessons today.'}` : 'Welcome to your student portal.';
+  $('stats').innerHTML = k('bi-calendar-check', 'green', rate == null ? '—' : rate + '%', 'Attendance this term', att ? `${att.absent} absent · ${att.late} late` : 'nothing recorded yet')
+    + k('bi-wallet2', owed > 0 ? 'blue' : 'green', kes(Math.max(owed, 0)), 'Fee balance', owed > 0 ? 'see the Fees tab' : 'all paid up')
+    + k('bi-journal-bookmark', 'gold', todayN, 'Lessons today', DAYS[todayDow]);
+}
+
+// ---------- Boot ----------
+(async () => {
+  const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['student'], requireLiveSubscription: true });
+  if (!user) return;
+  const first = user.full_name.split(' ')[0], h = new Date().getHours();
+  $('uname').textContent = user.full_name;
+  $('greet').textContent = `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${first} 👋`;
+  $('av').textContent = user.full_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  $('chip').addEventListener('click', () => { if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout(); });
+  api('/schools/me').then(r => { $('school').textContent = r.data.name; }).catch(() => { $('school').textContent = ''; });
+  route();
+  try {
+    me = (await api('/student-portal/me')).data;
+    $('urole').textContent = [me.grade_name, me.stream_name].filter(Boolean).join(' ') || 'Student';
+  } catch (e) { toast(e.message); }
+  try { await loadTerms(); } catch (e) { toast(e.message); }
+  try { slots = (await api('/student-portal/me/timetable')).data; } catch (e) { toast(e.message); }
+  try { invoices = (await api('/student-portal/me/invoices')).data; } catch (e) { toast(e.message); }
+  renderTimetable(); renderFees(); renderOverview();
+  route();
+})();
+</script>
+</body>
+</html>

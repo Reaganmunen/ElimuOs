@@ -20,6 +20,7 @@ const auditLogRoutes = require('./auditLog.routes');
 const parentPortalRoutes = require('./parentPortal.routes');
 const studentPortalRoutes = require('./studentPortal.routes');
 const teacherPortalRoutes = require('./teacherPortal.routes');
+const guardianRequestsRoutes = require('./guardianRequests.routes');
 
 const router = express.Router();
 
@@ -46,5 +47,6 @@ router.use('/audit-logs', auditLogRoutes);
 router.use('/parent-portal', parentPortalRoutes);
 router.use('/student-portal', studentPortalRoutes);
 router.use('/teacher-portal', teacherPortalRoutes);
+router.use('/guardian-requests', guardianRequestsRoutes);
 
 module.exports = router;

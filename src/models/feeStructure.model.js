@@ -23,11 +23,37 @@ async function create(schoolId, { gradeId, termId, itemName, amount, isMandatory
 
 async function listByGradeAndTerm(schoolId, gradeId, termId) {
   return withTenantClient(schoolId, async (client) => {
+    const params = [schoolId, termId];
+    let grade = '';
+    if (gradeId) { params.push(gradeId); grade = ` AND f.grade_id = $${params.length}`; }
     const result = await client.query(
-      `SELECT * FROM fee_structures WHERE grade_id = $1 AND term_id = $2 ORDER BY item_name`,
-      [gradeId, termId]
+      `SELECT f.*, g.name AS grade_name FROM fee_structures f JOIN grades g ON g.id = f.grade_id
+       WHERE f.school_id = $1 AND f.term_id = $2${grade} ORDER BY g.sort_order, f.item_name`,
+      params
     );
     return result.rows;
+  });
+}
+
+/** Copies fee items from one term to another (skipping any grade+item name already in the target). */
+async function copyTerm(schoolId, { fromTermId, toTermId, gradeId }, actorUserId) {
+  return withTenantClient(schoolId, async (client) => {
+    const params = [schoolId, fromTermId, toTermId];
+    let grade = '';
+    if (gradeId) { params.push(gradeId); grade = ` AND f.grade_id = $${params.length}`; }
+    const result = await client.query(
+      `INSERT INTO fee_structures (school_id, grade_id, term_id, item_name, amount, is_mandatory)
+       SELECT f.school_id, f.grade_id, $3, f.item_name, f.amount, f.is_mandatory FROM fee_structures f
+       WHERE f.school_id = $1 AND f.term_id = $2${grade}
+         AND NOT EXISTS (SELECT 1 FROM fee_structures x WHERE x.term_id = $3 AND x.grade_id = f.grade_id AND x.item_name = f.item_name)
+       RETURNING id`,
+      params
+    );
+    await recordAudit(client, {
+      schoolId, userId: actorUserId, action: 'create', tableName: 'fee_structures', recordId: null,
+      details: { copiedFromTermId: fromTermId, toTermId, itemName: `${result.rowCount} item(s) copied` },
+    });
+    return { copied: result.rowCount };
   });
 }
 
@@ -79,4 +105,4 @@ async function update(schoolId, feeStructureId, { itemName, amount, isMandatory 
   });
 }
 
-module.exports = { create, listByGradeAndTerm, update, remove };
+module.exports = { create, listByGradeAndTerm, copyTerm, update, remove };

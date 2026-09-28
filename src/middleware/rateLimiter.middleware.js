@@ -69,4 +69,14 @@ const refreshLimiter = rateLimit({
   message: { success: false, message: 'Too many session refreshes from this network. Please wait a few minutes and try again.' },
 });
 
-module.exports = { loginLimiter, sensitiveActionLimiter, refreshLimiter, testSendLimiter };
+/** Caps fee-reminder SMS batches per school — every message costs real SMS credit. */
+const reminderLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `school:${req.user?.school_id || 'unknown'}`,
+  message: { success: false, message: 'Too many reminder batches this hour. Please try again later.' },
+});
+
+module.exports = { loginLimiter, sensitiveActionLimiter, refreshLimiter, testSendLimiter, reminderLimiter };

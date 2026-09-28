@@ -6,6 +6,7 @@ const assessmentModel = require('../models/assessment.model');
 const reportCardModel = require('../models/reportCard.model');
 const attendanceModel = require('../models/attendance.model');
 const invoiceModel = require('../models/invoice.model');
+const timetableModel = require('../models/timetable.model');
 const { renderReportCardPdf } = require('../utils/reportCardPdf.util');
 
 /**
@@ -76,6 +77,23 @@ const getMyInvoice = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, invoice);
 });
 
+// The student's own class timetable. The class comes from the student's own record, never the request.
+const getMyTimetable = asyncHandler(async (req, res) => {
+  const student = await resolveSelf(req);
+  if (!student.current_class_id) return sendSuccess(res, 200, []);
+  const slots = await timetableModel.listByClass(req.user.school_id, student.current_class_id);
+  return sendSuccess(res, 200, slots);
+});
+
+// Day-by-day attendance records for a date range (the summary endpoint only returns counts).
+const getMyAttendanceRecords = asyncHandler(async (req, res) => {
+  const student = await resolveSelf(req);
+  const { startDate, endDate } = req.query;
+  if (!startDate || !endDate) throw new ApiError(400, 'startDate and endDate query params are required');
+  const rows = await attendanceModel.getByStudentRange(req.user.school_id, student.id, startDate, endDate);
+  return sendSuccess(res, 200, rows.map((r) => ({ date: r.date, status: r.status, remark: r.remark })));
+});
+
 module.exports = {
-  getMe, getMyReportCard, downloadMyReportCardPdf, getMyAttendance, listMyInvoices, getMyInvoice,
+  getMyTimetable, getMyAttendanceRecords, getMe, getMyReportCard, downloadMyReportCardPdf, getMyAttendance, listMyInvoices, getMyInvoice,
 };

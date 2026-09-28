@@ -1,6 +1,6 @@
 const express = require('express');
 const {
-  getMe, getMyReportCard, downloadMyReportCardPdf, getMyAttendance, listMyInvoices, getMyInvoice,
+  getMe, getMyTimetable, getMyAttendanceRecords, getMyReportCard, downloadMyReportCardPdf, getMyAttendance, listMyInvoices, getMyInvoice,
 } = require('../controllers/studentPortal.controller');
 const { authenticate, restrictTo } = require('../middleware/auth.middleware');
 
@@ -12,6 +12,8 @@ router.get('/me', getMe);
 router.get('/me/terms/:termId/report-card', getMyReportCard);
 router.get('/me/terms/:termId/report-card/pdf', downloadMyReportCardPdf);
 router.get('/me/attendance', getMyAttendance);
+router.get('/me/attendance/records', getMyAttendanceRecords);
+router.get('/me/timetable', getMyTimetable);
 router.get('/me/invoices', listMyInvoices);
 router.get('/me/invoices/:invoiceId', getMyInvoice);
 

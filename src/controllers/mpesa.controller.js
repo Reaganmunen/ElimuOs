@@ -6,6 +6,7 @@ const invoiceModel = require('../models/invoice.model');
 const paymentConfigModel = require('../models/schoolPaymentConfig.model');
 const guardianModel = require('../models/guardian.model');
 const { initiateStkPush } = require('../utils/daraja.client');
+const { normalizeKenyanPhone } = require('../utils/phone.util');
 
 /**
  * Starts an STK Push for an outstanding invoice. The actual passkey is
@@ -40,6 +41,15 @@ const initiatePayment = asyncHandler(async (req, res) => {
     }
   }
 
+  // Validated AFTER the ownership check so a non-owner can't probe balances via error messages.
+  const phone = normalizeKenyanPhone(phoneNumber);
+  if (!phone) throw new ApiError(400, 'phoneNumber must be a valid Kenyan mobile number, e.g. 0712345678');
+  const stkAmount = Math.round(Number(amount));
+  const balance = Number(invoice.total_amount) - Number(invoice.amount_paid || 0);
+  if (!Number.isFinite(stkAmount) || stkAmount < 1) throw new ApiError(400, 'amount must be at least KES 1');
+  if (balance <= 0) throw new ApiError(400, 'This invoice is already fully paid');
+  if (stkAmount > Math.ceil(balance)) throw new ApiError(400, `Amount exceeds the outstanding balance of KES ${Math.ceil(balance).toLocaleString('en-KE')}`);
+
   const config = await paymentConfigModel.get(req.user.school_id);
   if (!config || !config.mpesa_shortcode) {
     throw new ApiError(400, 'This school has not configured an M-Pesa shortcode yet');
@@ -58,8 +68,8 @@ const initiatePayment = asyncHandler(async (req, res) => {
     daraja = await initiateStkPush({
       shortcode: config.mpesa_shortcode,
       passkey,
-      phoneNumber,
-      amount,
+      phoneNumber: phone,
+      amount: stkAmount,
       accountReference,
       callbackUrl,
     });
@@ -79,8 +89,8 @@ const initiatePayment = asyncHandler(async (req, res) => {
     invoiceId,
     checkoutRequestId: daraja.CheckoutRequestID,
     merchantRequestId: daraja.MerchantRequestID,
-    phoneNumber,
-    amount,
+    phoneNumber: phone,
+    amount: stkAmount,
   });
 
   return sendSuccess(res, 201, txn, 'STK Push sent — awaiting customer PIN entry');
@@ -155,4 +165,16 @@ const updatePaymentConfig = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, config, 'Payment config updated');
 });
 
-module.exports = { initiatePayment, handleCallback, listInvoiceTransactions, getPaymentConfig, updatePaymentConfig };
+const TXN_STATUSES = ['pending', 'success', 'failed', 'cancelled', 'timeout'];
+const listTransactions = asyncHandler(async (req, res) => {
+  const { status, q, from, to, limit, offset } = req.query;
+  if (status && !TXN_STATUSES.includes(status)) throw new ApiError(400, 'Invalid status filter');
+  const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  if ((from && !isDate(from)) || (to && !isDate(to))) throw new ApiError(400, 'from and to must be YYYY-MM-DD dates');
+  const data = await mpesaModel.listAll(req.user.school_id, {
+    status, q, from, to, limit: Math.min(Number(limit) || 100, 300), offset: Number(offset) || 0,
+  });
+  return sendSuccess(res, 200, data);
+});
+
+module.exports = { initiatePayment, handleCallback, listTransactions, listInvoiceTransactions, getPaymentConfig, updatePaymentConfig };

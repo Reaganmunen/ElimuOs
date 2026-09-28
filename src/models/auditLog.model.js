@@ -21,6 +21,22 @@ async function listBySchool(schoolId, { tableName, userId, action, limit = 50, o
   });
 }
 
+/** One user's own actions in their school (used by the accountant's "My activity"). */
+async function listByUser(schoolId, userId, { tableName, limit = 50, offset = 0 } = {}) {
+  return withTenantClient(schoolId, async (client) => {
+    const params = [userId, limit, offset];
+    let filter = '';
+    if (tableName) { params.push(tableName); filter = ` AND al.table_name = $${params.length}`; }
+    const result = await client.query(
+      `SELECT al.id, al.action, al.table_name, al.record_id, al.details, al.created_at
+       FROM audit_logs al WHERE al.user_id = $1${filter}
+       ORDER BY al.created_at DESC LIMIT $2 OFFSET $3`,
+      params
+    );
+    return result.rows;
+  });
+}
+
 async function getForRecord(schoolId, tableName, recordId) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
@@ -60,4 +76,4 @@ async function listAll({ schoolId, tableName, action, limit = 50, offset = 0 } =
   return result.rows;
 }
 
-module.exports = { listBySchool, getForRecord, listAll };
+module.exports = { listBySchool, listByUser, getForRecord, listAll };

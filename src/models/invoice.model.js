@@ -8,6 +8,8 @@ const { recordAudit } = require('../utils/auditLog.util');
  * schema enforces one invoice per student per term) rather than silently
  * duplicating charges.
  */
+const EFF_STATUS = `(CASE WHEN i.status = 'unpaid' AND i.due_date IS NOT NULL AND i.due_date < CURRENT_DATE THEN 'overdue' ELSE i.status END)`;
+
 async function generateForStudent(schoolId, studentId, termId, dueDate, actorUserId) {
   return withTenantClient(schoolId, async (client) => {
     const studentRow = await client.query(
@@ -66,10 +68,11 @@ async function getById(schoolId, invoiceId) {
     if (invoiceResult.rows.length === 0) return null;
 
     const itemsResult = await client.query(
-      `SELECT * FROM invoice_items WHERE invoice_id = $1`,
+      `SELECT * FROM invoice_items WHERE invoice_id = $1 ORDER BY id`,
       [invoiceId]
     );
-    return { ...invoiceResult.rows[0], items: itemsResult.rows };
+    const adjustments = await require('./feeAdjustment.model').listForInvoice(client, invoiceId);
+    return { ...invoiceResult.rows[0], items: itemsResult.rows, adjustments };
   });
 }
 
@@ -86,7 +89,7 @@ async function listByStudent(schoolId, studentId) {
 async function listOutstanding(schoolId, { limit = 50, offset = 0 } = {}) {
   return withTenantClient(schoolId, async (client) => {
     const result = await client.query(
-      `SELECT i.*, s.full_name AS student_name, s.admission_number
+      `SELECT i.*, ${EFF_STATUS} AS status, s.full_name AS student_name, s.admission_number
        FROM invoices i JOIN students s ON s.id = i.student_id
        WHERE i.school_id = $1 AND i.status IN ('unpaid','partial','overdue')
        ORDER BY i.due_date ASC NULLS LAST
@@ -94,6 +97,42 @@ async function listOutstanding(schoolId, { limit = 50, offset = 0 } = {}) {
       [schoolId, limit, offset]
     );
     return result.rows;
+  });
+}
+
+async function listAll(schoolId, { termId, status, classId, q, limit = 100, offset = 0 } = {}) {
+  return withTenantClient(schoolId, async (client) => {
+    const params = [schoolId];
+    let where = 'i.school_id = $1';
+    if (termId) { params.push(termId); where += ` AND i.term_id = $${params.length}`; }
+    if (status) { params.push(status); where += ` AND ${EFF_STATUS} = $${params.length}`; }
+    if (classId) { params.push(classId); where += ` AND s.current_class_id = $${params.length}`; }
+    if (q) { params.push(`%${q}%`); where += ` AND (s.full_name ILIKE $${params.length} OR s.admission_number ILIKE $${params.length})`; }
+    const from = `FROM invoices i JOIN students s ON s.id = i.student_id WHERE ${where}`;
+    const total = await client.query(`SELECT COUNT(*)::int AS n ${from}`, params);
+    params.push(limit, offset);
+    const rows = await client.query(
+      `SELECT i.*, ${EFF_STATUS} AS status, s.full_name AS student_name, s.admission_number ${from}
+       ORDER BY i.due_date ASC NULLS LAST, s.full_name LIMIT $${params.length - 1} OFFSET $${params.length}`, params
+    );
+    return { items: rows.rows, total: total.rows[0].n };
+  });
+}
+
+/** Billed / collected across ALL invoices (paid ones included), optionally for one term or class. */
+async function summary(schoolId, { termId, classId } = {}) {
+  return withTenantClient(schoolId, async (client) => {
+    const params = [schoolId];
+    let where = 'i.school_id = $1';
+    if (termId) { params.push(termId); where += ` AND i.term_id = $${params.length}`; }
+    if (classId) { params.push(classId); where += ` AND s.current_class_id = $${params.length}`; }
+    const r = await client.query(
+      `SELECT COALESCE(SUM(i.total_amount),0) AS billed, COALESCE(SUM(i.amount_paid),0) AS collected,
+              COUNT(*)::int AS invoices, COUNT(*) FILTER (WHERE ${EFF_STATUS} = 'overdue')::int AS overdue,
+              COUNT(*) FILTER (WHERE i.status = 'paid')::int AS paid
+       FROM invoices i JOIN students s ON s.id = i.student_id WHERE ${where}`, params
+    );
+    return r.rows[0];
   });
 }
 
@@ -113,8 +152,10 @@ async function recalculateStatus(client, invoiceId) {
   const invoiceResult = await client.query(`SELECT total_amount, due_date FROM invoices WHERE id = $1`, [invoiceId]);
   const { total_amount: totalAmount, due_date: dueDate } = invoiceResult.rows[0];
 
+  // A fully-bursaried invoice has a zero total but still has lines; it counts as settled.
+  const itemCount = await client.query(`SELECT COUNT(*)::int AS n FROM invoice_items WHERE invoice_id = $1`, [invoiceId]);
   let status = 'unpaid';
-  if (amountPaid >= Number(totalAmount) && Number(totalAmount) > 0) {
+  if (amountPaid >= Number(totalAmount) && (Number(totalAmount) > 0 || itemCount.rows[0].n > 0)) {
     status = 'paid';
   } else if (amountPaid > 0) {
     status = 'partial';
@@ -129,4 +170,4 @@ async function recalculateStatus(client, invoiceId) {
   return result.rows[0];
 }
 
-module.exports = { generateForStudent, getById, listByStudent, listOutstanding, recalculateStatus };
+module.exports = { generateForStudent, getById, listByStudent, listOutstanding, listAll, summary, recalculateStatus };

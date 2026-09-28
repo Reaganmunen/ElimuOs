@@ -10,6 +10,15 @@ const listMySchoolLogs = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, logs);
 });
 
+// The signed-in user's own actions only — the user id always comes from the JWT, never the request.
+const listMine = asyncHandler(async (req, res) => {
+  const { tableName, limit, offset } = req.query;
+  const logs = await auditLogModel.listByUser(req.user.school_id, req.user.id, {
+    tableName, limit: Math.min(Number(limit) || 50, 200), offset: Number(offset) || 0,
+  });
+  return sendSuccess(res, 200, logs);
+});
+
 const getRecordHistory = asyncHandler(async (req, res) => {
   const { tableName, recordId } = req.params;
   const logs = await auditLogModel.getForRecord(req.user.school_id, tableName, recordId);
@@ -25,4 +34,4 @@ const listAllLogs = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, logs);
 });
 
-module.exports = { listMySchoolLogs, getRecordHistory, listAllLogs };
+module.exports = { listMySchoolLogs, listMine, getRecordHistory, listAllLogs };

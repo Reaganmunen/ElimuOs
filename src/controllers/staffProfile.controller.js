@@ -22,6 +22,17 @@ const getProfile = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, profile);
 });
 
+// Self-service, read-only: any authenticated staff member (teacher,
+// accountant, school_admin) looking up their OWN record — scoped by
+// req.user.id rather than a :userId param, so there's no access-control
+// decision to make here (you can only ever see your own). A 404 just
+// means school_admin hasn't set this profile up yet, same as getProfile.
+const getMyProfile = asyncHandler(async (req, res) => {
+  const profile = await staffProfileModel.getByUserId(req.user.school_id, req.user.id);
+  if (!profile) throw new ApiError(404, 'Staff profile not found');
+  return sendSuccess(res, 200, profile);
+});
+
 const listStaff = asyncHandler(async (req, res) => {
   const { roleCode, limit, offset } = req.query;
   const staff = await staffProfileModel.listBySchool(req.user.school_id, {
@@ -47,4 +58,4 @@ const removeProfile = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, result, 'Staff member removed and account deactivated');
 });
 
-module.exports = { upsertProfile, getProfile, listStaff, removeProfile };
+module.exports = { upsertProfile, getProfile, getMyProfile, listStaff, removeProfile };

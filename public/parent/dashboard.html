@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Parent Portal — ElimuOs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:20px; }
+  .kpi{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px 20px; }
+  .kpi .ico{ width:36px; height:36px; border-radius:11px; display:grid; place-items:center; font-size:1.05rem; margin-bottom:12px; }
+  .ico.blue{ background:rgba(74,90,240,.1); color:var(--blue); } .ico.green{ background:rgba(23,166,115,.12); color:var(--leaf); }
+  .ico.gold{ background:rgba(232,162,61,.16); color:#B7791F; } .ico.red{ background:rgba(240,99,122,.12); color:var(--coral); }
+  .kpi b{ display:block; font:800 1.4rem 'Plus Jakarta Sans',sans-serif; } .kpi span{ font-size:.8rem; font-weight:600; color:var(--ink-soft); }
+  .kpi em{ display:block; font-style:normal; font-size:.75rem; color:var(--ink-soft); margin-top:3px; }
+  .hero{ background:linear-gradient(135deg,var(--ink),#232a4d); color:#fff; border-radius:var(--radius-lg); padding:26px 30px; margin-bottom:20px; position:relative; overflow:hidden; }
+  .hero::after{ content:''; position:absolute; width:260px; height:260px; border-radius:50%; background:var(--blue); opacity:.28; filter:blur(70px); right:-60px; top:-90px; }
+  .hero>*{ position:relative; z-index:1; }
+  .hero h2{ color:#fff; font-size:1.4rem; margin-bottom:6px; } .hero p{ color:rgba(255,255,255,.72); font-size:.9rem; margin:0; }
+  .tbl{ width:100%; border-collapse:collapse; font-size:.88rem; }
+  .tbl th{ text-align:left; font-size:.76rem; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); }
+  .tbl td{ padding:11px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .tbl tr.row{ cursor:pointer } .tbl tr.row:hover{ background:var(--cloud); }
+  .num{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .sub{ font-size:.76rem; color:var(--ink-soft); }
+  .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .toolbar .input{ max-width:220px; }
+  .btn-sm{ padding:8px 16px; font-size:.84rem; }
+  .view{ display:none } .view.on{ display:block }
+  .modal-box.wide{ max-width:640px; max-height:90vh; overflow-y:auto; }
+  .kv{ display:flex; justify-content:space-between; gap:12px; padding:6px 0; font-size:.88rem; }
+  .sec{ font:700 .84rem 'Plus Jakarta Sans',sans-serif; margin:20px 0 8px; }
+  .link{ background:none; border:0; color:var(--blue); font-weight:600; cursor:pointer; padding:0; font-size:.82rem; }
+  #toast{ position:fixed; bottom:20px; right:20px; z-index:60; max-width:360px; }
+  #toast .alert-elimu{ box-shadow:0 12px 30px -12px rgba(18,23,43,.4); background:#fff; margin:0 0 8px; }
+  .alert-ok{ background:#E9F7F1; color:#0F7A55; }
+  .lesson{ display:flex; align-items:center; gap:14px; padding:11px 8px; border-radius:12px; }
+  .lesson+.lesson{ border-top:1px solid var(--line); border-radius:0; }
+  .lesson .tm{ min-width:92px; font:700 .82rem 'Plus Jakarta Sans',sans-serif; color:var(--blue-deep); }
+  .week{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
+  .dcol{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:14px; }
+  .dcol.today{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(74,90,240,.1); }
+  .dcol h4{ font:700 .88rem 'Plus Jakarta Sans',sans-serif; margin:0 0 10px; display:flex; justify-content:space-between; }
+  .slot{ padding:8px 10px; border-radius:10px; background:var(--cloud); margin-bottom:8px; font-size:.82rem; }
+  .slot b{ display:block; } .slot span{ color:var(--ink-soft); font-size:.74rem; }
+  .area{ margin-bottom:16px; } .area h4{ font:700 .95rem 'Plus Jakarta Sans',sans-serif; margin:0 0 6px; }
+  .res{ display:flex; align-items:flex-start; gap:12px; padding:9px 0; border-top:1px solid var(--line); }
+  .res .grow{ flex:1; min-width:0; }
+  .rub{ min-width:42px; text-align:center; font:800 .8rem 'Plus Jakarta Sans',sans-serif; padding:6px 8px; border-radius:9px; flex-shrink:0; }
+  .r4{ background:rgba(23,166,115,.14); color:#0F7A55; } .r3{ background:rgba(74,90,240,.12); color:var(--blue-deep); }
+  .r2{ background:rgba(232,162,61,.2); color:#8A5A12; } .r1{ background:rgba(240,99,122,.14); color:#B23350; }
+  .remark{ background:var(--cloud); border-radius:12px; padding:12px 14px; font-size:.86rem; margin-bottom:10px; line-height:1.5; }
+  .remark small{ display:block; font-weight:700; color:var(--ink-soft); margin-bottom:3px; }
+  .cal{ display:grid; grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:8px; }
+  .dot{ border-radius:10px; padding:8px 4px; text-align:center; font-size:.72rem; background:var(--cloud); }
+  .dot b{ display:block; font-size:.95rem; }
+  .dot.present{ background:rgba(23,166,115,.14); } .dot.late{ background:rgba(232,162,61,.2); }
+  .dot.absent{ background:rgba(240,99,122,.16); } .dot.excused{ background:rgba(74,90,240,.12); }
+  .kids{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-bottom:20px; }
+  .kid{ background:#fff; border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; cursor:pointer; }
+  .kid:hover{ border-color:var(--blue); } .kid h4{ margin:0 0 2px; font:700 1rem 'Plus Jakarta Sans',sans-serif; }
+  .msg{ padding:14px 4px; border-top:1px solid var(--line); cursor:pointer; }
+  .msg:first-child{ border-top:0; } .msg.unread .mh{ font-weight:800; }
+  .msg .mh{ display:flex; justify-content:space-between; gap:10px; font-weight:600; }
+  .msg .mb{ font-size:.86rem; color:var(--ink-soft); margin-top:4px; white-space:pre-wrap; }
+  .pip{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--blue); margin-right:6px; }
+  .badge-n{ background:var(--coral); color:#fff; border-radius:99px; font-size:.68rem; padding:1px 7px; margin-left:auto; font-weight:700; }
+  .field{ margin-bottom:12px; } .field label{ display:block; font-size:.78rem; font-weight:600; margin-bottom:4px; }
+  .field .input, .field textarea{ width:100%; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(max-width:700px){ .hero{ padding:20px; } .grid2{ grid-template-columns:1fr; } }
+  @media print{ .admin-sidebar,.admin-topbar,.toolbar,.no-print{ display:none!important } }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a href="#overview" class="brand"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>ElimuOs</a>
+    <nav class="admin-nav">
+      <a href="#overview" data-v="overview" class="admin-nav-link"><i class="bi bi-grid-1x2-fill"></i> Overview</a>
+      <div class="admin-nav-section">My child</div>
+      <a href="#results" data-v="results" class="admin-nav-link"><i class="bi bi-award-fill"></i> Results</a>
+      <a href="#attendance" data-v="attendance" class="admin-nav-link"><i class="bi bi-calendar-check-fill"></i> Attendance</a>
+      <a href="#timetable" data-v="timetable" class="admin-nav-link"><i class="bi bi-calendar3"></i> Timetable</a>
+      <a href="#teachers" data-v="teachers" class="admin-nav-link"><i class="bi bi-person-badge"></i> Teachers</a>
+      <div class="admin-nav-section">Money</div>
+      <a href="#fees" data-v="fees" class="admin-nav-link"><i class="bi bi-receipt"></i> Fees &amp; payments</a>
+      <div class="admin-nav-section">School</div>
+      <a href="#messages" data-v="messages" class="admin-nav-link"><i class="bi bi-chat-square-text-fill"></i> Messages <span class="badge-n" id="nMsg" style="display:none"></span></a>
+      <a href="#contact" data-v="contact" class="admin-nav-link"><i class="bi bi-envelope-paper-fill"></i> Contact school <span class="badge-n" id="nEnq" style="display:none"></span></a>
+      <div class="admin-nav-section">Account</div>
+      <a href="#profile" data-v="profile" class="admin-nav-link"><i class="bi bi-person-circle"></i> My profile</a>
+    </nav>
+    <div class="admin-sidebar-foot" id="school">Loading…</div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1 id="title">Overview</h1>
+      <div class="admin-topbar-right">
+        <select class="input" id="child" style="max-width:220px" title="Choose child"></select>
+        <div class="user-chip" id="chip"><div class="user-avatar" id="av">…</div>
+          <div><div class="user-chip-name" id="uname">Loading…</div><div class="user-chip-role">Parent / Guardian</div></div>
+        </div>
+      </div>
+    </header>
+    <main class="admin-content">
+
+      <section class="view" id="v-overview">
+        <div class="hero"><h2 id="greet">Welcome</h2><p id="heroSum">Loading…</p></div>
+        <div class="stat-grid" id="stats"></div>
+        <div class="sec" style="margin-top:0">My children</div>
+        <div class="kids" id="kids"></div>
+      </section>
+
+      <section class="view" id="v-results">
+        <div class="toolbar"><select class="input" id="rterm"></select><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="rpdf"><i class="bi bi-file-earmark-pdf"></i> Download report card</button></div>
+        <div id="rbody"></div>
+      </section>
+
+      <section class="view" id="v-attendance">
+        <div class="toolbar"><select class="input" id="aterm"></select><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-primary btn-sm" onclick="openAbsence()"><i class="bi bi-megaphone"></i> Tell the school</button></div>
+        <div class="stat-grid" id="asum"></div>
+        <div class="card-elimu"><div class="sec" style="margin-top:0">Day by day</div><div class="cal" id="acal"></div><p class="sub" id="anote" style="margin-top:12px"></p></div>
+        <div class="card-elimu" style="margin-top:16px"><div class="sec" style="margin-top:0">Notices you have sent</div><div id="areports"></div></div>
+      </section>
+
+      <section class="view" id="v-timetable">
+        <div class="card-elimu" style="margin-bottom:16px"><div class="sec" style="margin-top:0" id="todayTitle">Today's lessons</div><div id="today"></div></div>
+        <div class="week" id="week"></div>
+      </section>
+
+      <section class="view" id="v-teachers"><div id="tbody"></div></section>
+
+      <section class="view" id="v-fees">
+        <div class="toolbar"><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-ghost btn-sm" onclick="printStatement()"><i class="bi bi-printer"></i> Fee statement</button>
+          <button class="btn-elimu btn-elimu-primary btn-sm" onclick="openPay()"><i class="bi bi-phone"></i> Pay with M-Pesa</button></div>
+        <div class="stat-grid" id="fsum"></div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Term</th><th>Due</th><th class="num">Total</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th></tr></thead><tbody id="fbody"></tbody></table></div>
+        <div class="sec">Payment history</div>
+        <div class="card-elimu" style="padding:8px 14px"><table class="tbl"><thead><tr><th>Date</th><th>Term</th><th>Method</th><th>Reference</th><th class="num">Amount</th></tr></thead><tbody id="pbody"></tbody></table></div>
+      </section>
+
+      <section class="view" id="v-messages">
+        <div class="toolbar"><span class="sub" id="mcount"></span><span style="flex:1"></span>
+          <button class="btn-elimu btn-elimu-ghost btn-sm" id="readAll"><i class="bi bi-check2-all"></i> Mark all read</button></div>
+        <div class="card-elimu" id="mlist"></div>
+      </section>
+
+      <section class="view" id="v-contact">
+        <div class="toolbar"><span style="flex:1"></span><button class="btn-elimu btn-elimu-primary btn-sm" onclick="openEnquiry()"><i class="bi bi-pencil-square"></i> New message</button></div>
+        <div class="card-elimu" id="elist"></div>
+      </section>
+
+      <section class="view" id="v-profile">
+        <div class="card-elimu" style="max-width:560px"><div class="sec" style="margin-top:0">Contact details</div>
+          <p class="sub">The school uses these to reach you. To change your name or ID number, please visit the school office.</p>
+          <div class="field"><label>Full name</label><input class="input" id="pName" disabled></div>
+          <div class="field"><label>Login email</label><input class="input" id="pLogin" disabled></div>
+          <div class="grid2"><div class="field"><label>Phone</label><input class="input" id="pPhone" placeholder="0712345678"></div>
+            <div class="field"><label>Email for notices</label><input class="input" id="pEmail" type="email"></div></div>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="saveProfile">Save changes</button></div>
+        <div class="card-elimu" style="max-width:560px;margin-top:16px"><div class="sec" style="margin-top:0">Change password</div>
+          <div class="field"><label>Current password</label><input class="input" id="pwOld" type="password" autocomplete="current-password"></div>
+          <div class="field"><label>New password</label><input class="input" id="pwNew" type="password" autocomplete="new-password"></div>
+          <button class="btn-elimu btn-elimu-primary btn-sm" id="savePw">Update password</button>
+          <p class="sub" style="margin-top:8px">You will be signed out on all devices afterwards.</p></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" style="display:none"><div class="modal-box wide" id="mbox"></div></div>
+<div id="toast"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/billing.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+const api = window.ElimuOs.api.apiFetch;
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kes = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE', { maximumFractionDigits: 0 });
+const day = (d) => d ? new Date(d).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' }) : '—';
+const dt = (d) => d ? new Date(d).toLocaleString('en-KE', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+const ymd = (d) => String(d).slice(0, 10);
+const hm = (t) => String(t || '').slice(0, 5);
+const bal = (i) => Number(i.total_amount) - Number(i.amount_paid || 0);
+const DAYS = { 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 7:'Sunday' };
+const TONE = { paid:'ok', partial:'info', unpaid:'warn', overdue:'error', success:'ok', pending:'info', failed:'error', cancelled:'warn', timeout:'warn',
+  submitted:'info', acknowledged:'ok', open:'warn', answered:'ok' };
+const chip = (s) => `<span class="status-chip ${TONE[s] || ''}">${esc(String(s).replace('_',' '))}</span>`;
+const todayStr = new Date().toLocaleDateString('en-CA');
+const todayDow = ((new Date().getDay() + 6) % 7) + 1;
+const effStatus = (i) => (i.status === 'unpaid' && i.due_date && ymd(i.due_date) < todayStr ? 'overdue' : i.status);
+const tl = (t) => `${t.year_label ? t.year_label + ' · ' : ''}Term ${t.term_number}`;
+const k = (ic, tone, v, l, s) => `<div class="kpi"><div class="ico ${tone}"><i class="bi ${ic}"></i></div><b>${v}</b><span>${l}</span><em>${s || ''}</em></div>`;
+const P = (sid, rest) => `/parent-portal/children/${sid}${rest}`;
+
+let me = null, guardian = null, children = [], cid = null, terms = [], curTerm = null, summary = null;
+let slots = [], invoices = [], payments = [], loaded = {};
+const kid = () => children.find(c => String(c.id) === String(cid));
+
+function toast(msg, ok) {
+  const el = document.createElement('div');
+  el.className = 'alert-elimu ' + (ok ? 'alert-ok' : 'alert-error');
+  el.innerHTML = `<i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}"></i><div>${esc(msg)}</div>`;
+  $('toast').appendChild(el); setTimeout(() => el.remove(), 5000);
+}
+const openModal = (html) => { $('mbox').innerHTML = html; $('modal').style.display = 'flex'; };
+const closeModal = () => { $('modal').style.display = 'none'; };
+$('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+const needKid = () => { if (!cid) { toast('No child is linked to your account yet. Please contact the school office.'); return false; } return true; };
+
+// ---------- Routing ----------
+const TITLES = { overview:'Overview', results:'Results', attendance:'Attendance', timetable:'Timetable', teachers:'Teachers', fees:'Fees & payments', messages:'Messages', contact:'Contact school', profile:'My profile' };
+const PER_CHILD = ['results', 'attendance', 'timetable', 'teachers', 'fees'];
+function route() {
+  const v = TITLES[location.hash.slice(1)] ? location.hash.slice(1) : 'overview';
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('[data-v]').forEach(a => a.classList.toggle('active', a.dataset.v === v));
+  $('title').textContent = TITLES[v];
+  $('child').style.display = PER_CHILD.includes(v) && children.length > 1 ? '' : 'none';
+  if (PER_CHILD.includes(v) && !cid) return;
+  ({ results: loadResults, attendance: loadAttendance, timetable: loadTimetable, teachers: loadTeachers, fees: loadFees,
+     messages: loadMessages, contact: loadEnquiries, profile: loadProfile }[v] || (() => {}))();
+}
+window.addEventListener('hashchange', route);
+$('child').addEventListener('change', () => { cid = $('child').value; loaded = {}; slots = []; invoices = []; payments = []; route(); });
+function selectChild(id) { cid = String(id); $('child').value = cid; loaded = {}; }
+
+// ---------- Terms ----------
+async function loadTerms() {
+  const years = (await api('/academic-years')).data;
+  const all = await Promise.all(years.map(async y => (await api(`/academic-years/${y.id}/terms`)).data.map(t => ({ ...t, year_label: y.year_label }))));
+  terms = all.flat().sort((a, b) => ymd(a.start_date).localeCompare(ymd(b.start_date)));
+  curTerm = terms.find(t => ymd(t.start_date) <= todayStr && todayStr <= ymd(t.end_date))
+    || [...terms].reverse().find(t => ymd(t.start_date) <= todayStr) || terms[terms.length - 1] || null;
+  const opts = terms.filter(t => ymd(t.start_date) <= todayStr).reverse().map(t => `<option value="${t.id}">${esc(tl(t))}</option>`).join('') || '<option value="">No terms yet</option>';
+  $('rterm').innerHTML = $('aterm').innerHTML = opts;
+  if (curTerm) $('rterm').value = $('aterm').value = curTerm.id;
+}
+
+// ---------- Overview ----------
+function renderOverview() {
+  const s = summary, h = new Date().getHours(), first = (guardian?.full_name || '').split(' ')[0];
+  $('greet').textContent = `${h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'}, ${first} 👋`;
+  $('heroSum').textContent = s.term ? `${tl(s.term)} · ${s.children.length} child${s.children.length === 1 ? '' : 'ren'} linked to your account.` : 'Welcome to the parent portal.';
+  $('stats').innerHTML = k('bi-wallet2', s.totals.balance > 0 ? 'blue' : 'green', kes(Math.max(s.totals.balance, 0)), 'Total fee balance', s.totals.balance > 0 ? 'across all children' : 'all paid up')
+    + k('bi-exclamation-triangle', s.totals.overdue > 0 ? 'red' : 'gold', kes(s.totals.overdue), 'Overdue', s.totals.overdue > 0 ? 'past the due date' : 'nothing overdue')
+    + k('bi-chat-square-text', s.unreadMessages > 0 ? 'blue' : 'green', s.unreadMessages, 'Unread messages', 'from the school')
+    + k('bi-reply', s.unseenEnquiryReplies > 0 ? 'gold' : 'green', s.unseenEnquiryReplies, 'New replies', 'to your enquiries');
+  $('kids').innerHTML = s.children.length ? s.children.map(c => {
+    const a = c.attendance, rate = a && a.presentRatePercent != null ? a.presentRatePercent + '%' : '—';
+    return `<div class="kid" onclick="openKid('${c.id}')"><h4>${esc(c.full_name)}</h4>
+      <div class="sub">${esc(c.admission_number)} · ${esc(c.relationship || '')}</div>
+      <div class="kv" style="margin-top:10px"><span>Attendance this term</span><b>${rate}</b></div>
+      <div class="kv"><span>Fee balance</span><b>${kes(Math.max(c.balance, 0))}</b></div>
+      ${c.overdue > 0 ? `<div class="kv"><span style="color:var(--coral)">Overdue</span><b style="color:var(--coral)">${kes(c.overdue)}</b></div>` : ''}
+      ${c.next_due_date && c.balance > 0 ? `<div class="sub">Next due ${day(c.next_due_date)}</div>` : ''}</div>`;
+  }).join('') : '<div class="card-elimu"><p class="sub" style="margin:0">No children are linked to your account yet. Please contact the school office.</p></div>';
+  setBadge('nMsg', s.unreadMessages); setBadge('nEnq', s.unseenEnquiryReplies);
+}
+function setBadge(id, n) { $(id).style.display = n > 0 ? '' : 'none'; $(id).textContent = n; }
+function openKid(id) { selectChild(id); location.hash = '#results'; if (location.hash === '#results') route(); }
+
+// ---------- Results ----------
+async function loadResults() {
+  const id = $('rterm').value;
+  if (!id) { $('rbody').innerHTML = '<div class="card-elimu"><p class="sub" style="margin:0">No terms yet.</p></div>'; return; }
+  $('rbody').innerHTML = '<div class="skeleton" style="height:160px"></div>';
+  try {
+    const { reportCard, results } = (await api(P(cid, `/report-card/${id}`))).data;
+    const byArea = new Map();
+    results.forEach(r => byArea.set(r.learning_area_name, [...(byArea.get(r.learning_area_name) || []), r]));
+    const rub = (r) => `<div class="rub r${Math.min(Math.max(Number(r.score_value) || 1, 1), 4)}" title="${esc(r.rubric_label)}">${esc(r.rubric_code)}</div>`;
+    const remarks = reportCard ? [['Class teacher', reportCard.class_teacher_remark], ['Head teacher', reportCard.head_teacher_remark]]
+      .filter(x => x[1]).map(x => `<div class="remark"><small>${x[0]}</small>${esc(x[1])}</div>`).join('') : '';
+    $('rbody').innerHTML = (remarks ? `<div class="card-elimu" style="margin-bottom:16px"><div class="sec" style="margin-top:0">Teacher remarks</div>${remarks}</div>` : '')
+      + (byArea.size ? [...byArea].map(([name, rows]) => `<div class="card-elimu area"><h4>${esc(name)}</h4>${rows.map(r => `<div class="res">${rub(r)}
+        <div class="grow"><div><b>${esc(r.sub_strand_name)}</b> <span class="sub">${esc(r.strand_name)}</span></div>
+        <div class="sub">${esc(r.rubric_label)} · ${day(r.assessment_date)}</div>${r.teacher_remark ? `<div class="sub" style="margin-top:3px">“${esc(r.teacher_remark)}”</div>` : ''}</div></div>`).join('')}</div>`).join('')
+        + '<p class="sub">EE = Exceeds, ME = Meets, AE = Approaches, BE = Below expectation. Showing the latest result for each topic.</p>'
+        : '<div class="card-elimu"><p class="sub" style="margin:0">No results have been recorded for this term yet.</p></div>');
+  } catch (e) { $('rbody').innerHTML = ''; toast(e.message); }
+}
+$('rterm').addEventListener('change', loadResults);
+async function download(path, filename) {
+  const get = () => fetch(`${window.ElimuOs.api.API_BASE}${path}`, { headers: { Authorization: 'Bearer ' + window.ElimuOs.api.getAccessToken() } });
+  let res = await get();
+  if (res.status === 401 && (await window.ElimuOs.auth.silentRefresh()) === true) res = await get();
+  if (!res.ok) { let m = 'Not available yet.'; try { m = (await res.json()).message || m; } catch (e) { /* not json */ } throw new Error(m); }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(await res.blob()); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+}
+$('rpdf').addEventListener('click', async () => {
+  const id = $('rterm').value; if (!id) return toast('Choose a term first.');
+  const t = terms.find(x => String(x.id) === String(id)) || {};
+  try { await download(P(cid, `/report-card/${id}/pdf`), `report-card-${(kid() || {}).full_name || 'child'}-term${t.term_number || ''}.pdf`); }
+  catch (e) { toast(e.message); }
+});
+
+// ---------- Attendance + absence notices ----------
+const termRange = (t) => ({ startDate: ymd(t.start_date), endDate: ymd(t.end_date) < todayStr ? ymd(t.end_date) : todayStr });
+async function loadAttendance() {
+  const t = terms.find(x => String(x.id) === String($('aterm').value));
+  loadAbsenceReports();
+  if (!t || ymd(t.start_date) > todayStr) { $('asum').innerHTML = ''; $('acal').innerHTML = '<p class="sub">No term selected.</p>'; return; }
+  try {
+    const q = new URLSearchParams(termRange(t));
+    const [sumR, recR] = await Promise.all([api(P(cid, '/attendance?' + q)), api(P(cid, '/attendance/records?' + q))]);
+    const sum = sumR.data, rec = recR.data;
+    $('asum').innerHTML = k('bi-percent', 'green', sum.presentRatePercent == null ? '—' : sum.presentRatePercent + '%', 'Attendance rate', `${sum.total} school day${sum.total === 1 ? '' : 's'} recorded`)
+      + k('bi-check2-circle', 'green', sum.present, 'Present', 'days') + k('bi-clock', 'gold', sum.late, 'Late', 'days')
+      + k('bi-x-circle', 'red', sum.absent, 'Absent', 'days') + k('bi-envelope-paper', 'blue', sum.excused, 'Excused', 'days');
+    $('acal').innerHTML = rec.length ? rec.map(r => `<div class="dot ${esc(r.status)}" title="${esc(r.remark || r.status)}"><b>${new Date(r.date).getDate()}</b>${new Date(r.date).toLocaleDateString('en-KE', { month:'short' })}<br>${esc(r.status)}</div>`).join('')
+      : '<p class="sub" style="margin:0">No attendance recorded for this term yet.</p>';
+    const notes = rec.filter(r => r.remark && r.status !== 'present');
+    $('anote').textContent = notes.length ? 'Teacher notes: ' + notes.slice(0, 5).map(r => `${day(r.date)} — ${r.remark}`).join(' · ') : '';
+  } catch (e) { toast(e.message); }
+}
+$('aterm').addEventListener('change', loadAttendance);
+const TYPE = { absent:'Absent', late_arrival:'Arriving late', early_pickup:'Early pickup' };
+async function loadAbsenceReports() {
+  try {
+    const rows = (await api(P(cid, '/absence-reports'))).data;
+    $('areports').innerHTML = rows.length ? rows.map(r => `<div class="res"><div class="grow"><b>${TYPE[r.report_type]}</b> ${chip(r.status)}
+      <div class="sub">${day(r.date_from)}${r.date_to !== r.date_from ? ' – ' + day(r.date_to) : ''}${r.expected_time ? ' · ' + hm(r.expected_time) : ''} · sent by ${esc(r.guardian_name)}</div>
+      <div class="sub">${esc(r.reason)}</div>${r.staff_note ? `<div class="sub"><b>School:</b> ${esc(r.staff_note)}</div>` : ''}</div>
+      ${r.status === 'submitted' ? `<button class="link" onclick="cancelAbsence('${r.id}')">Withdraw</button>` : ''}</div>`).join('')
+      : '<p class="sub" style="margin:0">Nothing sent yet. Use “Tell the school” if your child will be away, late or leaving early.</p>';
+  } catch (e) { $('areports').innerHTML = ''; }
+}
+function openAbsence() {
+  if (!needKid()) return;
+  openModal(`<h3>Tell the school</h3><p class="sub">For ${esc(kid().full_name)}</p>
+    <div class="field"><label>What is happening?</label><select class="input" id="abType" onchange="absToggle()"><option value="absent">Will be absent</option><option value="late_arrival">Will arrive late</option><option value="early_pickup">Needs early pickup</option></select></div>
+    <div class="grid2"><div class="field"><label id="abFromL">From</label><input class="input" type="date" id="abFrom" value="${todayStr}"></div>
+      <div class="field" id="abToW"><label>To</label><input class="input" type="date" id="abTo" value="${todayStr}"></div>
+      <div class="field" id="abTimeW" style="display:none"><label id="abTimeL">Expected time</label><input class="input" type="time" id="abTime"></div></div>
+    <div class="field"><label>Reason</label><textarea class="input" id="abReason" rows="3" maxlength="500" placeholder="e.g. Clinic appointment"></textarea></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Cancel</button><button class="btn-elimu btn-elimu-primary btn-sm" id="abGo" onclick="submitAbsence()">Send to school</button></div>`);
+}
+function absToggle() {
+  const t = $('abType').value, one = t !== 'absent';
+  $('abToW').style.display = one ? 'none' : ''; $('abTimeW').style.display = one ? '' : 'none';
+  $('abTimeL').textContent = t === 'late_arrival' ? 'Expected arrival time' : 'Pickup time';
+}
+async function submitAbsence() {
+  const t = $('abType').value, from = $('abFrom').value;
+  const body = { reportType: t, dateFrom: from, dateTo: t === 'absent' ? ($('abTo').value || from) : from, expectedTime: $('abTime').value || undefined, reason: $('abReason').value };
+  $('abGo').disabled = true;
+  try { await api(P(cid, '/absence-reports'), { method:'POST', body: JSON.stringify(body) }); closeModal(); toast('The school has been notified.', true); loadAbsenceReports(); }
+  catch (e) { toast(e.message); $('abGo').disabled = false; }
+}
+async function cancelAbsence(id) {
+  if (!confirm('Withdraw this notice?')) return;
+  try { await api(P(cid, `/absence-reports/${id}`), { method:'DELETE' }); toast('Notice withdrawn.', true); loadAbsenceReports(); } catch (e) { toast(e.message); }
+}
+
+// ---------- Timetable ----------
+async function loadTimetable() {
+  if (!loaded.tt) { try { slots = (await api(P(cid, '/timetable'))).data; loaded.tt = true; } catch (e) { return toast(e.message); } }
+  const days = [1, 2, 3, 4, 5, ...[6, 7].filter(d => slots.some(s => s.day_of_week === d))];
+  $('week').innerHTML = slots.length ? days.map(d => {
+    const list = slots.filter(s => s.day_of_week === d);
+    return `<div class="dcol${d === todayDow ? ' today' : ''}"><h4>${DAYS[d]}${d === todayDow ? '<span class="sub">Today</span>' : ''}</h4>
+      ${list.length ? list.map(s => `<div class="slot"><b>${esc(s.learning_area_name)}</b><span>${hm(s.start_time)}–${hm(s.end_time)} · ${esc(s.teacher_name)}</span></div>`).join('') : '<p class="sub">No lessons</p>'}</div>`;
+  }).join('') : '<div class="card-elimu"><p class="sub" style="margin:0">The timetable hasn\'t been set up yet.</p></div>';
+  const nowT = new Date().toTimeString().slice(0, 5), list = slots.filter(s => s.day_of_week === todayDow);
+  $('today').innerHTML = list.length ? list.map(s => `<div class="lesson"><div class="tm">${hm(s.start_time)}–${hm(s.end_time)}</div><div><b>${esc(s.learning_area_name)}</b>${hm(s.start_time) <= nowT && nowT < hm(s.end_time) ? ' <span class="status-chip info">Now</span>' : ''}<div class="sub">${esc(s.teacher_name)}</div></div></div>`).join('')
+    : `<p class="sub" style="margin:0">${slots.length ? 'No lessons today.' : 'Nothing scheduled.'}</p>`;
+}
+
+// ---------- Teachers ----------
+async function loadTeachers() {
+  try {
+    const t = (await api(P(cid, '/teachers'))).data;
+    $('tbody').innerHTML = `<div class="card-elimu" style="margin-bottom:16px"><div class="sec" style="margin-top:0">Class teacher</div><b>${esc(t.classTeacher || 'Not assigned yet')}</b></div>
+      <div class="card-elimu"><div class="sec" style="margin-top:0">Subject teachers</div>${t.subjectTeachers.length ? t.subjectTeachers.map(x => `<div class="kv"><span>${esc(x.learning_area_name)}</span><b>${esc(x.teacher_name)}</b></div>`).join('') : '<p class="sub" style="margin:0">No subject teachers assigned yet.</p>'}
+      <p class="sub" style="margin-top:12px">To reach a teacher, send a message from “Contact school”.</p></div>`;
+  } catch (e) { toast(e.message); }
+}
+
+// ---------- Fees ----------
+async function loadFees() {
+  try {
+    [invoices, payments] = (await Promise.all([api(P(cid, '/invoices')), api(P(cid, '/payments'))])).map(r => r.data);
+  } catch (e) { return toast(e.message); }
+  const total = invoices.reduce((t, i) => t + bal(i), 0), billed = invoices.reduce((t, i) => t + Number(i.total_amount), 0);
+  const paid = invoices.reduce((t, i) => t + Number(i.amount_paid || 0), 0);
+  const overdue = invoices.filter(i => effStatus(i) === 'overdue').reduce((t, i) => t + bal(i), 0);
+  $('fsum').innerHTML = k('bi-wallet2', total > 0 ? 'blue' : 'green', kes(Math.max(total, 0)), total < 0 ? 'Credit on account' : 'Balance to pay', total <= 0 ? 'all paid up' : 'across all terms')
+    + k('bi-check2-circle', 'green', kes(paid), 'Paid so far', `of ${kes(billed)} billed`)
+    + k('bi-exclamation-triangle', overdue > 0 ? 'red' : 'gold', kes(overdue), 'Overdue', overdue > 0 ? 'past the due date' : 'nothing overdue');
+  const termName = (id) => { const t = terms.find(x => String(x.id) === String(id)); return t ? tl(t) : 'Term'; };
+  $('fbody').innerHTML = invoices.length ? invoices.map(i => `<tr class="row" onclick="openInvoice('${i.id}')"><td>${esc(termName(i.term_id))}</td><td>${day(i.due_date)}</td>
+    <td class="num">${kes(i.total_amount)}</td><td class="num">${kes(i.amount_paid)}</td><td class="num">${kes(bal(i))}</td><td>${chip(effStatus(i))}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="sub" style="padding:24px">No fee invoices yet.</td></tr>';
+  const M = { mpesa:'M-Pesa', cash:'Cash', bank:'Bank', cheque:'Cheque' };
+  $('pbody').innerHTML = payments.length ? payments.map(p => `<tr><td>${dt(p.paid_at)}</td><td>${esc(p.year_label)} · T${p.term_number}</td><td>${M[p.method] || esc(p.method)}</td>
+    <td>${esc(p.mpesa_receipt_number || p.reference_note || '—')}</td><td class="num">${kes(p.amount)}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="sub" style="padding:24px">No payments recorded yet.</td></tr>';
+}
+async function openInvoice(id) {
+  openModal('<div class="skeleton" style="height:160px"></div>');
+  try {
+    const inv = (await api(P(cid, `/invoices/${id}`))).data;
+    const txns = (await api(P(cid, `/invoices/${id}/transactions`))).data;
+    openModal(`<div style="display:flex;justify-content:space-between;gap:12px"><div><h3>Fee invoice</h3><div class="sub">Due ${day(inv.due_date)}</div></div>${chip(effStatus(inv))}</div>
+      <div class="sec">Items</div>${inv.items.map(t => `<div class="kv"><span>${esc(t.description)}</span><span>${kes(t.amount)}</span></div>`).join('')}
+      <div class="kv"><b>Total</b><b>${kes(inv.total_amount)}</b></div><div class="kv"><span>Paid</span><span>${kes(inv.amount_paid)}</span></div>
+      <div class="kv"><b>${bal(inv) < 0 ? 'Credit' : 'Balance'}</b><b>${kes(Math.abs(bal(inv)))}</b></div>
+      ${txns.length ? `<div class="sec">M-Pesa attempts</div>${txns.map(t => `<div class="kv"><span>${dt(t.initiated_at)} · ${kes(t.amount)}</span>${chip(t.status)}</div>`).join('')}` : ''}
+      <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button>
+      ${bal(inv) > 0.005 ? `<button class="btn-elimu btn-elimu-primary btn-sm" onclick="openPay('${inv.id}')">Pay with M-Pesa</button>` : ''}</div>`);
+  } catch (e) { closeModal(); toast(e.message); }
+}
+function openPay(invoiceId) {
+  if (!needKid()) return;
+  const open = invoices.filter(i => bal(i) > 0.005);
+  if (!open.length) return toast('There is nothing to pay — all invoices are settled.', true);
+  const sel = open.find(i => String(i.id) === String(invoiceId)) || open[0];
+  openModal(`<h3>Pay with M-Pesa</h3><p class="sub">For ${esc(kid().full_name)}. You will get a prompt on your phone to enter your M-Pesa PIN.</p>
+    <div class="field"><label>Invoice</label><select class="input" id="pyInv" onchange="payFill()">${open.map(i => { const t = terms.find(x => String(x.id) === String(i.term_id)); return `<option value="${i.id}" ${String(i.id) === String(sel.id) ? 'selected' : ''}>${esc(t ? tl(t) : 'Invoice')} — balance ${kes(bal(i))}</option>`; }).join('')}</select></div>
+    <div class="grid2"><div class="field"><label>M-Pesa phone number</label><input class="input" id="pyPhone" value="${esc(guardian?.phone || '')}" placeholder="0712345678"></div>
+      <div class="field"><label>Amount (KES)</label><input class="input" id="pyAmt" type="number" min="1" step="1"></div></div>
+    <p class="sub">You can pay part of the balance. Amounts are rounded to whole shillings.</p>
+    <div id="pyStatus"></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button><button class="btn-elimu btn-elimu-primary btn-sm" id="pyGo" onclick="submitPay()">Send prompt</button></div>`);
+  payFill();
+}
+function payFill() { const i = invoices.find(x => String(x.id) === String($('pyInv').value)); if (i) $('pyAmt').value = Math.ceil(bal(i)); }
+async function submitPay() {
+  const invoiceId = $('pyInv').value, sid = cid;
+  $('pyGo').disabled = true;
+  try {
+    const r = await api('/mpesa/stk-push', { method:'POST', body: JSON.stringify({ invoiceId, phoneNumber: $('pyPhone').value, amount: Number($('pyAmt').value) }) });
+    $('pyStatus').innerHTML = '<div class="alert-elimu alert-ok"><i class="bi bi-phone"></i><div>Check your phone and enter your M-Pesa PIN…</div></div>';
+    pollPayment(sid, invoiceId, r.data.checkout_request_id);
+  } catch (e) { toast(e.message); $('pyGo').disabled = false; }
+}
+async function pollPayment(sid, invoiceId, checkoutId, tries = 0) {
+  if (!$('pyStatus') || !$('pyStatus').isConnected) return; // modal closed — stop polling
+  try {
+    const txns = (await api(P(sid, `/invoices/${invoiceId}/transactions`))).data;
+    const t = txns.find(x => x.checkout_request_id === checkoutId);
+    if (t && t.status !== 'pending') {
+      const ok = t.status === 'success';
+      $('pyStatus').innerHTML = `<div class="alert-elimu ${ok ? 'alert-ok' : 'alert-error'}"><i class="bi ${ok ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i><div>${ok ? 'Payment received. Thank you!' : esc(t.result_desc || 'The payment was not completed.')}</div></div>`;
+      $('pyGo').disabled = false;
+      if (ok) { loaded = {}; loadFees(); refreshSummary(); }
+      return;
+    }
+  } catch (e) { /* keep polling */ }
+  if (tries >= 25) { $('pyStatus').innerHTML = '<div class="alert-elimu"><i class="bi bi-hourglass-split"></i><div>Still waiting. If you paid, it will appear under Payment history shortly.</div></div>'; $('pyGo').disabled = false; return; }
+  setTimeout(() => pollPayment(sid, invoiceId, checkoutId, tries + 1), 4000);
+}
+async function printStatement() {
+  if (!needKid()) return;
+  try {
+    const d = (await api(P(cid, '/fee-statement'))).data, school = $('school').textContent;
+    const rows = d.invoices.map(i => `<h3>${esc(termLabel(i.term_id))} — due ${day(i.due_date)}</h3><table>${i.items.map(t => `<tr><td>${esc(t.description)}</td><td class="r">${kes(t.amount)}</td></tr>`).join('')}
+      <tr><td><b>Total</b></td><td class="r"><b>${kes(i.total_amount)}</b></td></tr><tr><td>Paid</td><td class="r">${kes(i.amount_paid)}</td></tr><tr><td><b>Balance</b></td><td class="r"><b>${kes(bal(i))}</b></td></tr></table>`).join('');
+    const pays = d.payments.map(p => `<tr><td>${dt(p.paid_at)}</td><td>${esc(p.method)}</td><td>${esc(p.mpesa_receipt_number || p.reference_note || '')}</td><td class="r">${kes(p.amount)}</td></tr>`).join('');
+    const w = window.open('', '_blank');
+    if (!w) return toast('Please allow pop-ups to print the statement.');
+    w.document.write(`<!DOCTYPE html><html><head><title>Fee statement</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#111}table{width:100%;border-collapse:collapse;margin-bottom:8px}td{padding:6px 4px;border-bottom:1px solid #ddd;font-size:14px}.r{text-align:right}h3{margin:20px 0 6px;font-size:15px}</style></head><body>
+      <h2>${esc(school)}</h2><h3 style="margin-top:0">Fee statement</h3><p>${esc(d.student.full_name)} · ${esc(d.student.admission_number)}<br>Generated ${dt(d.generatedAt)}</p>${rows}
+      <h3>Payments received</h3><table>${pays || '<tr><td>None</td></tr>'}</table><p><b>Outstanding: ${kes(d.invoices.reduce((t, i) => t + bal(i), 0))}</b></p></body></html>`);
+    w.document.close(); w.focus(); w.print();
+  } catch (e) { toast(e.message); }
+}
+function termLabel(id) { const t = terms.find(x => String(x.id) === String(id)); return t ? tl(t) : 'Term'; }
+
+// ---------- Messages ----------
+let inbox = [];
+async function loadMessages() {
+  try { inbox = (await api('/parent-portal/messages')).data; } catch (e) { return toast(e.message); }
+  const unread = inbox.filter(m => !m.read_at).length;
+  $('mcount').textContent = inbox.length ? `${inbox.length} message${inbox.length === 1 ? '' : 's'} · ${unread} unread` : '';
+  $('mlist').innerHTML = inbox.length ? inbox.map(m => `<div class="msg ${m.read_at ? '' : 'unread'}" onclick="openMsg('${m.id}')"><div class="mh"><span>${m.read_at ? '' : '<span class="pip"></span>'}${esc(m.subject || (m.channel === 'sms' ? 'SMS from school' : 'Message from school'))}</span><span class="sub">${dt(m.sent_at)}</span></div>
+    <div class="mb">${esc(m.body.length > 140 ? m.body.slice(0, 140) + '…' : m.body)}</div></div>`).join('')
+    : '<p class="sub" style="margin:0">No messages from the school yet.</p>';
+  setBadge('nMsg', unread);
+}
+async function openMsg(id) {
+  const m = inbox.find(x => String(x.id) === String(id)); if (!m) return;
+  openModal(`<h3>${esc(m.subject || 'Message from school')}</h3><div class="sub">${dt(m.sent_at)}${m.sender_name ? ' · ' + esc(m.sender_name) : ''} · ${m.channel.toUpperCase()}</div>
+    <div class="remark" style="margin-top:14px;white-space:pre-wrap">${esc(m.body)}</div><div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+  if (!m.read_at) { try { await api(`/parent-portal/messages/${id}/read`, { method:'POST' }); m.read_at = new Date().toISOString(); loadMessages(); } catch (e) { /* non-fatal */ } }
+}
+$('readAll').addEventListener('click', async () => { try { await api('/parent-portal/messages/read-all', { method:'POST' }); loadMessages(); } catch (e) { toast(e.message); } });
+
+// ---------- Contact school ----------
+async function loadEnquiries() {
+  try {
+    const rows = (await api('/parent-portal/enquiries')).data; enqs = rows;
+    $('elist').innerHTML = rows.length ? rows.map((e, n) => `<div class="msg" onclick="openEnq(${n})"><div class="mh"><span>${e.reply && !e.reply_seen_at ? '<span class="pip"></span>' : ''}${esc(e.subject)}</span>${chip(e.status)}</div>
+      <div class="sub">${dt(e.created_at)}${e.student_name ? ' · about ' + esc(e.student_name) : ''}</div></div>`).join('')
+      : '<p class="sub" style="margin:0">You haven\'t sent any messages yet. Use “New message” to ask the school office a question.</p>';
+    setBadge('nEnq', rows.filter(e => e.reply && !e.reply_seen_at).length);
+  } catch (e) { toast(e.message); }
+}
+let enqs = [];
+async function openEnq(n) {
+  const e = enqs[n]; if (!e) return;
+  openModal(`<h3>${esc(e.subject)}</h3><div class="sub">${dt(e.created_at)}${e.student_name ? ' · about ' + esc(e.student_name) : ''}</div>
+    <div class="remark" style="margin-top:14px;white-space:pre-wrap"><small>You wrote</small>${esc(e.body)}</div>
+    ${e.reply ? `<div class="remark" style="white-space:pre-wrap"><small>${esc(e.replied_by_name || 'School')} replied · ${dt(e.replied_at)}</small>${esc(e.reply)}</div>` : '<p class="sub">Waiting for a reply from the school.</p>'}
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Close</button></div>`);
+  if (e.reply && !e.reply_seen_at) { try { await api(`/parent-portal/enquiries/${e.id}/seen`, { method:'POST' }); loadEnquiries(); } catch (x) { /* non-fatal */ } }
+}
+function openEnquiry() {
+  openModal(`<h3>Message the school</h3>
+    <div class="field"><label>About (optional)</label><select class="input" id="enChild"><option value="">General</option>${children.map(c => `<option value="${c.id}" ${String(c.id) === String(cid) ? 'selected' : ''}>${esc(c.full_name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Subject</label><input class="input" id="enSub" maxlength="150"></div>
+    <div class="field"><label>Message</label><textarea class="input" id="enBody" rows="5" maxlength="2000"></textarea></div>
+    <div class="modal-actions"><button class="btn-elimu btn-elimu-ghost btn-sm" onclick="closeModal()">Cancel</button><button class="btn-elimu btn-elimu-primary btn-sm" id="enGo" onclick="sendEnquiry()">Send</button></div>`);
+}
+async function sendEnquiry() {
+  $('enGo').disabled = true;
+  try {
+    await api('/parent-portal/enquiries', { method:'POST', body: JSON.stringify({ studentId: $('enChild').value || undefined, subject: $('enSub').value, body: $('enBody').value }) });
+    closeModal(); toast('Your message has been sent.', true); loadEnquiries();
+  } catch (e) { toast(e.message); $('enGo').disabled = false; }
+}
+
+// ---------- Profile ----------
+async function loadProfile() {
+  try {
+    const g = (await api('/parent-portal/me')).data; guardian = { ...guardian, ...g };
+    $('pName').value = g.full_name; $('pLogin').value = g.login_email || ''; $('pPhone').value = g.phone || ''; $('pEmail').value = g.email || '';
+  } catch (e) { toast(e.message); }
+}
+$('saveProfile').addEventListener('click', async () => {
+  try { await api('/parent-portal/me', { method:'PATCH', body: JSON.stringify({ phone: $('pPhone').value, email: $('pEmail').value }) }); toast('Contact details saved.', true); loadProfile(); }
+  catch (e) { toast(e.message); }
+});
+$('savePw').addEventListener('click', async () => {
+  try {
+    await api('/parent-portal/me/change-password', { method:'POST', body: JSON.stringify({ currentPassword: $('pwOld').value, newPassword: $('pwNew').value }) });
+    toast('Password changed. Signing you out…', true); setTimeout(() => window.ElimuOs.auth.logout(), 1500);
+  } catch (e) { toast(e.message); }
+});
+
+// ---------- Boot ----------
+async function refreshSummary() { try { summary = (await api('/parent-portal/summary')).data; renderOverview(); } catch (e) { toast(e.message); } }
+(async () => {
+  const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['parent'], requireLiveSubscription: true });
+  if (!user) return;
+  me = user;
+  $('uname').textContent = user.full_name;
+  $('av').textContent = user.full_name.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
+  $('chip').addEventListener('click', () => { if (confirm('Log out of ElimuOs?')) window.ElimuOs.auth.logout(); });
+  api('/schools/me').then(r => { $('school').textContent = r.data.name; }).catch(() => { $('school').textContent = ''; });
+  try { guardian = (await api('/parent-portal/me')).data; } catch (e) { toast(e.message); }
+  try { children = (await api('/parent-portal/children')).data; } catch (e) { toast(e.message); }
+  $('child').innerHTML = children.map(c => `<option value="${c.id}">${esc(c.full_name)}</option>`).join('');
+  if (children.length) selectChild(children[0].id);
+  try { await loadTerms(); } catch (e) { toast(e.message); }
+  await refreshSummary();
+  route();
+})();
+</script>
+</body>
+</html>

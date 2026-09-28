@@ -111,4 +111,33 @@ async function listByInvoice(schoolId, invoiceId) {
   });
 }
 
-module.exports = { createPending, findByCheckoutRequestId, applyCallback, listByInvoice };
+
+/** School-wide list of STK prompts (any status) with the student/invoice each was for, plus counts per status. */
+async function listAll(schoolId, { status, q, from, to, limit = 100, offset = 0 } = {}) {
+  return withTenantClient(schoolId, async (client) => {
+    const params = [schoolId];
+    let where = 'm.school_id = $1';
+    if (from) { params.push(from); where += ` AND m.initiated_at >= $${params.length}::date`; }
+    if (to) { params.push(to); where += ` AND m.initiated_at < ($${params.length}::date + 1)`; }
+    if (q) {
+      params.push(`%${q}%`);
+      where += ` AND (s.full_name ILIKE $${params.length} OR s.admission_number ILIKE $${params.length} OR m.phone_number ILIKE $${params.length})`;
+    }
+    const joins = `FROM mpesa_transactions m LEFT JOIN invoices i ON i.id = m.invoice_id LEFT JOIN students s ON s.id = i.student_id`;
+    const counts = await client.query(
+      `SELECT m.status, COUNT(*)::int AS n, COALESCE(SUM(m.amount),0) AS total ${joins} WHERE ${where} GROUP BY m.status`, params
+    );
+    const rowParams = [...params];
+    let rowWhere = where;
+    if (status) { rowParams.push(status); rowWhere += ` AND m.status = $${rowParams.length}`; }
+    rowParams.push(limit, offset);
+    const rows = await client.query(
+      `SELECT m.id, m.invoice_id, m.phone_number, m.amount, m.status, m.result_desc, m.initiated_at, m.completed_at,
+              s.full_name AS student_name, s.admission_number, i.student_id, (i.total_amount - i.amount_paid) AS invoice_balance
+       ${joins} WHERE ${rowWhere} ORDER BY m.initiated_at DESC LIMIT $${rowParams.length - 1} OFFSET $${rowParams.length}`,
+      rowParams
+    );
+    return { items: rows.rows, counts: counts.rows };
+  });
+}
+module.exports = { createPending, findByCheckoutRequestId, applyCallback, listByInvoice, listAll };

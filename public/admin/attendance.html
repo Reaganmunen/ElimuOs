@@ -24,6 +24,7 @@
     font-size: 0.88rem; color: var(--ink-soft); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px;
   }
   .tab-btn.active{ color: var(--blue-deep); border-bottom-color: var(--blue); }
+  .tab-badge{ display:inline-block; min-width:18px; padding:1px 6px; margin-left:6px; border-radius:999px; background:var(--coral); color:#fff; font-size:.7rem; font-weight:700; text-align:center; } .tab-badge:empty{ display:none; }
   .tab-panel{ display: none; }
   .tab-panel.active{ display: block; }
 
@@ -146,6 +147,7 @@
       <div class="tab-row">
         <button type="button" class="tab-btn active" data-tab="mark">Mark attendance</button>
         <button type="button" class="tab-btn" data-tab="history">Student history</button>
+        <button type="button" class="tab-btn" data-tab="notices">Guardian notices<span class="tab-badge" id="noticeBadge"></span></button>
       </div>
 
       <!-- ===================== Mark attendance ===================== -->
@@ -206,6 +208,12 @@
       </div>
 
       <!-- ===================== Student history ===================== -->
+      <!-- ===================== Guardian notices ===================== -->
+      <div class="tab-panel" id="tab-notices">
+        <p style="color:var(--ink-soft); font-size:.88rem; margin:0 0 14px;">Absence, late-arrival and early-pickup notices sent by guardians through the parent portal. Acknowledge each one so the guardian knows the school has seen it.</p>
+        <div id="noticesMount"></div>
+      </div>
+
       <div class="tab-panel" id="tab-history">
 
         <div class="filter-row">
@@ -275,6 +283,7 @@
 <script src="../js/api.js"></script>
 <script src="../js/billing.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/guardianInbox.js"></script>
 <script>
   const api = window.ElimuOs.api;
   const STATUSES = ['present', 'absent', 'late', 'excused'];
@@ -333,8 +342,24 @@
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(`tab-${btn.getAttribute('data-tab')}`).classList.add('active');
+      if (btn.getAttribute('data-tab') === 'notices') openNotices();
     });
   });
+
+  // ---------------------------------------------------------------
+  // Guardian notices (absence / late / early pickup from the parent portal)
+  // ---------------------------------------------------------------
+  let noticesView = null;
+  async function refreshNoticeBadge() {
+    try {
+      const s = await window.ElimuOs.guardianInbox.summary();
+      document.getElementById('noticeBadge').textContent = s.pendingAbsences || '';
+    } catch (e) { /* non-fatal */ }
+  }
+  function openNotices() {
+    if (!noticesView) noticesView = window.ElimuOs.guardianInbox.mountAbsences(document.getElementById('noticesMount'), { isAdmin: true, onChange: refreshNoticeBadge });
+    else noticesView.reload();
+  }
 
   // ---------------------------------------------------------------
   // Mark attendance
@@ -556,6 +581,8 @@
   (async () => {
     const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
     if (!user) return;
+    refreshNoticeBadge();
+    if (location.hash === '#notices') document.querySelector('[data-tab="notices"]').click();
 
     document.getElementById('userName').textContent = user.full_name;
     document.getElementById('userRole').textContent = user.role_code.replace('_', ' ');
