@@ -127,13 +127,10 @@
     const params = new URLSearchParams(window.location.search);
     const returnTo = params.get('returnTo');
 
-    if (user.role === 'super_admin') {
-      showAlert(loginAlert, 'warn', 'Super admin accounts don\'t use this dashboard — manage the platform from the command line instead.');
-      setLoading(false);
-      return;
-    }
-
-    const target = returnTo || window.ElimuOs.auth.dashboardPathForRole(user.role);
+    const safeReturn = user.role === 'super_admin'
+      ? (returnTo && returnTo.startsWith('/superadmin/') ? returnTo : null)
+      : returnTo;
+    const target = safeReturn || window.ElimuOs.auth.dashboardPathForRole(user.role);
     if (!target) {
       showAlert(loginAlert, 'error', 'This account\'s role isn\'t recognized. Contact your school admin.');
       setLoading(false);

@@ -112,6 +112,52 @@
   .picked-student-chip button{ background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 0.9rem; padding: 0; }
 
   .modal-box.wide{ max-width: 560px; }
+
+  /* ---------- Payment setup / paybill-till payments / payouts ---------- */
+  .setup-wrap{ max-width: 780px; display: flex; flex-direction: column; gap: 18px; }
+  .setup-wrap .card-elimu{ margin-bottom: 0; }
+  .step-head{ display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+  .step-head h3{ font-size: 0.98rem; margin-bottom: 2px; }
+  .step-head p{ font-size: 0.84rem; color: var(--ink-soft); line-height: 1.5; }
+  .step-badge{
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--cloud); color: var(--blue-deep);
+    font-weight: 800; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .readiness-row{ display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+  .readiness-row:last-child{ border-bottom: none; }
+  .readiness-row .dot{ width: 10px; height: 10px; border-radius: 50%; background: var(--line); margin-top: 5px; flex-shrink: 0; }
+  .readiness-row .dot.ok{ background: var(--leaf); }
+  .readiness-row .dot.warn{ background: var(--gold); }
+  .readiness-row .r-title{ font-weight: 700; }
+  .readiness-row .r-detail{ color: var(--ink-soft); font-size: 0.8rem; }
+  .secret-input{ position: relative; }
+  .secret-input .input{ padding-right: 44px; }
+  .eye-btn{ position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--ink-soft); cursor: pointer; padding: 8px; font-size: 0.95rem; }
+  .btn-row{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .inline-line{ font-size: 0.82rem; margin-top: 12px; display: none; line-height: 1.5; }
+  .inline-line.shown{ display: block; }
+  .inline-line.ok{ color: var(--leaf); }
+  .inline-line.bad{ color: #B23350; }
+  .inline-line.neutral{ color: var(--ink-soft); }
+  .check-row{ display: flex; align-items: flex-start; gap: 9px; font-size: 0.86rem; font-weight: 600; margin: 0 0 14px; cursor: pointer; }
+  .check-row input{ width: auto; margin-top: 3px; }
+  .check-row .sub{ display: block; font-weight: 500; color: var(--ink-soft); font-size: 0.78rem; margin-top: 2px; line-height: 1.45; }
+  .url-label{ font-size: 0.76rem; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; }
+  .url-row{ display: flex; gap: 8px; margin-bottom: 12px; align-items: stretch; }
+  .url-row .input{ font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.74rem; }
+  .sub-panel{ border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 14px 14px 6px; margin: 4px 0 16px; }
+  .how-to{ background: var(--cloud); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.55; margin-bottom: 16px; }
+  .how-to b{ color: var(--ink); }
+  .status-pill.pending, .status-pill.unallocated, .status-pill.timeout{ background: rgba(232,162,61,0.14); color: #8A5B14; }
+  .status-pill.success, .status-pill.allocated{ background: rgba(23,166,115,0.12); color: var(--leaf); }
+  .status-pill.failed{ background: rgba(240,99,122,0.1); color: #B23350; }
+  .status-pill.ignored{ background: rgba(91,97,120,0.1); color: var(--ink-soft); }
+  .count-chips{ display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .count-chip{ background: var(--cloud); border-radius: 999px; padding: 6px 13px; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); }
+  .count-chip b{ color: var(--ink); }
+  .table-scroll{ overflow-x: auto; }
+
 </style>
 </head>
 <body>
@@ -171,6 +217,8 @@
       <div class="tab-row">
         <button type="button" class="tab-btn active" data-tab="invoices">Invoices</button>
         <button type="button" class="tab-btn" data-tab="structures">Fee structures</button>
+        <button type="button" class="tab-btn" data-tab="c2b">Paybill / Till payments</button>
+        <button type="button" class="tab-btn" data-tab="b2b">Payouts</button>
         <button type="button" class="tab-btn" data-tab="setup">Payment setup</button>
       </div>
 
@@ -272,40 +320,286 @@
         </div>
       </div>
 
-      <!-- ===================== PAYMENT SETUP TAB ===================== -->
+            <!-- ===================== PAYMENT SETUP TAB ===================== -->
       <div class="tab-panel" id="tab-setup">
-        <div class="card-elimu" style="max-width:560px;">
-          <h3 style="font-size:0.98rem; margin-bottom:2px;">M-Pesa till / paybill number</h3>
-          <p style="font-size:0.84rem; color:var(--ink-soft); margin-bottom:18px;">
-            This is the number parents pay fees into, and the one your accountant sends M-Pesa payment prompts through from an invoice. Set it up once here.
-          </p>
+        <div class="setup-wrap">
 
-          <div class="setup-status" id="setupStatusRow">
-            <span class="dot" id="setupStatusDot"></span>
-            <span id="setupStatusText" class="muted-cell">Checking current setup…</span>
+          <div id="setupNotices"></div>
+
+          <div class="card-elimu">
+            <h3 style="font-size:0.98rem; margin-bottom:2px;">Payment setup checklist</h3>
+            <p style="font-size:0.84rem; color:var(--ink-soft); margin-bottom:10px;">
+              Work through steps 1 and 2 to let parents pay by M-Pesa prompt. Steps 3 and 4 are optional extras.
+            </p>
+            <div id="readinessList"><div class="muted-cell">Loading…</div></div>
           </div>
 
-          <div class="form-error" id="setupFormError"></div>
+          <!-- ---------- 1. Daraja credentials ---------- -->
+          <div class="card-elimu">
+            <div class="step-head">
+              <span class="step-badge">1</span>
+              <div>
+                <h3>Daraja app credentials</h3>
+                <p>These let ElimuOs talk to M-Pesa for your school. Find them at <b>developer.safaricom.co.ke → My Apps → your app → Keys</b>. They are stored encrypted and are never shown again after saving.</p>
+              </div>
+            </div>
+            <div class="form-error" id="credsError"></div>
+            <form id="credsForm" autocomplete="off">
+              <div class="field">
+                <label for="cfgEnv">Environment</label>
+                <select class="input" id="cfgEnv">
+                  <option value="sandbox">Sandbox — testing, no real money</option>
+                  <option value="production">Production — live M-Pesa, real money</option>
+                </select>
+                <div class="hint" id="envHint"></div>
+              </div>
+              <div class="field">
+                <label for="cfgConsumerKey">Consumer key</label>
+                <div class="secret-input">
+                  <input class="input" id="cfgConsumerKey" type="password" autocomplete="new-password" spellcheck="false" />
+                  <button type="button" class="eye-btn" data-eye="cfgConsumerKey" title="Show / hide"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="hint" id="consumerKeyHint"></div>
+              </div>
+              <div class="field">
+                <label for="cfgConsumerSecret">Consumer secret</label>
+                <div class="secret-input">
+                  <input class="input" id="cfgConsumerSecret" type="password" autocomplete="new-password" spellcheck="false" />
+                  <button type="button" class="eye-btn" data-eye="cfgConsumerSecret" title="Show / hide"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="hint" id="consumerSecretHint"></div>
+              </div>
+              <div class="btn-row">
+                <button type="submit" class="btn-elimu btn-elimu-primary" id="saveCredsBtn">Save credentials</button>
+                <button type="button" class="btn-elimu btn-elimu-ghost" id="verifyBtn"><i class="bi bi-shield-check"></i> Verify connection</button>
+              </div>
+              <div class="hint" style="margin-top:8px;">"Verify connection" checks the credentials you have <b>saved</b> with Safaricom. It costs nothing and moves no money.</div>
+              <div class="inline-line" id="verifyLine"></div>
+            </form>
+          </div>
 
-          <form id="paymentConfigForm">
-            <div class="field">
-              <label for="mpesaShortcode">Till / paybill number</label>
-              <input class="input" id="mpesaShortcode" placeholder="e.g. 174379" required />
-              <div class="hint">Your M-Pesa till number (for a till) or paybill business number. This is what shows up when a parent pays.</div>
+          <!-- ---------- 2. Collection account + STK ---------- -->
+          <div class="card-elimu">
+            <div class="step-head">
+              <span class="step-badge">2</span>
+              <div>
+                <h3>Where parents pay (paybill or till)</h3>
+                <p>The number fees are paid into, and the passkey used to send M-Pesa payment prompts (STK Push) to a parent's phone from an invoice.</p>
+              </div>
             </div>
-            <div class="field">
-              <label for="mpesaAccountRef">Account reference prefix <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
-              <input class="input" id="mpesaAccountRef" placeholder="e.g. FEE" maxlength="20" />
-              <div class="hint">Shown before the invoice number on the payment, e.g. "FEE-1042". Defaults to FEE if left blank.</div>
+            <div class="form-error" id="collectError"></div>
+            <form id="collectForm" autocomplete="off">
+              <div class="field">
+                <label for="cfgShortcodeType">Account type</label>
+                <select class="input" id="cfgShortcodeType">
+                  <option value="paybill">Paybill</option>
+                  <option value="till">Till number (Buy Goods)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cfgShortcode" id="shortcodeLabel">Paybill number</label>
+                <input class="input" id="cfgShortcode" inputmode="numeric" maxlength="7" placeholder="e.g. 174379" />
+                <div class="hint" id="shortcodeHint"></div>
+              </div>
+              <div class="field" id="tillWrap" style="display:none;">
+                <label for="cfgTillNumber">Till number</label>
+                <input class="input" id="cfgTillNumber" inputmode="numeric" maxlength="7" placeholder="e.g. 5123456" />
+                <div class="hint">The till number customers pay to. Leave blank if it is the same as the store number above.</div>
+              </div>
+              <div class="field">
+                <label for="cfgPasskey">Passkey (Lipa na M-Pesa Online)</label>
+                <div class="secret-input">
+                  <input class="input" id="cfgPasskey" type="password" autocomplete="new-password" spellcheck="false" />
+                  <button type="button" class="eye-btn" data-eye="cfgPasskey" title="Show / hide"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="hint" id="passkeyHint"></div>
+              </div>
+              <div class="field">
+                <label for="cfgAccountRef">Account reference prefix <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+                <input class="input" id="cfgAccountRef" placeholder="e.g. FEE" maxlength="8" />
+                <div class="hint">Shown before the invoice number on the prompt, e.g. "FEE-1042". Letters and numbers only. Defaults to FEE.</div>
+              </div>
+              <label class="check-row">
+                <input type="checkbox" id="cfgStkEnabled" />
+                <span>Allow M-Pesa payment prompts (STK Push)<span class="sub">When off, "Send M-Pesa prompt" buttons stop working for accountants and parents.</span></span>
+              </label>
+              <button type="submit" class="btn-elimu btn-elimu-primary" id="saveCollectBtn">Save</button>
+            </form>
+          </div>
+
+          <!-- ---------- 3. C2B ---------- -->
+          <div class="card-elimu">
+            <div class="step-head">
+              <span class="step-badge">3</span>
+              <div>
+                <h3>Direct payments to your paybill / till (C2B)</h3>
+                <p>Let parents pay from their own M-Pesa menu without a prompt. ElimuOs is told about each payment and records it against the student automatically.</p>
+              </div>
             </div>
-            <div class="field">
-              <label for="secretsManagerKey">Passkey reference <span style="font-weight:500; color:var(--ink-soft);">(optional, for your tech team)</span></label>
-              <input class="input" id="secretsManagerKey" placeholder="e.g. daraja/passkey/school-42" />
-              <div class="hint">A pointer to where your M-Pesa passkey is stored in your secrets manager — not the passkey itself. Leave blank unless your developer asked you to set this.</div>
+            <div class="form-error" id="c2bError"></div>
+            <div class="how-to" id="c2bHowTo"></div>
+            <form id="c2bForm">
+              <label class="check-row">
+                <input type="checkbox" id="cfgC2bEnabled" />
+                <span>Record direct paybill / till payments<span class="sub">Turn on, save, then register your URLs below.</span></span>
+              </label>
+              <label class="check-row" id="c2bRejectRow">
+                <input type="checkbox" id="cfgC2bReject" />
+                <span>Reject payments with an unknown account number<span class="sub">Paybill only. Takes effect only after Safaricom switches on "external validation" for your paybill. Leave off to accept every payment and sort unmatched ones by hand.</span></span>
+              </label>
+              <button type="submit" class="btn-elimu btn-elimu-primary" id="saveC2bBtn">Save</button>
+            </form>
+
+            <div id="c2bUrlsBlock" style="margin-top:20px;">
+              <div class="modal-section-label" style="margin-top:0;">Your notification URLs</div>
+              <div id="c2bUrlsEmpty" class="hint">Save your paybill / till number above first — your URLs appear here.</div>
+              <div id="c2bUrlsFields" style="display:none;">
+                <div class="url-label">Validation URL</div>
+                <div class="url-row">
+                  <input class="input" id="c2bValidationUrl" readonly />
+                  <button type="button" class="btn-elimu btn-elimu-ghost" data-copy="c2bValidationUrl"><i class="bi bi-clipboard"></i> Copy</button>
+                </div>
+                <div class="url-label">Confirmation URL</div>
+                <div class="url-row">
+                  <input class="input" id="c2bConfirmationUrl" readonly />
+                  <button type="button" class="btn-elimu btn-elimu-ghost" data-copy="c2bConfirmationUrl"><i class="bi bi-clipboard"></i> Copy</button>
+                </div>
+                <div class="hint" style="margin-bottom:12px;">These contain a secret code unique to your school — don't share them. On a live paybill Safaricom lets you register URLs only once; if it says they already exist, ask Safaricom (or use your Daraja portal's URL management) to point them at these.</div>
+                <div class="btn-row">
+                  <button type="button" class="btn-elimu btn-elimu-primary" id="registerC2bBtn"><i class="bi bi-cloud-arrow-up"></i> Register URLs with Safaricom</button>
+                </div>
+                <div class="inline-line" id="c2bRegLine"></div>
+              </div>
             </div>
-            <button type="submit" class="btn-elimu btn-elimu-primary" id="saveConfigBtn">Save payment setup</button>
-          </form>
+          </div>
+
+          <!-- ---------- 4. B2B ---------- -->
+          <div class="card-elimu">
+            <div class="step-head">
+              <span class="step-badge">4</span>
+              <div>
+                <h3>Paying other paybills / tills (B2B)</h3>
+                <p>Send money from your M-Pesa business account to another paybill or till — for example a supplier or a utility. This moves money <b>out</b>, so it needs an M-Pesa API operator and asks for your login password every time.</p>
+              </div>
+            </div>
+            <div class="form-error" id="b2bSetupError"></div>
+            <form id="b2bForm" autocomplete="off">
+              <label class="check-row">
+                <input type="checkbox" id="cfgB2bEnabled" />
+                <span>Allow paying other paybills / tills</span>
+              </label>
+              <div class="field">
+                <label for="cfgInitiatorName">API initiator name</label>
+                <input class="input" id="cfgInitiatorName" autocomplete="off" spellcheck="false" placeholder="e.g. schoolapi" />
+                <div class="hint">The username of an M-Pesa <b>API operator</b> created in your M-Pesa organisation portal (with permission to make B2B payments). This is <b>not</b> your Daraja login.</div>
+              </div>
+              <div class="field">
+                <label for="cfgInitiatorPassword">API initiator password</label>
+                <div class="secret-input">
+                  <input class="input" id="cfgInitiatorPassword" type="password" autocomplete="new-password" spellcheck="false" />
+                  <button type="button" class="eye-btn" data-eye="cfgInitiatorPassword" title="Show / hide"><i class="bi bi-eye"></i></button>
+                </div>
+                <div class="hint" id="initiatorPasswordHint"></div>
+              </div>
+              <div class="inline-line" id="b2bCertNote"></div>
+              <button type="submit" class="btn-elimu btn-elimu-primary" id="saveB2bBtn" style="margin-top:14px;">Save</button>
+            </form>
+          </div>
+
         </div>
+      </div>
+
+      <!-- ===================== PAYBILL / TILL PAYMENTS TAB (C2B) ===================== -->
+      <div class="tab-panel" id="tab-c2b">
+        <div class="page-head" style="margin-bottom:14px;">
+          <div>
+            <h1 style="font-size:1.05rem;">Paybill / Till payments</h1>
+            <p>Payments parents make straight to your paybill or till number. Ones that match a student are applied to their invoices automatically; the rest wait here for you.</p>
+          </div>
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="c2bRefreshBtn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+        <div class="count-chips" id="c2bCounts"></div>
+        <div class="filter-row">
+          <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input class="input" id="c2bSearch" placeholder="Search receipt, account, name, phone…" />
+          </div>
+          <select class="input status-filter" id="c2bStatus">
+            <option value="">All payments</option>
+            <option value="unallocated">Needs action</option>
+            <option value="allocated">Applied</option>
+            <option value="ignored">Set aside</option>
+          </select>
+        </div>
+        <div class="card-elimu table-scroll">
+          <table class="fees-table">
+            <thead>
+              <tr><th>Received</th><th>Receipt</th><th>Paid by</th><th>Account no.</th><th>Amount</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="c2bBody"><tr><td colspan="7" class="muted-cell">Open this tab to load payments.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== PAYOUTS TAB (B2B) ===================== -->
+      <div class="tab-panel" id="tab-b2b">
+        <div class="page-head" style="margin-bottom:14px;">
+          <div>
+            <h1 style="font-size:1.05rem;">Pay a paybill or till</h1>
+            <p>Send money from your M-Pesa business account to another paybill or till number.</p>
+          </div>
+          <button type="button" class="btn-elimu btn-elimu-ghost" id="b2bRefreshBtn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        </div>
+
+        <div id="b2bUnavailable" class="alert-elimu alert-warn" style="display:none;">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <div id="b2bUnavailableText"></div>
+        </div>
+
+        <div class="card-elimu" id="b2bFormCard" style="max-width:560px; display:none;">
+          <div class="form-error" id="b2bError"></div>
+          <div class="field">
+            <label for="b2bTargetType">Paying a</label>
+            <select class="input" id="b2bTargetType">
+              <option value="paybill">Paybill</option>
+              <option value="till">Till number</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="b2bTargetNumber">Paybill / till number</label>
+            <input class="input" id="b2bTargetNumber" inputmode="numeric" maxlength="7" />
+          </div>
+          <div class="field" id="b2bAccountWrap">
+            <label for="b2bAccountRef">Account number</label>
+            <input class="input" id="b2bAccountRef" maxlength="13" />
+            <div class="hint">The account number the receiver gave you (e.g. your customer or invoice number with them).</div>
+          </div>
+          <div class="field">
+            <label for="b2bAmount">Amount (KES)</label>
+            <input class="input" id="b2bAmount" type="number" min="1" step="1" />
+          </div>
+          <div class="field">
+            <label for="b2bRemarks">What is it for? <span style="font-weight:500; color:var(--ink-soft);">(optional)</span></label>
+            <input class="input" id="b2bRemarks" maxlength="100" placeholder="e.g. Electricity bill – September" />
+          </div>
+          <div class="field">
+            <label for="b2bPassword">Your ElimuOs password</label>
+            <input class="input" id="b2bPassword" type="password" autocomplete="current-password" />
+            <div class="hint">Required every time, to confirm it is really you sending money out.</div>
+          </div>
+          <button type="button" class="btn-elimu btn-elimu-primary" id="b2bSendBtn"><i class="bi bi-send"></i> Send payment</button>
+        </div>
+
+        <div class="card-elimu table-scroll" style="margin-top:18px;">
+          <h3 style="font-size:0.95rem; margin-bottom:10px;">Payment history</h3>
+          <table class="fees-table">
+            <thead>
+              <tr><th>Sent</th><th>To</th><th>Account</th><th>Amount</th><th>Status</th><th>Receipt</th><th>By</th></tr>
+            </thead>
+            <tbody id="b2bBody"><tr><td colspan="7" class="muted-cell">Open this tab to load history.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
       </div>
 
     </main>
@@ -424,6 +718,26 @@
 
     <div class="modal-actions">
       <button type="button" class="btn-elimu btn-elimu-ghost" id="detailModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Apply a paybill/till payment to an invoice -->
+<div class="modal-overlay" id="allocModal" style="display:none;">
+  <div class="modal-box wide">
+    <h3>Apply payment to an invoice</h3>
+    <p id="allocSummary" style="margin-bottom:14px;"></p>
+    <div class="form-error" id="allocError"></div>
+    <div class="field" id="allocSearchWrap">
+      <label for="allocSearch">Find the invoice</label>
+      <input class="input" id="allocSearch" placeholder="Student name or admission number" autocomplete="off" />
+      <div class="student-pick-list" id="allocResults" style="display:none;"></div>
+    </div>
+    <div id="allocPicked"></div>
+    <div id="allocWarn" class="hint" style="margin-top:10px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-elimu btn-elimu-ghost" id="allocCancel">Cancel</button>
+      <button type="button" class="btn-elimu btn-elimu-primary" id="allocApply" disabled>Apply payment</button>
     </div>
   </div>
 </div>
@@ -952,56 +1266,6 @@
     }
   });
 
-  // ===================== PAYMENT SETUP =====================
-
-  async function loadPaymentConfig() {
-    try {
-      const res = await api.apiFetch('/mpesa/config');
-      const config = res.data;
-      if (config && config.mpesa_shortcode) {
-        document.getElementById('setupStatusDot').className = 'dot ok';
-        document.getElementById('setupStatusText').textContent = `Configured — till/paybill ${config.mpesa_shortcode}`;
-        document.getElementById('mpesaShortcode').value = config.mpesa_shortcode;
-        document.getElementById('mpesaAccountRef').value = config.mpesa_account_ref_prefix || '';
-        document.getElementById('secretsManagerKey').value = config.secrets_manager_key || '';
-      } else {
-        document.getElementById('setupStatusDot').className = 'dot warn';
-        document.getElementById('setupStatusText').textContent = 'Not set up yet — parents can\'t pay via M-Pesa until you add a till or paybill number.';
-      }
-    } catch (err) {
-      document.getElementById('setupStatusDot').className = 'dot warn';
-      document.getElementById('setupStatusText').textContent = 'Not set up yet — parents can\'t pay via M-Pesa until you add a till or paybill number.';
-    }
-  }
-
-  document.getElementById('paymentConfigForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    formError('setupFormError', null);
-    const mpesaShortcode = document.getElementById('mpesaShortcode').value.trim();
-    const mpesaAccountRefPrefix = document.getElementById('mpesaAccountRef').value.trim();
-    const secretsManagerKey = document.getElementById('secretsManagerKey').value.trim();
-    if (!mpesaShortcode) { formError('setupFormError', 'Enter your till or paybill number.'); return; }
-
-    const btn = document.getElementById('saveConfigBtn');
-    btn.disabled = true; btn.textContent = 'Saving…';
-    try {
-      await api.apiFetch('/mpesa/config', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          mpesaShortcode,
-          mpesaAccountRefPrefix: mpesaAccountRefPrefix || undefined,
-          secretsManagerKey: secretsManagerKey || undefined,
-        }),
-      });
-      showAlert('success', 'Payment setup saved.');
-      await loadPaymentConfig();
-    } catch (err) {
-      formError('setupFormError', err.message || 'Could not save payment setup.');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Save payment setup';
-    }
-  });
-
   // ---------- Boot ----------
   (async () => {
     const user = await window.ElimuOs.auth.bootstrap({ allowRoles: ['school_admin'] });
@@ -1025,7 +1289,7 @@
     populateYearSelect(document.getElementById('structYearSelect'), document.getElementById('structTermSelect'));
 
     await loadInvoices();
-    loadPaymentConfig();
+    loadSetup();
 
     try {
       const sub = await B.getMine();
@@ -1035,6 +1299,487 @@
         : '';
     } catch (err) { /* non-fatal */ }
   })();
+
+  // ===================== PAYMENT SETUP =====================
+  let currentPayConfig = null; // last /mpesa/config response, cached for form submits
+
+  function eyeToggle(inputId) {
+    const input = document.getElementById(inputId);
+    const btn = document.querySelector(`[data-eye="${inputId}"] i`);
+    if (input.type === 'password') { input.type = 'text'; btn.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; btn.className = 'bi bi-eye'; }
+  }
+  document.querySelectorAll('[data-eye]').forEach(btn => {
+    btn.addEventListener('click', () => eyeToggle(btn.getAttribute('data-eye')));
+  });
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const input = document.getElementById(btn.getAttribute('data-copy'));
+      try {
+        await navigator.clipboard.writeText(input.value);
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2"></i> Copied';
+        setTimeout(() => { btn.innerHTML = original; }, 1500);
+      } catch (err) { input.select(); document.execCommand('copy'); }
+    });
+  });
+
+  function readinessRow(title, r) {
+    if (!r) return '';
+    return `<div class="readiness-row"><span class="dot ${r.ok ? 'ok' : 'warn'}"></span>
+      <div><div class="r-title">${title}</div><div class="r-detail">${escapeHtml(r.detail || '')}</div></div></div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function renderSetupNotices(platform) {
+    const notes = [];
+    if (platform && !platform.encryptionAvailable) {
+      notes.push('This server cannot store credentials securely yet. Ask your platform administrator to configure encryption before you enter any keys here.');
+    }
+    if (platform && platform.urlProblem) notes.push(platform.urlProblem);
+    document.getElementById('setupNotices').innerHTML = notes.length
+      ? notes.map(n => `<div class="alert-elimu alert-warn"><i class="bi bi-exclamation-triangle-fill"></i><div>${escapeHtml(n)}</div></div>`).join('')
+      : '';
+  }
+
+  function applyShortcodeTypeUI(type) {
+    const isTill = type === 'till';
+    document.getElementById('shortcodeLabel').textContent = isTill ? 'Store / head office number' : 'Paybill number';
+    document.getElementById('shortcodeHint').textContent = isTill
+      ? 'The number your till is registered under (used to generate M-Pesa prompts).'
+      : 'The paybill business number customers pay to.';
+    document.getElementById('tillWrap').style.display = isTill ? 'block' : 'none';
+    document.getElementById('c2bRejectRow').style.display = isTill ? 'none' : 'flex';
+  }
+  document.getElementById('cfgShortcodeType').addEventListener('change', (e) => applyShortcodeTypeUI(e.target.value));
+  document.getElementById('cfgEnv').addEventListener('change', (e) => {
+    document.getElementById('envHint').textContent = e.target.value === 'production'
+      ? 'Live mode — real money moves. Use credentials from a PRODUCTION Daraja app.'
+      : 'Safe for testing — use the sandbox credentials and test numbers from your Daraja app.';
+  });
+
+  async function loadSetup() {
+    let res;
+    try {
+      res = await api.apiFetch('/mpesa/config');
+    } catch (err) {
+      document.getElementById('readinessList').innerHTML = `<p class="muted-cell">Could not load payment setup: ${escapeHtml(err.message || '')}</p>`;
+      return;
+    }
+    const { config, urls, readiness, platform } = res.data;
+    currentPayConfig = config;
+
+    renderSetupNotices(platform);
+    document.getElementById('readinessList').innerHTML =
+      readinessRow('1. Daraja credentials', readiness.credentials) +
+      readinessRow('2. M-Pesa payment prompts (STK Push)', readiness.stk) +
+      readinessRow('3. Direct paybill / till payments (C2B)', readiness.c2b) +
+      readinessRow('4. Paying other paybills / tills (B2B)', readiness.b2b);
+
+    document.getElementById('cfgEnv').value = config.env;
+    document.getElementById('cfgEnv').dispatchEvent(new Event('change'));
+    document.getElementById('consumerKeyHint').textContent = config.consumerKeySet
+      ? `Saved (ending …${config.consumerKeyHint || '????'}). Leave blank to keep it, or enter a new one to replace it.`
+      : 'Not set yet.';
+    document.getElementById('consumerSecretHint').textContent = config.consumerSecretSet
+      ? 'Saved. Leave blank to keep it, or enter a new one to replace it.'
+      : (config.usingPlatformCredentials ? 'Using this platform\u2019s shared sandbox credentials for now — enter your own before going live.' : 'Not set yet.');
+
+    document.getElementById('cfgShortcodeType').value = config.shortcodeType;
+    applyShortcodeTypeUI(config.shortcodeType);
+    document.getElementById('cfgShortcode').value = config.shortcode || '';
+    document.getElementById('cfgTillNumber').value = config.tillNumber || '';
+    document.getElementById('cfgAccountRef').value = config.accountRefPrefix || '';
+    document.getElementById('passkeyHint').textContent = config.passkeySet ? 'Saved. Leave blank to keep it, or enter a new one to replace it.' : 'Not set yet.';
+    document.getElementById('cfgStkEnabled').checked = config.stkEnabled;
+
+    document.getElementById('cfgC2bEnabled').checked = config.c2bEnabled;
+    document.getElementById('cfgC2bReject').checked = config.c2bRejectUnmatched;
+    document.getElementById('c2bHowTo').innerHTML = 'Turning this on lets a parent pay <b>straight from their M-Pesa menu</b> using your paybill/till, without needing a prompt from ElimuOs. They should enter their child\u2019s <b>admission number</b> as the account number so the payment matches automatically \u2014 anything else lands under \u201cNeeds action\u201d on the <b>Paybill / Till payments</b> tab for your accountant to apply by hand.';
+
+    if (urls) {
+      document.getElementById('c2bUrlsEmpty').style.display = 'none';
+      document.getElementById('c2bUrlsFields').style.display = 'block';
+      document.getElementById('c2bValidationUrl').value = urls.c2bValidation;
+      document.getElementById('c2bConfirmationUrl').value = urls.c2bConfirmation;
+    } else {
+      document.getElementById('c2bUrlsEmpty').style.display = 'block';
+      document.getElementById('c2bUrlsFields').style.display = 'none';
+    }
+    const regLine = document.getElementById('c2bRegLine');
+    if (config.c2bRegisteredAt) {
+      regLine.className = 'inline-line shown ok';
+      regLine.textContent = `Registered with Safaricom on ${new Date(config.c2bRegisteredAt).toLocaleString('en-KE')}.`;
+    } else if (config.c2bRegisterMessage) {
+      regLine.className = 'inline-line shown bad';
+      regLine.textContent = config.c2bRegisterMessage;
+    } else {
+      regLine.className = 'inline-line'; regLine.textContent = '';
+    }
+
+    document.getElementById('cfgB2bEnabled').checked = config.b2bEnabled;
+    document.getElementById('cfgInitiatorName').value = config.initiatorName || '';
+    document.getElementById('initiatorPasswordHint').textContent = config.initiatorPasswordSet
+      ? 'Saved. Leave blank to keep it, or enter a new one to replace it.' : 'Not set yet.';
+    const certNote = document.getElementById('b2bCertNote');
+    if (platform && !platform.certificates[config.env]) {
+      certNote.className = 'inline-line shown bad';
+      certNote.textContent = `The Safaricom ${config.env} certificate is not installed on this server yet — paying out won\u2019t work until your platform administrator adds it.`;
+    } else { certNote.className = 'inline-line'; certNote.textContent = ''; }
+
+    const verifyLine = document.getElementById('verifyLine');
+    if (config.verifiedAt) {
+      verifyLine.className = `inline-line shown ${config.verifyOk ? 'ok' : 'bad'}`;
+      verifyLine.textContent = `${config.verifyMessage} (checked ${new Date(config.verifiedAt).toLocaleString('en-KE')})`;
+    } else { verifyLine.className = 'inline-line'; verifyLine.textContent = ''; }
+
+    renderB2bAvailability(config);
+  }
+
+  async function saveConfigPatch(body, btnId, busyText) {
+    const btn = document.getElementById(btnId);
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = busyText;
+    try {
+      await api.apiFetch('/mpesa/config', { method: 'PATCH', body: JSON.stringify(body) });
+      await loadSetup();
+      return true;
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  }
+
+  document.getElementById('credsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('credsError', null);
+    try {
+      await saveConfigPatch({
+        env: document.getElementById('cfgEnv').value,
+        consumerKey: document.getElementById('cfgConsumerKey').value.trim() || undefined,
+        consumerSecret: document.getElementById('cfgConsumerSecret').value.trim() || undefined,
+      }, 'saveCredsBtn', 'Saving…');
+      document.getElementById('cfgConsumerKey').value = '';
+      document.getElementById('cfgConsumerSecret').value = '';
+      showAlert('success', 'Daraja credentials saved.');
+    } catch (err) { formError('credsError', err.message || 'Could not save credentials.'); }
+  });
+
+  document.getElementById('verifyBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Checking…';
+    const line = document.getElementById('verifyLine');
+    try {
+      const res = await api.apiFetch('/mpesa/config/verify', { method: 'POST' });
+      line.className = `inline-line shown ${res.data.ok ? 'ok' : 'bad'}`;
+      line.textContent = res.data.message;
+    } catch (err) {
+      line.className = 'inline-line shown bad';
+      line.textContent = err.message || 'Could not verify.';
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-shield-check"></i> Verify connection';
+    }
+  });
+
+  document.getElementById('collectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('collectError', null);
+    const shortcodeType = document.getElementById('cfgShortcodeType').value;
+    const shortcode = document.getElementById('cfgShortcode').value.trim();
+    if (!shortcode) { formError('collectError', shortcodeType === 'till' ? 'Enter the store / head office number.' : 'Enter your paybill number.'); return; }
+    try {
+      await saveConfigPatch({
+        shortcodeType, shortcode,
+        tillNumber: document.getElementById('cfgTillNumber').value.trim() || undefined,
+        accountRefPrefix: document.getElementById('cfgAccountRef').value.trim() || undefined,
+        passkey: document.getElementById('cfgPasskey').value.trim() || undefined,
+        stkEnabled: document.getElementById('cfgStkEnabled').checked,
+      }, 'saveCollectBtn', 'Saving…');
+      document.getElementById('cfgPasskey').value = '';
+      showAlert('success', 'Payment setup saved.');
+    } catch (err) { formError('collectError', err.message || 'Could not save this section.'); }
+  });
+
+  document.getElementById('c2bForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('c2bError', null);
+    try {
+      await saveConfigPatch({
+        c2bEnabled: document.getElementById('cfgC2bEnabled').checked,
+        c2bRejectUnmatched: document.getElementById('cfgC2bReject').checked,
+      }, 'saveC2bBtn', 'Saving…');
+      showAlert('success', 'Saved.');
+    } catch (err) { formError('c2bError', err.message || 'Could not save this section.'); }
+  });
+
+  document.getElementById('registerC2bBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('registerC2bBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Registering…';
+    const line = document.getElementById('c2bRegLine');
+    try {
+      const res = await api.apiFetch('/mpesa/config/c2b/register', { method: 'POST' });
+      line.className = `inline-line shown ${res.data.ok ? 'ok' : 'bad'}`;
+      line.textContent = res.data.message;
+    } catch (err) {
+      line.className = 'inline-line shown bad';
+      line.textContent = err.message || 'Could not register these URLs.';
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> Register URLs with Safaricom';
+    }
+  });
+
+  document.getElementById('b2bForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    formError('b2bSetupError', null);
+    const enabled = document.getElementById('cfgB2bEnabled').checked;
+    const initiatorName = document.getElementById('cfgInitiatorName').value.trim();
+    const initiatorPassword = document.getElementById('cfgInitiatorPassword').value;
+    if (enabled && !initiatorName && !(currentPayConfig && currentPayConfig.initiatorName)) {
+      formError('b2bSetupError', 'Enter the M-Pesa API initiator name.'); return;
+    }
+    try {
+      await saveConfigPatch({
+        b2bEnabled: enabled,
+        initiatorName: initiatorName || undefined,
+        initiatorPassword: initiatorPassword || undefined,
+      }, 'saveB2bBtn', 'Saving…');
+      document.getElementById('cfgInitiatorPassword').value = '';
+      showAlert('success', 'Saved.');
+    } catch (err) { formError('b2bSetupError', err.message || 'Could not save this section.'); }
+  });
+
+  // ===================== C2B: PAYBILL / TILL PAYMENTS =====================
+  let c2bSearchDebounce = null;
+
+  function statusPillHtml(status, label) {
+    return `<span class="status-pill ${status}">${label}</span>`;
+  }
+  const C2B_LABELS = { allocated: 'Applied', unallocated: 'Needs action', ignored: 'Set aside' };
+
+  async function loadC2B() {
+    const body = document.getElementById('c2bBody');
+    body.innerHTML = `<tr><td colspan="7" class="muted-cell">Loading…</td></tr>`;
+    const q = document.getElementById('c2bSearch').value.trim();
+    const status = document.getElementById('c2bStatus').value;
+    const params = new URLSearchParams({ limit: '100', offset: '0' });
+    if (q) params.set('q', q);
+    if (status) params.set('status', status);
+    try {
+      const res = await api.apiFetch(`/mpesa/c2b/transactions?${params.toString()}`);
+      const { items, counts } = res.data;
+      const total = counts.reduce((s, c) => s + c.n, 0);
+      document.getElementById('c2bCounts').innerHTML = total
+        ? counts.map(c => `<span class="count-chip"><b>${c.n}</b> ${C2B_LABELS[c.status] || c.status} \u00b7 ${B.formatKes(c.total)}</span>`).join('')
+        : '';
+      if (items.length === 0) {
+        body.innerHTML = `<tr><td colspan="7" class="muted-cell">No paybill/till payments${q || status ? ' match this filter' : ' recorded yet'}.</td></tr>`;
+        return;
+      }
+      body.innerHTML = items.map(t => `
+        <tr>
+          <td>${new Date(t.received_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+          <td>${escapeHtml(t.trans_id)}</td>
+          <td>${escapeHtml(t.student_name || t.payer_name || '\u2014')}${t.admission_number ? ` <span class="muted-cell">\u00b7 ${escapeHtml(t.admission_number)}</span>` : ''}</td>
+          <td>${escapeHtml(t.bill_ref_number || '\u2014')}</td>
+          <td>${B.formatKes(t.amount)}</td>
+          <td>${statusPillHtml(t.status, C2B_LABELS[t.status] || t.status)}<div class="muted-cell" style="font-size:0.72rem; margin-top:2px;">${escapeHtml(t.note || '')}</div></td>
+          <td>${t.status === 'unallocated' ? `
+            <button type="button" class="btn-elimu btn-elimu-ghost c2b-apply" data-id="${t.id}" data-amount="${t.amount}" data-receipt="${escapeHtml(t.trans_id)}" style="padding:6px 10px; font-size:0.78rem;">Apply</button>
+            <button type="button" class="btn-elimu btn-elimu-ghost c2b-ignore" data-id="${t.id}" style="padding:6px 10px; font-size:0.78rem;">Set aside</button>` : ''}</td>
+        </tr>`).join('');
+      body.querySelectorAll('.c2b-apply').forEach(b => b.addEventListener('click', () => openAllocModal(b.dataset.id, b.dataset.amount, b.dataset.receipt)));
+      body.querySelectorAll('.c2b-ignore').forEach(b => b.addEventListener('click', () => ignoreC2BTxn(b.dataset.id)));
+    } catch (err) {
+      body.innerHTML = `<tr><td colspan="7" class="muted-cell">Could not load payments: ${escapeHtml(err.message || '')}</td></tr>`;
+    }
+  }
+  document.getElementById('c2bRefreshBtn').addEventListener('click', loadC2B);
+  document.getElementById('c2bStatus').addEventListener('change', loadC2B);
+  document.getElementById('c2bSearch').addEventListener('input', () => {
+    clearTimeout(c2bSearchDebounce);
+    c2bSearchDebounce = setTimeout(loadC2B, 350);
+  });
+
+  async function ignoreC2BTxn(id) {
+    const reason = prompt('Why are you setting this payment aside? (e.g. "Not a fee payment", "Duplicate")');
+    if (reason === null) return;
+    if (reason.trim().length < 3) { alert('Please give a short reason.'); return; }
+    try {
+      await api.apiFetch(`/mpesa/c2b/transactions/${id}/ignore`, { method: 'POST', body: JSON.stringify({ reason: reason.trim() }) });
+      await loadC2B();
+    } catch (err) { alert(err.message || 'Could not set this payment aside.'); }
+  }
+
+  // ---- Allocate modal ----
+  let allocTxnId = null;
+  let allocStudentId = null;
+  let allocInvoiceId = null;
+  let allocSearchDebounce = null;
+
+  function openAllocModal(id, amount, receipt) {
+    allocTxnId = id; allocStudentId = null; allocInvoiceId = null;
+    document.getElementById('allocSummary').textContent = `${B.formatKes(amount)} \u00b7 receipt ${receipt}`;
+    document.getElementById('allocSearch').value = '';
+    document.getElementById('allocResults').style.display = 'none';
+    document.getElementById('allocResults').innerHTML = '';
+    document.getElementById('allocPicked').innerHTML = '';
+    document.getElementById('allocWarn').textContent = '';
+    formError('allocError', null);
+    document.getElementById('allocApply').disabled = true;
+    document.getElementById('allocSearchWrap').style.display = 'block';
+    document.getElementById('allocModal').style.display = 'flex';
+  }
+  document.getElementById('allocCancel').addEventListener('click', () => { document.getElementById('allocModal').style.display = 'none'; });
+
+  document.getElementById('allocSearch').addEventListener('input', (e) => {
+    clearTimeout(allocSearchDebounce);
+    const q = e.target.value.trim();
+    const resultsEl = document.getElementById('allocResults');
+    if (!q) { resultsEl.style.display = 'none'; resultsEl.innerHTML = ''; return; }
+    allocSearchDebounce = setTimeout(async () => {
+      try {
+        const res = await api.apiFetch(`/students?status=active&limit=10&offset=0&q=${encodeURIComponent(q)}`);
+        const students = res.data;
+        resultsEl.innerHTML = students.length === 0
+          ? `<div class="student-pick-row muted-cell">No matching students.</div>`
+          : students.map(s => `<div class="student-pick-row" data-id="${s.id}" data-name="${escapeHtml(s.full_name)}" data-adm="${escapeHtml(s.admission_number)}">${escapeHtml(s.full_name)} <span class="muted-cell">\u00b7 ${escapeHtml(s.admission_number)}</span></div>`).join('');
+        resultsEl.querySelectorAll('[data-id]').forEach(row => row.addEventListener('click', () => pickAllocStudent(row.dataset.id, row.dataset.name, row.dataset.adm)));
+        resultsEl.style.display = 'block';
+      } catch (err) { /* non-fatal */ }
+    }, 300);
+  });
+
+  async function pickAllocStudent(id, name, adm) {
+    allocStudentId = id; allocInvoiceId = null;
+    document.getElementById('allocSearchWrap').style.display = 'none';
+    document.getElementById('allocApply').disabled = true;
+    document.getElementById('allocPicked').innerHTML = `<div class="picked-student-chip">${escapeHtml(name)} \u00b7 ${escapeHtml(adm)} <button type="button" id="allocUnpick">&times;</button></div><div id="allocInvoiceList" style="margin-top:12px;"><p class="muted-cell">Loading invoices\u2026</p></div>`;
+    document.getElementById('allocUnpick').addEventListener('click', () => {
+      allocStudentId = null; allocInvoiceId = null;
+      document.getElementById('allocPicked').innerHTML = '';
+      document.getElementById('allocSearchWrap').style.display = 'block';
+      document.getElementById('allocApply').disabled = true;
+    });
+    try {
+      const res = await api.apiFetch(`/fees/invoices/student/${id}`);
+      const outstanding = (res.data || []).filter(inv => ['unpaid', 'partial', 'overdue'].includes(inv.status));
+      const listEl = document.getElementById('allocInvoiceList');
+      if (!listEl) return;
+      if (outstanding.length === 0) {
+        listEl.innerHTML = `<p class="muted-cell">This student has no outstanding invoice.</p>`;
+        return;
+      }
+      listEl.innerHTML = outstanding.map(inv => {
+        const balance = Number(inv.total_amount) - Number(inv.amount_paid || 0);
+        return `<label class="student-pick-row" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="radio" name="allocInvoiceRadio" value="${inv.id}" style="width:auto;" />
+          <span>Invoice #${inv.id} \u00b7 balance ${B.formatKes(balance)}</span>
+        </label>`;
+      }).join('');
+      listEl.querySelectorAll('input[name="allocInvoiceRadio"]').forEach(r => r.addEventListener('change', () => {
+        allocInvoiceId = r.value; document.getElementById('allocApply').disabled = false;
+      }));
+    } catch (err) {
+      const listEl = document.getElementById('allocInvoiceList');
+      if (listEl) listEl.innerHTML = `<p class="muted-cell">Could not load invoices for this student.</p>`;
+    }
+  }
+
+  document.getElementById('allocApply').addEventListener('click', async () => {
+    formError('allocError', null);
+    if (!allocTxnId || !allocInvoiceId) return;
+    const btn = document.getElementById('allocApply');
+    btn.disabled = true; const original = btn.textContent; btn.textContent = 'Applying\u2026';
+    try {
+      await api.apiFetch(`/mpesa/c2b/transactions/${allocTxnId}/allocate`, {
+        method: 'POST', body: JSON.stringify({ invoiceId: allocInvoiceId }),
+      });
+      document.getElementById('allocModal').style.display = 'none';
+      showAlert('success', 'Payment applied to the invoice.');
+      await loadC2B();
+    } catch (err) {
+      formError('allocError', err.message || 'Could not apply this payment.');
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  // ===================== B2B: PAYOUTS =====================
+  function renderB2bAvailability(config) {
+    const ready = config.b2bEnabled && config.initiatorPasswordSet && config.shortcode;
+    document.getElementById('b2bFormCard').style.display = ready ? 'block' : 'none';
+    document.getElementById('b2bUnavailable').style.display = ready ? 'none' : 'block';
+    if (!ready) {
+      document.getElementById('b2bUnavailableText').textContent = config.b2bEnabled
+        ? 'Finish setting up paying out under Payment setup \u2192 step 4 before sending a payment.'
+        : 'Turn on "Paying other paybills / tills" under Payment setup \u2192 step 4 to use this.';
+    }
+  }
+  document.getElementById('b2bTargetType').addEventListener('change', (e) => {
+    document.getElementById('b2bAccountWrap').style.display = e.target.value === 'till' ? 'none' : 'block';
+  });
+
+  const B2B_LABELS = { pending: 'Sending\u2026', success: 'Sent', failed: 'Failed', timeout: 'Awaiting M-Pesa' };
+  async function loadB2B() {
+    const body = document.getElementById('b2bBody');
+    body.innerHTML = `<tr><td colspan="7" class="muted-cell">Loading\u2026</td></tr>`;
+    try {
+      const res = await api.apiFetch('/mpesa/b2b/transactions?limit=100&offset=0');
+      const rows = res.data;
+      if (rows.length === 0) { body.innerHTML = `<tr><td colspan="7" class="muted-cell">No payouts sent yet.</td></tr>`; return; }
+      body.innerHTML = rows.map(r => `
+        <tr>
+          <td>${new Date(r.initiated_at).toLocaleString('en-KE', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+          <td>${escapeHtml(r.party_b)} <span class="muted-cell">(${r.command_id === 'BusinessBuyGoods' ? 'till' : 'paybill'})</span></td>
+          <td>${escapeHtml(r.account_reference || '\u2014')}</td>
+          <td>${B.formatKes(r.amount)}</td>
+          <td>${statusPillHtml(r.status, B2B_LABELS[r.status] || r.status)}${r.status === 'failed' && r.result_desc ? `<div class="muted-cell" style="font-size:0.72rem; margin-top:2px;">${escapeHtml(r.result_desc)}</div>` : ''}</td>
+          <td>${escapeHtml(r.transaction_id || '\u2014')}</td>
+          <td>${escapeHtml(r.initiated_by_name || '\u2014')}</td>
+        </tr>`).join('');
+    } catch (err) {
+      body.innerHTML = `<tr><td colspan="7" class="muted-cell">Could not load payout history: ${escapeHtml(err.message || '')}</td></tr>`;
+    }
+  }
+  document.getElementById('b2bRefreshBtn').addEventListener('click', loadB2B);
+
+  document.getElementById('b2bSendBtn').addEventListener('click', async () => {
+    formError('b2bError', null);
+    const targetType = document.getElementById('b2bTargetType').value;
+    const targetNumber = document.getElementById('b2bTargetNumber').value.trim();
+    const accountReference = document.getElementById('b2bAccountRef').value.trim();
+    const amount = Number(document.getElementById('b2bAmount').value);
+    const remarks = document.getElementById('b2bRemarks').value.trim();
+    const password = document.getElementById('b2bPassword').value;
+
+    if (!/^\d{5,7}$/.test(targetNumber)) { formError('b2bError', 'Enter a valid 5\u20137 digit paybill/till number.'); return; }
+    if (targetType === 'paybill' && !accountReference) { formError('b2bError', 'Enter the account number for this paybill.'); return; }
+    if (!Number.isInteger(amount) || amount < 1) { formError('b2bError', 'Enter a whole-number amount of at least KES 1.'); return; }
+    if (!password) { formError('b2bError', 'Enter your ElimuOs password to confirm.'); return; }
+
+    if (!confirm(`Send ${B.formatKes(amount)} to ${targetType} ${targetNumber}${accountReference ? ` (account ${accountReference})` : ''}? This cannot be undone.`)) return;
+
+    const btn = document.getElementById('b2bSendBtn');
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sending\u2026';
+    try {
+      await api.apiFetch('/mpesa/b2b/send', {
+        method: 'POST',
+        body: JSON.stringify({ targetType, targetNumber, accountReference: accountReference || undefined, amount, remarks: remarks || undefined, password }),
+      });
+      document.getElementById('b2bPassword').value = '';
+      showAlert('success', 'Payment request sent \u2014 check the history below for the outcome.');
+      await loadB2B();
+    } catch (err) {
+      formError('b2bError', err.message || 'Could not send this payment.');
+    } finally {
+      btn.disabled = false; btn.innerHTML = '<i class="bi bi-send"></i> Send payment';
+    }
+  });
+
+  // Lazily load each tab's data the first time it's opened
+  document.querySelector('[data-tab="c2b"]').addEventListener('click', loadC2B);
+  document.querySelector('[data-tab="b2b"]').addEventListener('click', loadB2B);
 </script>
 
 </body>

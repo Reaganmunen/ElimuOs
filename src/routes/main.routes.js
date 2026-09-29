@@ -13,6 +13,7 @@ const attendanceRoutes = require('./attendance.routes');
 const assessmentRoutes = require('./assessment.routes');
 const feeRoutes = require('./fee.routes');
 const mpesaRoutes = require('./mpesa.routes');
+const payCallbackRoutes = require('./payCallbacks.routes');
 const communicationRoutes = require('./communication.routes');
 const staffRoutes = require('./staff.routes');
 const billingRoutes = require('./billing.routes');
@@ -37,6 +38,8 @@ router.use('/attendance', attendanceRoutes);
 router.use('/assessments', assessmentRoutes);
 router.use('/fees', feeRoutes);
 router.use('/mpesa', mpesaRoutes);
+// Public Safaricom callbacks (STK / C2B / B2B). No "mpesa" in the path on purpose - Safaricom filters it.
+router.use('/pay', payCallbackRoutes);
 router.use('/communications', communicationRoutes);
 router.use('/staff', staffRoutes);
 router.use('/billing', billingRoutes);

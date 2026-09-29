@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Platform — ElimuOs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../css/theme.css">
+<link rel="stylesheet" href="../css/admin-shell.css">
+<style>
+  .muted{ color: var(--ink-soft); font-size: 0.84rem; }
+  .sm{ padding: 8px 15px !important; font-size: 0.84rem !important; }
+  .toolbar{ display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .toolbar .input{ width: auto; min-width: 180px; flex: 1; max-width: 280px; }
+  .toolbar .muted{ margin-right: auto; }
+  .tbl-wrap{ overflow-x: auto; }
+  .tbl{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .tbl th{ text-align: left; font-weight: 700; font-size: 0.78rem; color: var(--ink-soft); padding: 8px 12px; border-bottom: 1.5px solid var(--line); white-space: nowrap; }
+  .tbl td{ padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl tr:last-child td{ border-bottom: none; }
+  .lnk, .crumbs a, .row-item button, .cardbtns button.lb{ color: var(--blue-deep); font-weight: 600; cursor: pointer; background: none; border: none; padding: 0; font: inherit; font-weight: 600; }
+  .lnk{ margin-right: 14px; } .lnk:hover, .crumbs a:hover{ text-decoration: underline; }
+  .empty{ color: var(--ink-soft); text-align: center; padding: 28px 0; margin: 0; }
+  .stat-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .stat-card{ background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius-md); padding: 18px 20px; }
+  .stat-value{ font: 800 1.6rem 'Plus Jakarta Sans', sans-serif; }
+  .stat-label{ font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); margin-top: 2px; }
+  .cols{ display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 1000px){ .cols{ grid-template-columns: 1fr; } }
+  .row-item{ display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+  .row-item:last-child{ border-bottom: none; }
+  .row-item .cardbtns{ display: flex; gap: 14px; flex-shrink: 0; }
+  .banner{ background: rgba(232,162,61,0.14); color: #8A5B14; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 0.86rem; margin-bottom: 18px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .fchips{ display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .fchip{ padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--line); font-size: 0.82rem; font-weight: 600; text-transform: capitalize; background: var(--white); }
+  .fchip span{ color: var(--ink-soft); margin-left: 4px; }
+  .fchip.on{ background: var(--ink); border-color: var(--ink); color: var(--white); } .fchip.on span{ color: rgba(255,255,255,.7); }
+  .crumbs{ font-size: 0.84rem; color: var(--ink-soft); margin-bottom: 14px; }
+  .plan-card.retired{ opacity: .6; }
+  .plan-card .cardbtns{ display: flex; gap: 8px; margin-top: 16px; }
+  .plan-card .muted{ margin-bottom: 4px; }
+  textarea.input{ resize: vertical; }
+  pre{ margin: 6px 0 0; font-size: 0.76rem; white-space: pre-wrap; word-break: break-word; color: var(--ink-soft); max-width: 420px; }
+  .center{ text-align: center; margin-top: 14px; }
+  #toast{ position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 60; background: var(--ink); color: var(--white); padding: 12px 20px; border-radius: 999px; font-size: 0.88rem; font-weight: 600; display: none; max-width: 90vw; }
+  #toast.err{ background: #B23350; }
+  .signout{ background: none; border: none; color: var(--ink-soft); font-size: 1.1rem; cursor: pointer; padding: 8px; border-radius: 50%; }
+  .signout:hover{ background: var(--cloud); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a href="#overview" class="brand"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>ElimuOs</a>
+    <nav class="admin-nav" id="nav"></nav>
+    <div class="admin-sidebar-foot">Platform administrator</div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <h1 id="title">Overview</h1>
+      <div class="admin-topbar-right">
+        <button class="signout" data-a="refresh" title="Refresh data" aria-label="Refresh data"><i class="bi bi-arrow-clockwise"></i></button>
+        <div class="user-chip" style="cursor:default">
+          <div class="user-avatar" id="avatar">…</div>
+          <div><div class="user-chip-name" id="uname">Loading…</div><div class="user-chip-role">Super admin</div></div>
+        </div>
+        <button class="signout" data-a="logout" title="Sign out" aria-label="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+      </div>
+    </header>
+    <main class="admin-content" id="view"></main>
+  </div>
+</div>
+<div id="toast" role="status"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+(function () {
+  const A = window.ElimuOs.api.apiFetch, $ = (s, r = document) => r.querySelector(s);
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+  const kes = n => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+  const dt = d => d ? new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+  const dtm = d => d ? new Date(d).toLocaleString('en-KE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+  const get = async p => (await A(p)).data;
+  const send = (p, m, b) => A(p, { method: m, body: b ? JSON.stringify(b) : undefined });
+  const qs = o => { const q = new URLSearchParams(); for (const k in o) if (o[k] !== '' && o[k] != null) q.set(k, o[k]); const s = q.toString(); return s ? '?' + s : ''; };
+  const chip = s => `<span class="status-chip ${({ trial: 'info', active: 'ok', past_due: 'warn' })[s] || ''}">${esc(String(s).replace('_', ' '))}</span>`;
+  const tbl = (h, rows, empty = 'Nothing here yet.') => rows.length
+    ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
+    : `<p class="empty">${empty}</p>`;
+
+  function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = err ? 'err' : ''; t.style.display = 'block'; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 3500); }
+  function modal(html) { const o = document.createElement('div'); o.className = 'modal-overlay'; o.innerHTML = `<div class="modal-box" style="max-width:480px">${html}</div>`; document.body.appendChild(o); o.onclick = e => { if (e.target === o) o.remove(); }; return o; }
+  const confirmBox = (title, text, label, danger) => new Promise(res => {
+    const m = modal(`<h3>${esc(title)}</h3><p>${esc(text)}</p><div class="modal-actions"><button class="btn-elimu btn-elimu-ghost" data-x>Cancel</button><button class="btn-elimu ${danger ? 'btn-elimu-danger' : 'btn-elimu-primary'}" data-ok>${esc(label)}</button></div>`);
+    m.querySelector('[data-x]').onclick = () => { m.remove(); res(false); };
+    m.querySelector('[data-ok]').onclick = () => { m.remove(); res(true); };
+  });
+  const formBox = (title, fields, vals = {}, label = 'Save') => new Promise(res => {
+    const m = modal(`<h3>${esc(title)}</h3><form>${fields.map(f => `<div class="field"><label>${esc(f.label)}</label>${f.type === 'textarea'
+      ? `<textarea class="input" name="${f.k}" rows="5" ${f.req ? 'required' : ''}>${esc(vals[f.k])}</textarea>`
+      : `<input class="input" name="${f.k}" type="${f.type || 'text'}" value="${esc(vals[f.k])}" ${f.req ? 'required' : ''}>`}${f.hint ? `<div class="hint">${esc(f.hint)}</div>` : ''}</div>`).join('')}<div class="modal-actions"><button type="button" class="btn-elimu btn-elimu-ghost" data-x>Cancel</button><button class="btn-elimu btn-elimu-primary">${esc(label)}</button></div></form>`);
+    const f = m.querySelector('form');
+    m.querySelector('[data-x]').onclick = () => { m.remove(); res(null); };
+    f.onsubmit = e => { e.preventDefault(); const o = {}; fields.forEach(x => o[x.k] = f.elements[x.k].value.trim()); m.remove(); res(o); };
+    f.elements[fields[0].k].focus();
+  });
+
+  // ---- data cache (lists are small; refreshed after every write) ----
+  const SRC = { schools: '/schools?limit=1000', subs: '/billing/subscriptions?limit=1000', plans: '/billing/plans?includeInactive=true' };
+  let cache = {}, params = {};
+  const ld = k => cache[k] ? Promise.resolve(cache[k]) : get(SRC[k]).then(d => cache[k] = d);
+  const run = async (fn, ok) => { try { const r = await fn(); if (ok) toast(typeof ok === 'function' ? ok(r) : ok); route(); } catch (e) { toast(e.message, true); } };
+  const skeleton = () => `<div class="stat-grid">${'<div class="stat-card"><span class="skeleton" style="height:60px"></span></div>'.repeat(4)}</div><div class="card-elimu"><span class="skeleton" style="height:200px"></span></div>`;
+
+  const V = {};
+
+  // ---- Overview ----
+  V.overview = { t: 'Overview', async render() {
+    const [S, B, P, L] = await Promise.all([ld('schools'), ld('subs'), ld('plans'), get('/audit-logs/all?limit=8')]);
+    const price = Object.fromEntries(P.map(p => [p.id, +p.monthly_price_kes]));
+    const by = s => B.filter(x => x.status === s), now = Date.now();
+    const mrr = by('active').reduce((a, x) => a + (price[x.plan_id] || 0), 0);
+    const stale = by('trial').filter(x => new Date(x.trial_ends_at) < now);
+    const soon = by('trial').filter(x => { const d = new Date(x.trial_ends_at) - now; return d >= 0 && d < 7 * 864e5; });
+    const due = by('past_due');
+    const att = [...due.map(x => [x, 'Past due']), ...soon.map(x => [x, 'Trial ends ' + dt(x.trial_ends_at)])];
+    $('#view').innerHTML = `
+      ${stale.length ? `<div class="banner"><span><b>${stale.length}</b> trial${stale.length > 1 ? 's have' : ' has'} passed its end date but still ${stale.length > 1 ? 'have' : 'has'} access.</span><button class="btn-elimu btn-elimu-primary sm" data-a="expire">Run trial expiry</button></div>` : ''}
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-value">${S.length}</div><div class="stat-label">Schools (${S.filter(s => s.is_active).length} active)</div></div>
+        <div class="stat-card"><div class="stat-value">${by('active').length}</div><div class="stat-label">Paying schools (${by('trial').length} on trial)</div></div>
+        <div class="stat-card"><div class="stat-value">${due.length}</div><div class="stat-label">Past due</div></div>
+        <div class="stat-card"><div class="stat-value">${kes(mrr)}</div><div class="stat-label">Monthly revenue at plan list price</div></div>
+      </div>
+      <div class="cols">
+        <div class="card-elimu"><h3 style="margin-bottom:8px">Needs attention</h3>
+          ${att.length ? att.map(([x, why]) => `<div class="row-item"><div><b>${esc(x.school_name)}</b><div class="muted">${esc(x.plan_name)} · ${why}</div></div><button class="btn-elimu btn-elimu-ghost sm" data-a="activate" data-id="${x.id}" data-n="${esc(x.school_name)}" data-s="${x.status}">Activate</button></div>`).join('') : '<p class="empty">No trials ending this week and nothing past due.</p>'}
+        </div>
+        <div class="card-elimu"><h3 style="margin-bottom:8px">Recent activity</h3>
+          ${L.length ? L.map(r => `<div class="row-item"><div><b>${esc(r.actor_name || 'System')}</b> ${esc(r.action)} <span class="muted">${esc(r.table_name)}</span><div class="muted">${esc(r.school_name || 'Platform')} · ${dtm(r.created_at)}</div></div></div>`).join('') : '<p class="empty">No activity recorded yet.</p>'}
+          <div class="center"><a class="lnk" href="#audit" style="margin:0">Open audit log</a></div>
+        </div>
+      </div>`;
+  } };
+
+  // ---- Schools ----
+  V.schools = { t: 'Schools', async render() {
+    const [S, B] = await Promise.all([ld('schools'), ld('subs')]);
+    const sub = {}; B.forEach(x => { if (!sub[x.school_id]) sub[x.school_id] = x; });
+    $('#view').innerHTML = `<div class="card-elimu"><div class="toolbar"><input class="input" id="q" placeholder="Search name or county"><select class="input" id="fs"><option value="">All statuses</option><option value="1">Active</option><option value="0">Inactive</option></select><span class="muted" id="cnt"></span></div><div id="out"></div></div>`;
+    const draw = () => {
+      const q = $('#q').value.toLowerCase(), f = $('#fs').value;
+      const rows = S.filter(s => (!q || (s.name + ' ' + (s.county || '')).toLowerCase().includes(q)) && (!f || (s.is_active ? '1' : '0') === f));
+      $('#cnt').textContent = `${rows.length} of ${S.length}`;
+      $('#out').innerHTML = tbl(['School', 'County', 'Status', 'Subscription', 'Joined', ''], rows.map(s => [
+        `<b>${esc(s.name)}</b>`, esc(s.county || '—'),
+        `<span class="status-chip ${s.is_active ? 'ok' : ''}">${s.is_active ? 'Active' : 'Inactive'}</span>`,
+        sub[s.id] ? `${chip(sub[s.id].status)} <span class="muted">${esc(sub[s.id].plan_name)}</span>` : '<span class="muted">None</span>',
+        dt(s.created_at),
+        `<a class="lnk" href="#subscriptions?school=${s.id}">Billing</a><a class="lnk" href="#audit?school=${s.id}">Audit trail</a>`]), 'No schools match.');
+    };
+    $('#q').oninput = $('#fs').onchange = draw; draw();
+  } };
+
+  // ---- Subscriptions ----
+  V.subscriptions = { t: 'Subscriptions', async render() {
+    const B = await ld('subs'), sc = params.school || '', st = params.status || '';
+    const scoped = B.filter(x => !sc || String(x.school_id) === sc), rows = scoped.filter(x => !st || x.status === st);
+    $('#view').innerHTML = `
+      <div class="toolbar"><span class="muted">Payment confirmation happens outside the app — activate a subscription once the school has paid.</span><button class="btn-elimu btn-elimu-ghost sm" data-a="expire">Run trial expiry</button></div>
+      ${sc ? `<div class="banner"><span>Showing one school.</span><a class="lnk" href="#subscriptions${qs({ status: st })}" style="margin:0">Show all schools</a></div>` : ''}
+      <div class="fchips">${['', 'trial', 'active', 'past_due', 'cancelled'].map(s => `<a class="fchip ${s === st ? 'on' : ''}" href="#subscriptions${qs({ school: sc, status: s })}">${s ? s.replace('_', ' ') : 'All'}<span>${scoped.filter(x => !s || x.status === s).length}</span></a>`).join('')}</div>
+      <div class="card-elimu">${tbl(['School', 'Plan', 'Status', 'Period', 'Started', ''], rows.map(x => [
+        `<b>${esc(x.school_name)}</b>`, esc(x.plan_name), chip(x.status),
+        x.status === 'trial' ? 'Trial ends ' + dt(x.trial_ends_at) : x.status === 'active' ? 'Renews ' + dt(x.current_period_end) : x.status === 'past_due' ? 'Lapsed ' + dt(x.current_period_end || x.trial_ends_at) : '—',
+        dt(x.created_at),
+        x.status === 'cancelled' ? '' : `<button class="btn-elimu btn-elimu-ghost sm" data-a="activate" data-id="${x.id}" data-n="${esc(x.school_name)}" data-s="${x.status}">${x.status === 'active' ? 'Record renewal' : 'Activate'}</button>`]), 'No subscriptions match.')}</div>`;
+  } };
+
+  // ---- Plans ----
+  const feats = f => Array.isArray(f) ? f.map(String) : Object.values(f || {}).map(String);
+  V.plans = { t: 'Plans', async render() {
+    const P = await ld('plans');
+    $('#view').innerHTML = `<div class="toolbar"><span class="muted">Retired plans stay on existing subscriptions but can't be chosen by new schools.</span><button class="btn-elimu btn-elimu-primary sm" data-a="planNew">New plan</button></div>
+      <div class="plan-grid">${P.map(p => `<div class="plan-card ${p.is_active ? '' : 'retired'}">${p.is_active ? '' : '<span class="plan-card-badge" style="background:var(--ink-soft)">Retired</span>'}
+        <h3>${esc(p.name)}</h3><div class="plan-price">${kes(p.monthly_price_kes)}<span> /month</span></div>
+        <div class="muted">${p.max_students ? 'Up to ' + p.max_students + ' students' : 'Unlimited students'}</div>
+        <ul class="plan-feature-list">${feats(p.features).map(f => `<li><i class="bi bi-check-circle-fill"></i>${esc(f)}</li>`).join('')}</ul>
+        <div class="cardbtns"><button class="btn-elimu btn-elimu-ghost sm" data-a="planEdit" data-id="${p.id}">Edit</button><button class="btn-elimu btn-elimu-ghost sm" data-a="planActive" data-id="${p.id}" data-on="${p.is_active ? 0 : 1}">${p.is_active ? 'Retire' : 'Reactivate'}</button></div></div>`).join('')}</div>`;
+  } };
+  const PF = [
+    { k: 'name', label: 'Plan name', req: 1 },
+    { k: 'price', label: 'Monthly price (KES)', type: 'number', req: 1 },
+    { k: 'max', label: 'Student limit', type: 'number', hint: 'Leave blank for unlimited.' },
+    { k: 'features', label: 'Features', type: 'textarea', hint: 'One per line.' }];
+  const lines = s => s.split('\n').map(x => x.trim()).filter(Boolean);
+
+  // ---- Curriculum (global; shared by every school) ----
+  const NAME = [{ k: 'name', label: 'Name', req: 1 }];
+  const NS = [...NAME, { k: 'sortOrder', label: 'Sort order', type: 'number', req: 1 }];
+  const LV = [
+    { n: 'Education level', b: 'education-levels', ls: () => '/curriculum/education-levels', f: NS },
+    { n: 'Grade', b: 'grades', ls: p => '/curriculum/grades?educationLevelId=' + p, par: 'educationLevelId', f: NS },
+    { n: 'Learning area', b: 'learning-areas', ls: p => `/curriculum/grades/${p}/learning-areas`, par: 'gradeId', f: NAME },
+    { n: 'Strand', b: 'strands', ls: p => `/curriculum/learning-areas/${p}/strands`, par: 'learningAreaId', f: NAME },
+    { n: 'Sub-strand', b: 'sub-strands', ls: p => `/curriculum/strands/${p}/sub-strands`, par: 'strandId', f: NAME },
+    { n: 'Learning outcome', b: 'learning-outcomes', ls: p => `/curriculum/sub-strands/${p}/learning-outcomes`, par: 'subStrandId',
+      f: [{ k: 'termNumber', label: 'Term (1–3)', type: 'number', req: 1 }, { k: 'description', label: 'Description', type: 'textarea', req: 1 }] }];
+  let cur = [], cr = [];
+  const cv = r => ({ name: r.name, sortOrder: r.sort_order, termNumber: r.term_number, description: r.description });
+  const nums = (L, v) => { L.f.forEach(f => { if (f.type === 'number') v[f.k] = Number(v[f.k]); }); return v; };
+  V.curriculum = { t: 'Curriculum', async render() {
+    const d = cur.length, L = LV[d];
+    const [rows, rub] = await Promise.all([get(L.ls(d ? cur[d - 1].id : '')), get('/curriculum/rubric-levels')]);
+    cr = rows;
+    $('#view').innerHTML = `<div class="banner"><span>Curriculum is shared data. Every change here shows up for all schools.</span></div>
+      <div class="card-elimu"><div class="crumbs"><a data-a="curGo" data-i="0">Curriculum</a>${cur.map((c, i) => ` / <a data-a="curGo" data-i="${i + 1}">${esc(c.name)}</a>`).join('')}</div>
+        <div class="toolbar"><h3 style="margin-right:auto">${L.n}s</h3><button class="btn-elimu btn-elimu-primary sm" data-a="curAdd">Add ${L.n.toLowerCase()}</button></div>
+        ${rows.length ? rows.map((r, i) => `<div class="row-item"><div>${r.term_number ? `<span class="status-chip info">Term ${r.term_number}</span> ` : ''}${esc(r.name || r.description)}</div><div class="cardbtns">${d < 5 ? `<button data-a="curOpen" data-i="${i}">Open</button>` : ''}<button data-a="curEdit" data-i="${i}">Edit</button><button data-a="curDel" data-i="${i}">Delete</button></div></div>`).join('') : '<p class="empty">Nothing here yet. Add the first one.</p>'}
+      </div>
+      <div class="card-elimu"><h3 style="margin-bottom:6px">Rubric labels</h3><p class="muted" style="margin-bottom:8px">Codes and scores are fixed because report cards depend on them. Only the label can change.</p>
+        ${rub.map(r => `<div class="row-item"><div><b>${esc(r.code)}</b> · ${esc(r.label)} <span class="muted">score ${esc(r.score_value)}</span></div><button data-a="rubric" data-id="${r.id}" data-l="${esc(r.label)}">Edit label</button></div>`).join('')}</div>`;
+  } };
+
+  // ---- Sub-strands (pick grade + subject, manage every strand's sub-strands in one place) ----
+  let ss = { strands: [], subs: [] };
+  V.substrands = { t: 'Sub-strands', async render() {
+    const G = await get('/curriculum/grades');
+    if (!G.length) { $('#view').innerHTML = '<div class="card-elimu"><p class="empty">No grades yet. Add education levels and grades under Curriculum first.</p></div>'; return; }
+    const g = G.find(x => String(x.id) === params.grade) || G[0];
+    const areas = await get(`/curriculum/grades/${g.id}/learning-areas`);
+    const a = areas.find(x => String(x.id) === params.area) || areas[0];
+    const bar = `<div class="toolbar"><select class="input" data-ssel="grade">${G.map(x => `<option value="${x.id}" ${x.id === g.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <select class="input" data-ssel="area" ${a ? '' : 'disabled'}>${areas.length ? areas.map(x => `<option value="${x.id}" ${a && x.id === a.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : '<option>No subjects</option>'}</select>
+      <span class="muted"></span>${a ? '<button class="btn-elimu btn-elimu-primary sm" data-a="ssStrand">Add strand</button>' : ''}</div>`;
+    if (!a) { $('#view').innerHTML = `<div class="card-elimu">${bar}<p class="empty">${esc(g.name)} has no subjects yet. Add a learning area under Curriculum.</p></div>`; return; }
+    const strands = await get(`/curriculum/learning-areas/${a.id}/strands`);
+    const subs = await Promise.all(strands.map(s => get(`/curriculum/strands/${s.id}/sub-strands`)));
+    ss = { strands, subs, grade: g.id, area: a.id };
+    $('#view').innerHTML = `<div class="card-elimu" style="padding-bottom:6px">${bar}</div>` + (strands.length ? strands.map((s, i) => `
+      <div class="card-elimu"><div class="toolbar" style="margin-bottom:6px"><h3 style="margin-right:auto">${esc(s.name)} <span class="muted">${subs[i].length} sub-strand${subs[i].length === 1 ? '' : 's'}</span></h3>
+        <button class="btn-elimu btn-elimu-ghost sm" data-a="ssBulk" data-i="${i}">Add several</button></div>
+        ${subs[i].length ? subs[i].map((x, j) => `<div class="row-item"><div>${esc(x.name)}</div><div class="cardbtns"><button data-a="ssEdit" data-i="${i}" data-j="${j}">Edit</button><button data-a="ssDel" data-i="${i}" data-j="${j}">Delete</button></div></div>`).join('') : '<p class="empty" style="padding:14px 0">No sub-strands yet.</p>'}
+        <form class="toolbar" data-ssform="${i}" style="margin:14px 0 0"><input class="input" name="n" placeholder="New sub-strand name" style="max-width:none" aria-label="New sub-strand name"><button class="btn-elimu btn-elimu-primary sm">Add sub-strand</button></form></div>`).join('')
+      : `<div class="card-elimu"><p class="empty">${esc(a.name)} has no strands yet. Add a strand first, then its sub-strands.</p></div>`);
+  } };
+
+  // ---- Audit log ----
+  V.audit = { t: 'Audit log', async render() {
+    const S = await ld('schools'), f = { schoolId: params.school || '', tableName: params.table || '', action: params.action || '' };
+    const T = ['school_subscriptions', 'education_levels', 'grades', 'learning_areas', 'strands', 'sub_strands', 'learning_outcomes', 'rubric_levels', 'users'];
+    const Ac = ['create', 'update', 'delete', 'activate', 'cancel', 'change_plan', 'start_trial'];
+    $('#view').innerHTML = `<div class="card-elimu"><form class="toolbar" id="af">
+        <select class="input" name="schoolId"><option value="">All schools</option>${S.map(s => `<option value="${s.id}" ${String(s.id) === f.schoolId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+        <input class="input" name="tableName" list="tl" placeholder="Table" value="${esc(f.tableName)}"><datalist id="tl">${T.map(x => `<option value="${x}">`).join('')}</datalist>
+        <input class="input" name="action" list="al" placeholder="Action" value="${esc(f.action)}"><datalist id="al">${Ac.map(x => `<option value="${x}">`).join('')}</datalist>
+        <button class="btn-elimu btn-elimu-primary sm">Filter</button></form>
+      <div id="out"></div><div class="center"><button class="btn-elimu btn-elimu-ghost sm" id="more" hidden>Load more</button></div></div>`;
+    $('#af').onsubmit = e => { e.preventDefault(); const g = n => e.target.elements[n].value.trim(); const h = '#audit' + qs({ school: g('schoolId'), table: g('tableName'), action: g('action') }); location.hash === h ? route() : (location.hash = h); };
+    let off = 0; const all = [];
+    const draw = () => { $('#out').innerHTML = tbl(['When', 'School', 'Who', 'Action', 'Record', 'Details'], all.map(r => [
+      dtm(r.created_at), esc(r.school_name || 'Platform'), esc(r.actor_name || 'System'), `<span class="status-chip info">${esc(r.action)}</span>`,
+      `${esc(r.table_name)}${r.record_id ? ' <span class="muted">#' + esc(r.record_id) + '</span>' : ''}`,
+      r.details && Object.keys(r.details).length ? `<details><summary class="lnk">View</summary><pre>${esc(JSON.stringify(r.details, null, 2))}</pre></details>` : '—']), 'No entries match these filters.'); };
+    const load = async () => { const d = await get('/audit-logs/all' + qs({ ...f, limit: 50, offset: off })); off += d.length; all.push(...d); draw(); $('#more').hidden = d.length < 50; };
+    $('#more').onclick = () => load().catch(e => toast(e.message, true));
+    await load();
+  } };
+
+  // ---- Actions ----
+  const H = {
+    refresh() { cache = {}; route(); },
+    logout() { window.ElimuOs.auth.logout(); },
+    async expire() { if (await confirmBox('Run trial expiry', 'Every trial past its end date will be marked past due.', 'Run expiry')) run(async () => { cache = {}; return send('/billing/subscriptions/expire-trials', 'POST'); }, r => r.message || 'Trials expired'); },
+    async activate(d) {
+      const renew = d.s === 'active';
+      if (await confirmBox(renew ? 'Record renewal' : 'Activate subscription', `Confirm ${d.n} has paid. This opens a new 30-day billing period.`, renew ? 'Record renewal' : 'Activate'))
+        run(async () => { cache = {}; return send(`/billing/subscriptions/${d.id}/activate`, 'POST'); }, 'Subscription activated');
+    },
+    async planNew() {
+      const v = await formBox('New plan', PF, {}, 'Create plan'); if (!v) return;
+      run(async () => { cache = {}; return send('/billing/plans', 'POST', { name: v.name, monthlyPriceKes: Number(v.price), maxStudents: v.max ? Number(v.max) : undefined, features: lines(v.features) }); }, 'Plan created');
+    },
+    async planEdit(d) {
+      const p = cache.plans.find(x => String(x.id) === d.id), f0 = feats(p.features).join('\n');
+      const v = await formBox('Edit plan', PF, { name: p.name, price: p.monthly_price_kes, max: p.max_students ?? '', features: f0 }); if (!v) return;
+      // The update endpoint reads snake_case keys (unlike create). Features are only sent when edited so an object-shaped value isn't rewritten needlessly.
+      const body = { name: v.name, monthly_price_kes: Number(v.price), max_students: v.max ? Number(v.max) : null };
+      if (v.features !== f0) body.features = lines(v.features);
+      run(async () => { cache = {}; return send('/billing/plans/' + d.id, 'PATCH', body); }, 'Plan updated');
+    },
+    async planActive(d) {
+      const on = d.on === '1';
+      if (await confirmBox(on ? 'Reactivate plan' : 'Retire plan', on ? 'New schools will be able to choose this plan again.' : 'Existing subscriptions keep this plan. New schools will no longer see it.', on ? 'Reactivate' : 'Retire', !on))
+        run(async () => { cache = {}; return send(`/billing/plans/${d.id}/active`, 'PATCH', { isActive: on }); }, on ? 'Plan reactivated' : 'Plan retired');
+    },
+    curGo(d) { cur = cur.slice(0, +d.i); route(); },
+    curOpen(d) { const r = cr[+d.i]; cur.push({ id: r.id, name: r.name }); route(); },
+    async curAdd() {
+      const dp = cur.length, L = LV[dp], next = Math.max(0, ...cr.map(r => r.sort_order || 0)) + 1;
+      const v = await formBox('Add ' + L.n.toLowerCase(), L.f, { sortOrder: next }, 'Add'); if (!v) return;
+      run(() => send('/curriculum/' + L.b, 'POST', { ...(L.par ? { [L.par]: cur[dp - 1].id } : {}), ...nums(L, v) }), L.n + ' added');
+    },
+    async curEdit(d) {
+      const L = LV[cur.length], r = cr[+d.i], v = await formBox('Edit ' + L.n.toLowerCase(), L.f, cv(r)); if (!v) return;
+      run(() => send(`/curriculum/${L.b}/${r.id}`, 'PATCH', nums(L, v)), L.n + ' updated');
+    },
+    async curDel(d) {
+      const L = LV[cur.length], r = cr[+d.i];
+      if (await confirmBox('Delete ' + L.n.toLowerCase(), `"${(r.name || r.description).slice(0, 80)}" will be removed for every school. This may fail if schools already use it.`, 'Delete', true))
+        run(() => send(`/curriculum/${L.b}/${r.id}`, 'DELETE'), L.n + ' deleted');
+    },
+    async rubric(d) {
+      const v = await formBox('Edit rubric label', [{ k: 'label', label: 'Label', req: 1 }], { label: d.l }); if (!v) return;
+      run(() => send('/curriculum/rubric-levels/' + d.id, 'PATCH', { label: v.label }), 'Label updated');
+    },
+    async ssStrand() {
+      const v = await formBox('Add strand', NAME, {}, 'Add strand'); if (!v) return;
+      run(() => send('/curriculum/strands', 'POST', { learningAreaId: ss.area, name: v.name }), 'Strand added');
+    },
+    async ssBulk(d) {
+      const s = ss.strands[+d.i], v = await formBox('Add sub-strands to ' + s.name, [{ k: 'names', label: 'Sub-strands', type: 'textarea', req: 1, hint: 'One per line.' }], {}, 'Add all'); if (!v) return;
+      const names = lines(v.names); let n = 0;
+      try { for (const name of names) { await send('/curriculum/sub-strands', 'POST', { strandId: s.id, name }); n++; } toast(n + ' sub-strands added'); }
+      catch (e) { toast(`Added ${n} of ${names.length}. Stopped at "${names[n]}": ${e.message}`, true); }
+      route();
+    },
+    async ssEdit(d) {
+      const x = ss.subs[+d.i][+d.j], v = await formBox('Edit sub-strand', NAME, { name: x.name }); if (!v) return;
+      run(() => send('/curriculum/sub-strands/' + x.id, 'PATCH', { name: v.name }), 'Sub-strand updated');
+    },
+    async ssDel(d) {
+      const x = ss.subs[+d.i][+d.j];
+      if (await confirmBox('Delete sub-strand', `"${x.name}" will be removed for every school. This may fail if learning outcomes or assessments already use it.`, 'Delete', true))
+        run(() => send('/curriculum/sub-strands/' + x.id, 'DELETE'), 'Sub-strand deleted');
+    },
+  };
+  document.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b && H[b.dataset.a]) { e.preventDefault(); H[b.dataset.a](b.dataset); } });
+  document.addEventListener('submit', e => {
+    const f = e.target.closest('[data-ssform]'); if (!f) return; e.preventDefault();
+    const name = f.elements.n.value.trim(), s = ss.strands[+f.dataset.ssform]; if (!name) return;
+    run(() => send('/curriculum/sub-strands', 'POST', { strandId: s.id, name }), 'Sub-strand added');
+  });
+  document.addEventListener('change', e => {
+    const s = e.target.closest('[data-ssel]'); if (!s) return;
+    const grade = s.dataset.ssel === 'grade' ? s.value : ss.grade, area = s.dataset.ssel === 'area' ? s.value : '';
+    location.hash = '#substrands' + qs({ grade, area });
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.remove()); });
+
+  // ---- Shell + routing ----
+  const NAV = [['Platform', [['overview', 'Overview', 'grid-1x2-fill'], ['schools', 'Schools', 'building-fill']]],
+    ['Billing', [['subscriptions', 'Subscriptions', 'credit-card-fill'], ['plans', 'Plans', 'tags-fill']]],
+    ['Content', [['substrands', 'Sub-strands', 'diagram-2-fill'], ['curriculum', 'Curriculum', 'journal-bookmark-fill']]],
+    ['Oversight', [['audit', 'Audit log', 'clock-history']]]];
+  async function route() {
+    const [n, q] = location.hash.slice(1).split('?'), k = V[n] ? n : 'overview';
+    params = Object.fromEntries(new URLSearchParams(q || ''));
+    $('#nav').innerHTML = NAV.map(([s, items], i) => `${i ? `<div class="admin-nav-section">${s}</div>` : ''}${items.map(([id, l, ic]) => `<a href="#${id}" class="admin-nav-link ${id === k ? 'active' : ''}"><i class="bi bi-${ic}"></i> ${l}</a>`).join('')}`).join('');
+    $('#title').textContent = V[k].t; document.title = V[k].t + ' — ElimuOs';
+    $('#view').innerHTML = skeleton();
+    try { await V[k].render(); }
+    catch (e) { $('#view').innerHTML = `<div class="card-elimu"><p class="empty">${esc(e.message)}</p><div class="center"><button class="btn-elimu btn-elimu-primary sm" data-a="refresh">Try again</button></div></div>`; }
+  }
+  window.addEventListener('hashchange', route);
+  (async () => {
+    const u = await window.ElimuOs.auth.bootstrap({ allowRoles: ['super_admin'] });
+    if (!u) return;
+    $('#uname').textContent = u.full_name; $('#avatar').textContent = u.full_name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    route();
+  })();
+})();
+</script>
+</body>
+</html>

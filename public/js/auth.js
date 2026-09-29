@@ -221,6 +221,7 @@
    */
   function dashboardPathForRole(roleCode) {
     switch (roleCode) {
+      case 'super_admin': return '/superadmin/dashboard.html';
       case 'school_admin': return '/admin/dashboard.html';
       case 'accountant': return '/accountant/dashboard.html';
       case 'teacher': return '/teacher/dashboard.html';

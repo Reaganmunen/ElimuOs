@@ -79,4 +79,34 @@ const reminderLimiter = rateLimit({
   message: { success: false, message: 'Too many reminder batches this hour. Please try again later.' },
 });
 
-module.exports = { loginLimiter, sensitiveActionLimiter, refreshLimiter, testSendLimiter, reminderLimiter };
+/**
+ * "Verify connection" and "Register C2B URLs" both call Safaricom on the
+ * school's behalf - cap them per SCHOOL (must run after `authenticate`).
+ */
+const credentialActionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `school:${req.user?.school_id || 'unknown'}`,
+  message: { success: false, message: 'Too many attempts this hour. Please try again later.' },
+});
+
+/**
+ * Caps B2B "send money out" requests per SCHOOL. Together with the
+ * password re-entry on every send, this limits how fast anyone could drain the
+ * account from a hijacked session.
+ */
+const b2bSendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `school:${req.user?.school_id || 'unknown'}`,
+  message: { success: false, message: 'Too many payment requests this hour. Please try again later.' },
+});
+
+module.exports = {
+  loginLimiter, sensitiveActionLimiter, refreshLimiter, testSendLimiter, reminderLimiter,
+  credentialActionLimiter, b2bSendLimiter,
+};

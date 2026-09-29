@@ -182,8 +182,14 @@ const logoutAllDevices = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   if (!req.user.school_id) {
     // Platform super_admin accounts aren't attached to a school, so they
-    // fall outside the tenant-scoped user lookup entirely.
-    throw new ApiError(400, 'Super admin accounts are not tied to a school — use the platform admin endpoint instead');
+    // fall outside the tenant-scoped user lookup. Resolve them by id alone
+    // so the super admin dashboard can bootstrap like every other page.
+    const admin = await userModel.findByIdAcrossSchools(req.user.id);
+    if (!admin || admin.role_code !== 'super_admin' || !admin.is_active) throw new ApiError(404, 'User not found');
+    return sendSuccess(res, 200, {
+      id: admin.id, full_name: admin.full_name, email: admin.email,
+      is_active: admin.is_active, role_code: admin.role_code, school_id: null,
+    });
   }
   const user = await userModel.findById(req.user.id, req.user.school_id);
   if (!user) throw new ApiError(404, 'User not found');
